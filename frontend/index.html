@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Riptide Torrent Client</title>
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="titlebar">
+        <div class="brand">
+          <span class="dot red"></span>
+          <span class="dot yellow"></span>
+          <span class="dot green"></span>
+          <span class="logo">RIPTIDE</span>
+        </div>
+        <div class="top-stats">
+          <span id="global-down">DL 0 B/s</span>
+          <span id="global-up">UL 0 B/s</span>
+        </div>
+      </header>
+
+      <section class="workspace">
+        <aside class="sidebar">
+          <button class="nav active" data-filter="all">All torrents <b id="count-all">0</b></button>
+          <button class="nav" data-filter="downloading">Downloading <b id="count-downloading">0</b></button>
+          <button class="nav" data-filter="seeding">Seeding <b id="count-seeding">0</b></button>
+          <button class="nav" data-filter="completed">Completed <b id="count-completed">0</b></button>
+          <button class="nav" data-filter="paused">Paused <b id="count-paused">0</b></button>
+
+          <div class="sidebar-title">Labels</div>
+          <button class="label" data-label="linux"><span class="swatch cyan"></span> Linux ISOs <b id="count-linux">0</b></button>
+          <button class="label" data-label="media"><span class="swatch red"></span> Media <b id="count-media">0</b></button>
+          <button class="label" data-label="software"><span class="swatch blue"></span> Software <b id="count-software">0</b></button>
+          <button class="label" data-label="archives"><span class="swatch amber"></span> Archives <b id="count-archives">0</b></button>
+
+          <div class="free-space">
+            <div><span>Free space</span><b id="free-space">-</b></div>
+            <div class="meter"><span id="free-meter"></span></div>
+          </div>
+        </aside>
+
+        <section class="main-pane">
+          <div class="toolbar">
+            <button id="add-toggle" class="primary">+ Add torrent</button>
+            <button id="resume-selected" class="icon">Play</button>
+            <button id="pause-selected" class="icon">Pause</button>
+            <input id="search" class="search" placeholder="Filter torrents..." autocomplete="off" />
+            <button id="settings-toggle" class="icon">Settings</button>
+          </div>
+
+          <div id="add-panel" class="drawer hidden">
+            <form id="magnet-form" class="add-grid">
+              <input id="magnet" placeholder="magnet:?xt=urn:btih:..." autocomplete="off" />
+              <input id="save-path" placeholder="/var/lib/torrent-client/downloads/name" autocomplete="off" />
+              <button type="submit">Add magnet</button>
+            </form>
+            <form id="file-form" class="add-grid">
+              <input id="torrent-file" type="file" accept=".torrent" />
+              <input id="file-save-path" placeholder="/var/lib/torrent-client/downloads/name" autocomplete="off" />
+              <button type="submit">Upload file</button>
+            </form>
+          </div>
+
+          <div id="settings-panel" class="drawer hidden">
+            <form id="settings-form" class="settings-grid">
+              <label>Default folder <input id="default_download_folder" /></label>
+              <label>Max active <input id="max_active_downloads" type="number" min="1" /></label>
+              <label>Global DL KB/s <input id="global_download_limit" data-unit="kb" type="number" min="0" /></label>
+              <label>Global UL KB/s <input id="global_upload_limit" data-unit="kb" type="number" min="0" /></label>
+              <label class="check"><input id="dht_enabled" type="checkbox" /> DHT</label>
+              <label class="check"><input id="upnp_enabled" type="checkbox" /> UPnP</label>
+              <label class="check"><input id="lsd_enabled" type="checkbox" /> LSD</label>
+              <button type="submit">Save settings</button>
+            </form>
+          </div>
+
+          <div id="message" class="message"></div>
+          <div id="torrent-list" class="torrent-list"></div>
+        </section>
+
+        <aside class="detail-pane">
+          <div id="detail-empty" class="empty-detail">Select a torrent</div>
+          <div id="detail-content" class="hidden">
+            <div class="detail-head">
+              <div>
+                <span id="detail-status" class="pill">-</span>
+                <h2 id="detail-name">-</h2>
+              </div>
+              <button id="delete-selected" class="close">Delete</button>
+            </div>
+            <nav class="tabs">
+              <button class="tab active" data-tab="general">General</button>
+              <button class="tab" data-tab="files">Files</button>
+              <button class="tab" data-tab="peers">Peers</button>
+              <button class="tab" data-tab="trackers">Trackers</button>
+            </nav>
+            <section id="tab-general" class="tab-page active">
+              <canvas id="speed-chart" width="620" height="170"></canvas>
+              <div class="stats-grid">
+                <div><span>Progress</span><b id="stat-progress">-</b></div>
+                <div><span>Downloaded</span><b id="stat-downloaded">-</b></div>
+                <div><span>Ratio</span><b id="stat-ratio">-</b></div>
+                <div><span>ETA</span><b id="stat-eta">-</b></div>
+                <div><span>Seeds</span><b id="stat-seeds">-</b></div>
+                <div><span>Peers</span><b id="stat-peers">-</b></div>
+              </div>
+            </section>
+            <section id="tab-files" class="tab-page"></section>
+            <section id="tab-peers" class="tab-page"></section>
+            <section id="tab-trackers" class="tab-page"></section>
+          </div>
+        </aside>
+      </section>
+
+      <footer class="statusbar">
+        <span id="connection-state">Connected</span>
+        <span id="dht-state">DHT -</span>
+        <span id="footer-count">0 torrents</span>
+        <span id="footer-ratio">Ratio 0.00</span>
+      </footer>
+    </main>
+    <script src="/static/app.js"></script>
+  </body>
+</html>

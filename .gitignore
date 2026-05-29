@@ -1,0 +1,16 @@
+.DS_Store
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+data/
+downloads/
+*.db
+*.sqlite
+*.fastresume
+
+*.log
+.env
+*.env
+!deploy/*.env.example

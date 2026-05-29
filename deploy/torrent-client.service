@@ -1,0 +1,18 @@
+[Unit]
+Description=Local Torrent Client
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+Group=torrentclient
+User=torrentclient
+WorkingDirectory=/opt/torrent-client/backend
+EnvironmentFile=/etc/torrent-client.env
+ExecStart=/usr/bin/bash -lc 'exec /opt/torrent-client/backend/.venv/bin/python -m uvicorn app.main:app --host 127.0.0.1 --port 8123'
+Restart=on-failure
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target
