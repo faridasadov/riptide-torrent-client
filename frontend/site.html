@@ -8,6 +8,15 @@
     <link rel="stylesheet" href="/static/web.css" />
   </head>
   <body>
+    <script>
+      try {
+        const themeOverride = new URLSearchParams(window.location.search).get("theme");
+        const savedTheme = JSON.parse(localStorage.getItem("riptide_ui_settings") || "{}").theme;
+        if (themeOverride === "light" || savedTheme === "Pearl light") {
+          document.body.classList.add("theme-light");
+        }
+      } catch {}
+    </script>
     <div class="w-page">
       <nav class="w-nav scrolled">
         <div class="w-nav-inner">

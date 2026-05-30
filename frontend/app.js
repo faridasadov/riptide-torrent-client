@@ -64,6 +64,16 @@ function icon(name, size = 16) {
   return `<svg class="rt-ico" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${path}</svg>`;
 }
 
+function applyTheme() {
+  document.body.classList.toggle("theme-light", state.uiSettings.theme === "Pearl light");
+}
+
+function applyThemeOverride() {
+  const forcedTheme = new URLSearchParams(window.location.search).get("theme");
+  if (forcedTheme === "light") state.uiSettings.theme = "Pearl light";
+  if (forcedTheme === "dark") state.uiSettings.theme = "Deep ocean";
+}
+
 function applyStaticIcons() {
   document.querySelectorAll("[data-icon]").forEach((el) => {
     if (el.dataset.iconReady) return;
@@ -613,6 +623,8 @@ async function loadSettings() {
     } catch {
       localStorage.removeItem("riptide_ui_settings");
     }
+    applyThemeOverride();
+    applyTheme();
     Object.entries(settings).forEach(([key, value]) => {
       const input = qs(`#${key}`);
       if (!input) return;
@@ -866,8 +878,9 @@ qs("#settings-screen-form").addEventListener("click", async (event) => {
     if (next) qs("#screen_default_download_folder").value = next;
   }
   if (theme) {
-    state.uiSettings.theme = state.uiSettings.theme === "Deep ocean" ? "Deep ocean high contrast" : "Deep ocean";
+    state.uiSettings.theme = state.uiSettings.theme === "Deep ocean" ? "Pearl light" : "Deep ocean";
     localStorage.setItem("riptide_ui_settings", JSON.stringify(state.uiSettings));
+    applyTheme();
     renderSettingsScreen();
   }
 });
@@ -938,6 +951,8 @@ async function boot() {
   }
 }
 
+applyThemeOverride();
+applyTheme();
 applyStaticIcons();
 boot();
 setInterval(() => state.authenticated && loadTorrents(), 2000);
