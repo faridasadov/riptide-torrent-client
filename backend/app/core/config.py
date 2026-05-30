@@ -1,3 +1,4 @@
+import logging as _logging
 import os
 from pathlib import Path
 
@@ -13,7 +14,14 @@ FRONTEND_DIR = PROJECT_DIR / "frontend"
 AUTH_USERNAME = os.getenv("TORRENT_CLIENT_USERNAME", "admin")
 AUTH_PASSWORD = os.getenv("TORRENT_CLIENT_PASSWORD", "admin")
 AUTH_ENABLED = os.getenv("TORRENT_CLIENT_AUTH_ENABLED", "1") != "0"
-SESSION_SECRET = os.getenv("TORRENT_CLIENT_SESSION_SECRET", AUTH_PASSWORD)
+
+if AUTH_USERNAME == "admin" and AUTH_PASSWORD == "admin":
+    _logging.warning(
+        "SECURITY: Using default admin:admin credentials. "
+        "Set TORRENT_CLIENT_USERNAME and TORRENT_CLIENT_PASSWORD."
+    )
+
+SESSION_SECRET = os.getenv("TORRENT_CLIENT_SESSION_SECRET") or os.urandom(32).hex()
 SESSION_COOKIE_NAME = os.getenv("TORRENT_CLIENT_SESSION_COOKIE_NAME", "torrent_client_session")
 CORS_ORIGINS = [
     origin.strip()

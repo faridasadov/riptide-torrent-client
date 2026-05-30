@@ -32,17 +32,24 @@ class TorrentService:
 
         final_path = validate_save_path(save_path or self.settings_repo.get_all()["default_download_folder"])
         torrent_id = self.engine.add_magnet(magnet, final_path)
-        if self.torrent_repo.exists(torrent_id):
-            self.engine.remove_torrent(torrent_id, delete_files=False)
-            raise ValueError("Torrent already exists")
-        self.torrent_repo.upsert(
-            {
-                "info_hash": torrent_id,
-                "name": "",
-                "magnet": magnet,
-                "save_path": final_path,
-            }
-        )
+        try:
+            if self.torrent_repo.exists(torrent_id):
+                self.engine.remove_torrent(torrent_id, delete_files=False)
+                raise ValueError("Torrent already exists")
+            self.torrent_repo.upsert(
+                {
+                    "info_hash": torrent_id,
+                    "name": "",
+                    "magnet": magnet,
+                    "save_path": final_path,
+                }
+            )
+        except Exception:
+            try:
+                self.engine.remove_torrent(torrent_id, delete_files=False)
+            except Exception:
+                pass
+            raise
         return {"torrent_id": torrent_id, "message": "Torrent added"}
 
     def add_torrent_file(self, source_file: str, filename: str, save_path: str = None) -> Dict[str, str]:
@@ -59,14 +66,21 @@ class TorrentService:
         shutil.copyfile(source_file, stored_path)
 
         added = self.engine.add_torrent_file(str(stored_path), final_path)
-        self.torrent_repo.upsert(
-            {
-                "info_hash": torrent_id,
-                "name": added.get("name") or info.get("name") or "",
-                "torrent_file_path": str(stored_path),
-                "save_path": final_path,
-            }
-        )
+        try:
+            self.torrent_repo.upsert(
+                {
+                    "info_hash": torrent_id,
+                    "name": added.get("name") or info.get("name") or "",
+                    "torrent_file_path": str(stored_path),
+                    "save_path": final_path,
+                }
+            )
+        except Exception:
+            try:
+                self.engine.remove_torrent(torrent_id, delete_files=False)
+            except Exception:
+                pass
+            raise
         return {"torrent_id": torrent_id, "message": "Torrent added"}
 
     def list_statuses(self) -> List[Dict[str, Any]]:

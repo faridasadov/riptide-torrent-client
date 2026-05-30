@@ -16,6 +16,9 @@ from app.core.config import (
 )
 
 
+_active_sessions: set = set()
+
+
 PUBLIC_PATHS = {
     "/",
     "/site",
@@ -70,10 +73,18 @@ def _sign(payload: str) -> str:
 def create_session_token() -> str:
     timestamp = str(int(time.time()))
     payload = f"{AUTH_USERNAME}:{timestamp}"
-    return f"{payload}:{_sign(payload)}"
+    token = f"{payload}:{_sign(payload)}"
+    _active_sessions.add(token)
+    return token
+
+
+def revoke_session_token(token: str) -> None:
+    _active_sessions.discard(token)
 
 
 def is_valid_session_token(token: str) -> bool:
+    if token not in _active_sessions:
+        return False
     parts = token.split(":")
     if len(parts) != 3:
         return False

@@ -7,6 +7,7 @@ Wants=network-online.target
 Type=oneshot
 EnvironmentFile=-/etc/torrent-client.env
 ExecStart=/usr/local/sbin/torrent-client-killswitch.sh
+ExecStop=/usr/local/sbin/torrent-client-killswitch.sh stop
 RemainAfterExit=yes
 
 [Install]

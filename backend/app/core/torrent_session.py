@@ -1,12 +1,16 @@
+import logging
 import os
 import re
 import shutil
+import threading
 import time
 from pathlib import Path
 from typing import Any, Dict, Optional
 from urllib.parse import parse_qs, urlparse
 
 from app.core.config import ALLOWED_DOWNLOAD_ROOTS, MIN_FREE_SPACE_BYTES, RESUME_DIR
+
+logger = logging.getLogger(__name__)
 
 try:
     import libtorrent as lt  # type: ignore
@@ -72,6 +76,7 @@ class TorrentSessionManager:
         self.lt = require_libtorrent()
         self.session = self._create_session()
         self.handles: Dict[str, Any] = {}
+        self._lock = threading.Lock()
 
     def _create_session(self) -> Any:
         ses = self.lt.session()
@@ -118,8 +123,8 @@ class TorrentSessionManager:
             pack = self.session.get_settings()
             pack["active_downloads"] = limit
             self.session.apply_settings(pack)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Failed to set active downloads: %s", e)
 
     def add_magnet(self, magnet: str, save_path: str, resume_data: Optional[bytes] = None) -> str:
         info_hash = extract_info_hash_from_magnet(magnet)
@@ -131,7 +136,8 @@ class TorrentSessionManager:
             params["resume_data"] = resume_data
         handle = self.lt.add_magnet_uri(self.session, magnet, params)
         torrent_id = str(handle.info_hash()).lower() if handle.info_hash() else info_hash
-        self.handles[torrent_id] = handle
+        with self._lock:
+            self.handles[torrent_id] = handle
         return torrent_id
 
     def add_torrent_file(
@@ -150,7 +156,8 @@ class TorrentSessionManager:
             params["resume_data"] = resume_data
         handle = self.session.add_torrent(params)
         torrent_id = str(info.info_hash()).lower()
-        self.handles[torrent_id] = handle
+        with self._lock:
+            self.handles[torrent_id] = handle
         return {"torrent_id": torrent_id, "name": info.name()}
 
     def get_torrent_file_info(self, torrent_path: str) -> Dict[str, str]:
@@ -161,7 +168,8 @@ class TorrentSessionManager:
         return {"torrent_id": str(info.info_hash()).lower(), "name": info.name()}
 
     def get_handle(self, torrent_id: str) -> Any:
-        handle = self.handles.get(torrent_id.lower())
+        with self._lock:
+            handle = self.handles.get(torrent_id.lower())
         if not handle or not handle.is_valid():
             raise KeyError("Torrent is not loaded in the current session")
         return handle
@@ -183,7 +191,8 @@ class TorrentSessionManager:
             pass
 
     def remove_torrent(self, torrent_id: str, delete_files: bool = False) -> None:
-        handle = self.handles.pop(torrent_id.lower(), None)
+        with self._lock:
+            handle = self.handles.pop(torrent_id.lower(), None)
         if handle and handle.is_valid():
             flags = 0
             if delete_files:
@@ -196,7 +205,8 @@ class TorrentSessionManager:
         handle.set_upload_limit(upload_limit)
 
     def get_status(self, torrent_id: str, db_row: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        handle = self.handles.get(torrent_id.lower())
+        with self._lock:
+            handle = self.handles.get(torrent_id.lower())
         if not handle or not handle.is_valid():
             return self._offline_status(torrent_id, db_row)
         status = handle.status()
@@ -231,7 +241,8 @@ class TorrentSessionManager:
 
     def get_details(self, torrent_id: str, db_row: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         status = self.get_status(torrent_id, db_row)
-        handle = self.handles.get(torrent_id.lower())
+        with self._lock:
+            handle = self.handles.get(torrent_id.lower())
         details: Dict[str, Any] = {
             "status": status,
             "files": [],
@@ -259,8 +270,8 @@ class TorrentSessionManager:
                 {"url": tracker.url, "tier": int(getattr(tracker, "tier", 0) or 0)}
                 for tracker in info.trackers()
             ]
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Failed to get torrent file/tracker details for %s: %s", torrent_id, e)
 
         try:
             peers = []
@@ -277,8 +288,8 @@ class TorrentSessionManager:
                     }
                 )
             details["peers"] = peers
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Failed to get peer info for %s: %s", torrent_id, e)
 
         return details
 
@@ -326,8 +337,38 @@ class TorrentSessionManager:
 
     def save_all_resume_data(self) -> None:
         RESUME_DIR.mkdir(parents=True, exist_ok=True)
-        for torrent_id in list(self.handles):
-            data = self.save_resume_data(torrent_id)
+        with self._lock:
+            handle_snapshot = dict(self.handles)
+        # Issue all save requests first
+        pending: Dict[str, Any] = {}
+        for torrent_id, handle in handle_snapshot.items():
+            if handle and handle.is_valid():
+                try:
+                    handle.save_resume_data()
+                    pending[torrent_id] = handle
+                except Exception as e:
+                    logger.warning("Failed to request resume data for %s: %s", torrent_id, e)
+        if not pending:
+            return
+        # Drain alerts once for all pending handles
+        deadline = time.time() + 5
+        collected: Dict[str, bytes] = {}
+        while time.time() < deadline and len(collected) < len(pending):
+            for alert in self.session.pop_alerts():
+                name = alert.__class__.__name__
+                if name == "save_resume_data_alert":
+                    ih = str(alert.handle.info_hash()).lower()
+                    if ih in pending:
+                        try:
+                            collected[ih] = self.lt.bencode(alert.resume_data)
+                        except Exception as e:
+                            logger.warning("Failed to bencode resume data for %s: %s", ih, e)
+                elif name == "save_resume_data_failed_alert":
+                    ih = str(alert.handle.info_hash()).lower()
+                    logger.warning("Resume data save failed for %s", ih)
+                    collected.setdefault(ih, b"")
+            time.sleep(0.05)
+        for torrent_id, data in collected.items():
             if data:
                 (RESUME_DIR / f"{torrent_id}.fastresume").write_bytes(data)
 
@@ -335,10 +376,17 @@ class TorrentSessionManager:
         torrent_id = row["info_hash"].lower()
         resume_path = RESUME_DIR / f"{torrent_id}.fastresume"
         resume_data = resume_path.read_bytes() if resume_path.exists() else None
-        if row.get("magnet"):
-            self.add_magnet(row["magnet"], row["save_path"], resume_data)
-        elif row.get("torrent_file_path"):
-            self.add_torrent_file(row["torrent_file_path"], row["save_path"], resume_data)
+        try:
+            if row.get("magnet"):
+                self.add_magnet(row["magnet"], row["save_path"], resume_data)
+            elif row.get("torrent_file_path"):
+                self.add_torrent_file(row["torrent_file_path"], row["save_path"], resume_data)
+            else:
+                logger.warning("Skipping restore for %s: no magnet or torrent_file_path", torrent_id)
+                return
+        except Exception as e:
+            logger.error("Failed to restore torrent %s: %s", torrent_id, e)
+            return
         if row.get("paused"):
             self.pause_torrent(torrent_id)
         self.set_torrent_limits(

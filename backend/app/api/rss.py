@@ -1,4 +1,6 @@
+import ipaddress
 import xml.etree.ElementTree as ET
+from urllib.parse import urlparse
 
 import httpx
 from fastapi import APIRouter, HTTPException
@@ -38,6 +40,29 @@ class RuleUpdate(BaseModel):
     enabled: Optional[bool] = None
 
 
+def _validate_rss_url(url: str) -> None:
+    try:
+        parsed = urlparse(url)
+    except Exception:
+        raise ValueError("Invalid URL")
+    if parsed.scheme not in ("http", "https"):
+        raise ValueError("Only http/https URLs are allowed for RSS feeds")
+    host = (parsed.hostname or "").lower()
+    blocked_hosts = {"localhost", "127.0.0.1", "::1", "0.0.0.0"}
+    if host in blocked_hosts:
+        raise ValueError("Local/private URLs are not allowed")
+    try:
+        addr = ipaddress.ip_address(host)
+        if addr.is_private or addr.is_loopback or addr.is_link_local or addr.is_reserved:
+            raise ValueError("Private/reserved IP addresses are not allowed")
+    except ValueError as e:
+        if "not allowed" in str(e):
+            raise
+        # host is a domain name, not an IP — allow it
+    if host.endswith(".local") or host.endswith(".internal"):
+        raise ValueError("Local network domains are not allowed")
+
+
 def _values(payload):
     if hasattr(payload, "model_dump"):
         return payload.model_dump(exclude_none=True)
@@ -52,7 +77,10 @@ async def list_feeds():
 @router.post("/feeds")
 async def create_feed(payload: FeedCreate):
     try:
+        _validate_rss_url(payload.url)
         return RssRepository().create_feed(payload.title, payload.url, payload.active)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
     except Exception as exc:
         raise HTTPException(status_code=400, detail=str(exc))
 
@@ -79,7 +107,8 @@ async def feed_items(feed_id: int):
     if not feed:
         raise HTTPException(status_code=404, detail="RSS feed not found")
     try:
-        async with httpx.AsyncClient(timeout=10, follow_redirects=True) as client:
+        _validate_rss_url(feed["url"])
+        async with httpx.AsyncClient(timeout=10, follow_redirects=False) as client:
             response = await client.get(feed["url"])
             response.raise_for_status()
         root = ET.fromstring(response.text)

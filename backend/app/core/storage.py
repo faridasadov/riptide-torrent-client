@@ -1,4 +1,5 @@
 import json
+import re
 from typing import Any, Dict, List, Optional
 
 from app.core.config import DEFAULT_SETTINGS
@@ -41,7 +42,8 @@ class TorrentRepository:
                     save_path = excluded.save_path,
                     paused = excluded.paused,
                     download_limit = excluded.download_limit,
-                    upload_limit = excluded.upload_limit
+                    upload_limit = excluded.upload_limit,
+                    label = COALESCE(excluded.label, torrents.label)
                 """,
                 (
                     item["info_hash"],
@@ -130,9 +132,20 @@ class SettingsRepository:
 
     def _deserialize(self, value: str, default: Any) -> Any:
         if isinstance(default, bool):
-            return value in {"1", "true", "True", "yes", "on"}
+            try:
+                return bool(int(value))
+            except (ValueError, TypeError):
+                return default
         if isinstance(default, int):
-            return int(value)
+            try:
+                return int(value)
+            except (ValueError, TypeError):
+                return default
+        if isinstance(default, float):
+            try:
+                return float(value)
+            except (ValueError, TypeError):
+                return default
         return value
 
 
@@ -160,6 +173,7 @@ class RssRepository:
                 if not row:
                     raise KeyError("RSS feed not found")
                 return _row_to_dict(row)
+        assert all(re.match(r'^[a-z_]+$', f) for f in fields), "Invalid field names"
         assignments = ", ".join(f"{field} = ?" for field in fields)
         params = [int(values[field]) if field == "active" else values[field] for field in fields]
         params.append(feed_id)
@@ -213,6 +227,7 @@ class RssRepository:
                 if not row:
                     raise KeyError("RSS rule not found")
                 return _row_to_dict(row)
+        assert all(re.match(r'^[a-z_]+$', f) for f in fields), "Invalid field names"
         assignments = ", ".join(f"{field} = ?" for field in fields)
         params = [int(values[field]) if field == "enabled" else values[field] for field in fields]
         params.append(rule_id)

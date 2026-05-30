@@ -49,8 +49,8 @@ app = FastAPI(title="Local Torrent Client", version="0.1.0", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=CORS_ORIGINS,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization"],
     allow_credentials=True,
 )
 app.middleware("http")(basic_auth_middleware)

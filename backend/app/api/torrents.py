@@ -46,6 +46,8 @@ async def add_file(
     tmp_path = None
     try:
         content = await file.read()
+        if not content.startswith(b"d"):
+            raise ValueError("File does not appear to be a valid .torrent (invalid bencode header)")
         if len(content) > MAX_TORRENT_FILE_BYTES:
             raise ValueError(
                 f".torrent file is too large. Maximum allowed size is {MAX_TORRENT_FILE_BYTES} bytes"

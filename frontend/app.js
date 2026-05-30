@@ -160,6 +160,16 @@ function fromBytes(value, unit = "b") {
   return value || 0;
 }
 
+function safeLinkHref(url) {
+  if (!url) return "#";
+  try {
+    const parsed = new URL(url);
+    return (parsed.protocol === "https:" || parsed.protocol === "http:") ? url : "#";
+  } catch {
+    return "#";
+  }
+}
+
 function esc(value) {
   return String(value ?? "").replace(/[&<>"']/g, (char) => ({
     "&": "&amp;",
@@ -231,7 +241,8 @@ function renderCounts() {
     const el = qs(`#count-label-${CSS.escape(name)}`);
     if (el) el.textContent = count;
   });
-  qs("#footer-count").textContent = `${counts.all} torrents`;
+  const footerCount = qs("#footer-count");
+  if (footerCount) footerCount.textContent = `${counts.all} torrents`;
 }
 
 async function loadLabels() {
@@ -363,6 +374,7 @@ function renderTotals() {
 
 function drawChart() {
   const canvas = qs("#speed-chart");
+  if (!canvas) return;
   const ctx = canvas.getContext("2d");
   const { width, height } = canvas;
   ctx.clearRect(0, 0, width, height);
@@ -502,14 +514,18 @@ async function selectTorrent(torrentId) {
         <div class="rt-bdot" style="background:${ok ? "var(--rt-success)" : "var(--rt-fg-4)"}"></div>
         <div class="rt-tracker-main">
           <div class="rt-tracker-url">${esc(t.url)}</div>
-          <div class="rt-tracker-meta">Tier ${t.tier}${t.message ? " · " + esc(t.message) : ""}</div>
+          <div class="rt-tracker-meta">Tier ${esc(String(t.tier ?? ""))}${t.message ? " · " + esc(t.message) : ""}</div>
         </div>
       </div>`;
     }).join("");
   }
 }
 
+let _loadingTorrents = false;
+
 async function loadTorrents() {
+  if (_loadingTorrents) return;
+  _loadingTorrents = true;
   try {
     state.torrents = await api("/api/torrents");
     if (!state.selectedId && state.torrents[0]) state.selectedId = state.torrents[0].torrent_id;
@@ -525,6 +541,8 @@ async function loadTorrents() {
     }
   } catch (error) {
     showMessage(error.message, true);
+  } finally {
+    _loadingTorrents = false;
   }
 }
 
@@ -622,12 +640,17 @@ async function loadRss() {
   }
 }
 
+let _rssLoadGen = 0;
+
 async function loadRssItems(feedId) {
+  const gen = ++_rssLoadGen;
   try {
     const data = await api(`/api/rss/feeds/${feedId}/items`);
+    if (gen !== _rssLoadGen) return; // stale response
     state.rssItems = data.items || [];
     renderRss();
   } catch (error) {
+    if (gen !== _rssLoadGen) return; // stale response
     state.rssItems = [];
     qs("#rss-panel").insertAdjacentHTML("beforeend", `<div class="screen-empty">${esc(error.message)}</div>`);
   }
@@ -679,7 +702,7 @@ function renderRss() {
         ${icon("file", 15)}
         <div class="rt-rss-item-main"><div class="rt-rss-item-title">${esc(item.title)}</div><div class="rt-rss-item-meta">${esc(item.date || "no date")} · ${item.size ? bytes(item.size) : "size unknown"}</div></div>
         <span class="rt-rss-matched">${icon("check", 11)}Feed item</span>
-        <a class="rt-res-btn" href="${esc(item.link || "#")}" target="_blank" rel="noreferrer">${icon("download", 14)}</a>
+        <a class="rt-res-btn" href="${safeLinkHref(item.link)}" target="_blank" rel="noreferrer">${icon("download", 14)}</a>
       </div>
     `).join("") || `<div class="rt-table-empty">No feed items loaded yet.</div>`}</div>
   ` : `<div class="rt-table-empty">Select a feed.</div>`;
@@ -919,11 +942,15 @@ qs("#resume-selected").onclick = () => state.selectedId && act(`/api/torrents/${
 qs("#delete-selected").onclick = () => state.selectedId && deleteTorrent(state.selectedId);
 qs("#torrent-limit-clear").onclick = async () => {
   if (!state.selectedId) return;
-  qs("#torrent-download-limit").value = 0;
-  qs("#torrent-upload-limit").value = 0;
-  await limitTorrent(state.selectedId, 0, 0);
-  showMessage("Torrent speed limits cleared");
-  await selectTorrent(state.selectedId);
+  try {
+    qs("#torrent-download-limit").value = 0;
+    qs("#torrent-upload-limit").value = 0;
+    await limitTorrent(state.selectedId, 0, 0);
+    showMessage("Torrent speed limits cleared");
+    await selectTorrent(state.selectedId);
+  } catch (e) {
+    showToast(e.message, "error");
+  }
 };
 qs("#torrent-limit-form").addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -990,6 +1017,7 @@ qs("#rss-panel").onclick = async (event) => {
   }
   if (toggleRule) {
     const rule = state.rssRules.find((item) => item.id === Number(toggleRule.dataset.toggleRule));
+    if (!rule) return;
     await api(`/api/rss/rules/${rule.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -999,6 +1027,7 @@ qs("#rss-panel").onclick = async (event) => {
   }
   if (toggleFeed) {
     const feed = state.rssFeeds.find((item) => item.id === Number(toggleFeed.dataset.toggleFeed));
+    if (!feed) return;
     await api(`/api/rss/feeds/${feed.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -1318,6 +1347,7 @@ qs("#add-modal-close").onclick = () => closeModal("add-modal");
 qs("#add-modal-cancel").onclick = () => closeModal("add-modal");
 
 qs("#about-toggle").onclick = () => {
+  if (typeof RIPTIDE === "undefined") { showToast("About info unavailable", "error"); return; }
   qs("#about-version").textContent = `v${RIPTIDE.version}`;
   qs("#about-tagline").textContent = RIPTIDE.tagline;
   qs("#about-brand").textContent = RIPTIDE.brand;

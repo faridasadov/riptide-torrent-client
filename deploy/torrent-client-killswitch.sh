@@ -5,8 +5,24 @@ VPN_IFACE="${1:-${TORRENT_CLIENT_VPN_IFACE:-tun0}}"
 SERVICE_USER="${TORRENT_CLIENT_SERVICE_USER:-torrentclient}"
 TABLE="torrent_client_killswitch"
 
+if [[ "${1:-}" == "stop" ]]; then
+  nft delete table inet "$TABLE" 2>/dev/null || true
+  echo "Torrent client kill-switch disabled"
+  exit 0
+fi
+
 if ! id "$SERVICE_USER" >/dev/null 2>&1; then
   echo "User not found: $SERVICE_USER" >&2
+  exit 1
+fi
+
+if ! ip link show "$VPN_IFACE" >/dev/null 2>&1; then
+  echo "VPN interface not found: $VPN_IFACE" >&2
+  exit 1
+fi
+
+if ! ip route get 1.1.1.1 oif "$VPN_IFACE" >/dev/null 2>&1; then
+  echo "VPN interface $VPN_IFACE is not usable for internet routing; refusing to install kill-switch" >&2
   exit 1
 fi
 
