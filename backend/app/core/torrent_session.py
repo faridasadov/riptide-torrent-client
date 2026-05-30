@@ -49,8 +49,16 @@ def extract_info_hash_from_magnet(magnet: str) -> Optional[str]:
     params = parse_qs(parsed.query)
     for xt in params.get("xt", []):
         match = re.match(r"urn:btih:([a-zA-Z0-9]+)", xt)
-        if match:
-            return match.group(1).lower()
+        if not match:
+            continue
+        raw = match.group(1)
+        if len(raw) == 32:
+            import base64
+            try:
+                return base64.b32decode(raw.upper()).hex()
+            except Exception:
+                return raw.lower()
+        return raw.lower()
     return None
 
 

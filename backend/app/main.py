@@ -16,14 +16,13 @@ from app.services.torrent_service import UnavailableTorrentService, create_servi
 
 
 async def periodic_resume_save(app: FastAPI) -> None:
+    _repo = TorrentRepository()
     while True:
         await asyncio.sleep(60)
         service = app.state.torrent_service
         if hasattr(service, "engine"):
-            await asyncio.to_thread(
-                ResumeService(service.engine, TorrentRepository()).save_resume_data
-            )
-            await asyncio.to_thread(service.list_statuses)
+            resume = ResumeService(service.engine, _repo)
+            await asyncio.to_thread(resume.save_resume_data)
 
 
 @asynccontextmanager

@@ -13,7 +13,7 @@ FRONTEND_DIR = PROJECT_DIR / "frontend"
 
 AUTH_USERNAME = os.getenv("TORRENT_CLIENT_USERNAME", "admin")
 AUTH_PASSWORD = os.getenv("TORRENT_CLIENT_PASSWORD", "admin")
-AUTH_ENABLED = os.getenv("TORRENT_CLIENT_AUTH_ENABLED", "1") != "0"
+AUTH_ENABLED = True  # auth cannot be disabled via env var
 
 if AUTH_USERNAME == "admin" and AUTH_PASSWORD == "admin":
     _logging.warning(

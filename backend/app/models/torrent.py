@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 
 
 class AddMagnetRequest(BaseModel):
-    magnet: str
+    magnet: str = Field(min_length=15, max_length=2000)
     save_path: Optional[str] = None
 
 
