@@ -226,6 +226,7 @@ class TorrentSessionManager:
             "paused": bool(status.paused),
             "download_limit": int((db_row or {}).get("download_limit", 0) or 0),
             "upload_limit": int((db_row or {}).get("upload_limit", 0) or 0),
+            "label": (db_row or {}).get("label"),
         }
 
     def get_details(self, torrent_id: str, db_row: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
@@ -301,6 +302,7 @@ class TorrentSessionManager:
             "paused": bool(row.get("paused", False)),
             "download_limit": int(row.get("download_limit", 0) or 0),
             "upload_limit": int(row.get("upload_limit", 0) or 0),
+            "label": row.get("label"),
         }
 
     def save_resume_data(self, torrent_id: str) -> Optional[bytes]:

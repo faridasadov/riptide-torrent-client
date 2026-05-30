@@ -4,10 +4,12 @@ from pathlib import Path
 from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
 
 from app.core.config import MAX_TORRENT_FILE_BYTES
+from app.core.storage import TorrentRepository
 from app.core.torrent_session import TorrentEngineUnavailable
-from app.models.torrent import AddMagnetRequest, AddTorrentResponse, LimitRequest
+from app.models.torrent import AddMagnetRequest, AddTorrentResponse, LimitRequest, SetLabelRequest
 
 router = APIRouter(prefix="/api/torrents", tags=["torrents"])
+_torrent_repo = TorrentRepository()
 
 
 def _service(request: Request):
@@ -51,7 +53,7 @@ async def add_file(
         with tempfile.NamedTemporaryFile(delete=False, suffix=".torrent") as tmp:
             tmp.write(content)
             tmp_path = tmp.name
-        result = _service(request).add_torrent_file(tmp_path, file.filename, save_path)
+        result = _service(request).add_torrent_file(tmp_path, save_path)
         return {"success": True, **result}
     except Exception as exc:
         raise _handle_error(exc)
@@ -119,5 +121,14 @@ async def limit_torrent(torrent_id: str, payload: LimitRequest, request: Request
     try:
         _service(request).limit(torrent_id, payload.download_limit, payload.upload_limit)
         return {"success": True, "message": "Torrent limits updated"}
+    except Exception as exc:
+        raise _handle_error(exc)
+
+
+@router.patch("/{torrent_id}/label")
+async def set_label(torrent_id: str, payload: SetLabelRequest, request: Request):
+    try:
+        _torrent_repo.update_label(torrent_id.lower(), payload.label)
+        return {"success": True}
     except Exception as exc:
         raise _handle_error(exc)

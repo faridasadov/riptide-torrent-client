@@ -31,9 +31,9 @@ class TorrentRepository:
                 """
                 INSERT INTO torrents (
                     info_hash, name, magnet, torrent_file_path, save_path, paused,
-                    download_limit, upload_limit
+                    download_limit, upload_limit, label
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(info_hash) DO UPDATE SET
                     name = excluded.name,
                     magnet = excluded.magnet,
@@ -52,6 +52,7 @@ class TorrentRepository:
                     int(bool(item.get("paused", False))),
                     int(item.get("download_limit", 0) or 0),
                     int(item.get("upload_limit", 0) or 0),
+                    item.get("label"),
                 ),
             )
 
@@ -71,6 +72,13 @@ class TorrentRepository:
                 WHERE info_hash = ?
                 """,
                 (download_limit, upload_limit, info_hash),
+            )
+
+    def update_label(self, info_hash: str, label: Optional[str]) -> None:
+        with get_conn() as conn:
+            conn.execute(
+                "UPDATE torrents SET label = ? WHERE info_hash = ?",
+                (label, info_hash),
             )
 
     def delete(self, info_hash: str) -> None:
@@ -218,3 +226,50 @@ class RssRepository:
     def delete_rule(self, rule_id: int) -> None:
         with get_conn() as conn:
             conn.execute("DELETE FROM rss_rules WHERE id = ?", (rule_id,))
+
+
+class LabelRepository:
+    def list(self) -> List[Dict]:
+        with get_conn() as conn:
+            rows = conn.execute(
+                "SELECT * FROM labels ORDER BY builtin DESC, name ASC"
+            ).fetchall()
+            return [_row_to_dict(row) for row in rows]
+
+    def get(self, name: str) -> Optional[Dict]:
+        with get_conn() as conn:
+            row = conn.execute(
+                "SELECT * FROM labels WHERE name = ?", (name,)
+            ).fetchone()
+            return _row_to_dict(row) if row else None
+
+    def create(self, name: str, color: str, save_path: str) -> None:
+        with get_conn() as conn:
+            conn.execute(
+                "INSERT INTO labels (name, color, save_path, builtin) VALUES (?, ?, ?, 0)",
+                (name, color, save_path),
+            )
+
+    def update(self, name: str, color: Optional[str], save_path: Optional[str]) -> None:
+        fields = []
+        params: List[Any] = []
+        if color is not None:
+            fields.append("color = ?")
+            params.append(color)
+        if save_path is not None:
+            fields.append("save_path = ?")
+            params.append(save_path)
+        if not fields:
+            return
+        params.append(name)
+        with get_conn() as conn:
+            conn.execute(
+                f"UPDATE labels SET {', '.join(fields)} WHERE name = ?", params
+            )
+
+    def delete(self, name: str) -> None:
+        label = self.get(name)
+        if label and label.get("builtin"):
+            raise ValueError("Cannot delete a built-in label")
+        with get_conn() as conn:
+            conn.execute("DELETE FROM labels WHERE name = ?", (name,))

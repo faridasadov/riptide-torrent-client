@@ -14,12 +14,14 @@ const state = {
   rssItems: [],
   rssSelectedFeed: null,
   rssShowRules: false,
+  labels: [],
   uiSettings: {
     autostart: true,
     notifications: false,
     theme: "Deep ocean",
     incomplete_folder: true,
     encryption: "Prefer",
+    compact: false,
   },
 };
 
@@ -56,6 +58,11 @@ const RT_ICON_PATHS = {
   users: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
   wifi: '<path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/>',
   x: '<path d="M18 6 6 18M6 6l12 12"/>',
+  tag: '<path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>',
+  bookmark: '<path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>',
+  disc: '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/>',
+  zap: '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
+  'more-horizontal': '<circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>',
 };
 
 function icon(name, size = 16) {
@@ -172,12 +179,16 @@ function eta(seconds) {
 }
 
 function labelOf(torrent) {
+  if (torrent.label) return torrent.label;
   const name = `${torrent.name} ${torrent.save_path}`.toLowerCase();
-  if (name.includes("ubuntu") || name.includes("linux") || name.includes("debian") || name.includes("iso")) return "linux";
-  if (/\.(mp4|mkv|mp3|flac|avi)$/.test(name)) return "media";
-  if (/\.(exe|msi|dmg|appimage)$/.test(name)) return "software";
-  if (/\.(zip|rar|7z|tar|gz)$/.test(name)) return "archives";
-  return "software";
+  if (/\b(iso|ubuntu|debian|fedora|arch|mint|kali|tails|centos|almalinux|rocky|opensuse|freebsd|windows.*iso|manjaro|popos|zorin)\b/.test(name) || name.endsWith(".iso")) return "iso";
+  if (/\.(mp4|mkv|mp3|flac|avi|mov|wmv|aac|opus|m4v|webm|srt|sub)/.test(name)) return "media";
+  if (/\b(720p|1080p|2160p|4k|bluray|blu-ray|bdrip|webrip|web-dl|hdtv|x264|x265|h264|h265|hevc|xvid|hdrip|dvdrip|remux)\b/.test(name)) return "media";
+  if (/\b(game|gog|fitgirl|repack|skidrow|codex|plaza|cpy|steamrip|elamigos)\b/.test(name)) return "games";
+  if (/\.(pdf|epub|mobi|azw|azw3|djvu|fb2|cbz|cbr|doc|docx)/.test(name)) return "books";
+  if (/\.(exe|msi|dmg|appimage|deb|rpm|pkg|apk)/.test(name)) return "software";
+  if (/\.(zip|rar|7z|tar|gz|bz2|xz|zst)/.test(name)) return "archives";
+  return "other";
 }
 
 function matchesFilter(torrent) {
@@ -194,7 +205,11 @@ function matchesFilter(torrent) {
 
 function pillClass(torrent) {
   if (torrent.paused) return "pill paused";
-  if (torrent.status.toLowerCase().includes("seeding")) return "pill seeding";
+  const s = torrent.status.toLowerCase();
+  if (s.includes("seeding")) return "pill seeding";
+  if (torrent.progress >= 100) return "pill completed";
+  if (s.includes("downloading") || s === "metadata loading" || s === "queued") return "pill downloading";
+  if (s === "not loaded" || s === "checking" || s === "checking resume data") return "pill paused";
   return "pill";
 }
 
@@ -205,41 +220,134 @@ function renderCounts() {
     seeding: state.torrents.filter((t) => t.status.toLowerCase().includes("seeding")).length,
     completed: state.torrents.filter((t) => t.progress >= 100).length,
     paused: state.torrents.filter((t) => t.paused).length,
-    linux: state.torrents.filter((t) => labelOf(t) === "linux").length,
-    media: state.torrents.filter((t) => labelOf(t) === "media").length,
-    software: state.torrents.filter((t) => labelOf(t) === "software").length,
-    archives: state.torrents.filter((t) => labelOf(t) === "archives").length,
   };
   Object.entries(counts).forEach(([key, value]) => {
     const el = qs(`#count-${key}`);
     if (el) el.textContent = value;
   });
+  // Update label counts in dynamically rendered sidebar buttons
+  state.labels.forEach(({ name }) => {
+    const count = state.torrents.filter((t) => labelOf(t) === name).length;
+    const el = qs(`#count-label-${CSS.escape(name)}`);
+    if (el) el.textContent = count;
+  });
   qs("#footer-count").textContent = `${counts.all} torrents`;
+}
+
+async function loadLabels() {
+  try {
+    state.labels = await api("/api/labels");
+    renderSidebarLabels();
+    populateLabelSelects();
+  } catch { /* ignore */ }
+}
+
+function renderSidebarLabels() {
+  const container = qs("#sidebar-labels");
+  if (!container) return;
+  container.innerHTML = state.labels.map(({ name, color }) => {
+    const isActive = state.label === name;
+    return `<button class="label${isActive ? " active" : ""}" data-label="${esc(name)}">` +
+      `<span class="swatch" style="background:${esc(color || "var(--rt-fg-4)")}"></span>` +
+      `<span>${esc(name)}</span>` +
+      `<b id="count-label-${esc(name)}">0</b>` +
+      `</button>`;
+  }).join("");
+  // Attach click handlers
+  container.querySelectorAll("[data-label]").forEach((button) => {
+    button.onclick = () => {
+      state.screen = "torrents";
+      state.label = button.dataset.label;
+      state.filter = "all";
+      document.querySelectorAll(".nav,.label").forEach((el) => el.classList.remove("active"));
+      setScreen("torrents");
+      button.classList.add("active");
+      renderList();
+    };
+  });
+}
+
+function populateLabelSelects() {
+  const options = state.labels.map(({ name }) => `<option value="${esc(name)}">${esc(name)}</option>`).join("");
+  ["#magnet-label", "#file-label", "#label-picker-select"].forEach((sel) => {
+    const el = qs(sel);
+    if (!el) return;
+    const current = el.value;
+    el.innerHTML = `<option value="">Auto-detect</option>${options}`;
+    if (current) el.value = current;
+  });
+}
+
+async function setTorrentLabel(torrentId, label) {
+  await api(`/api/torrents/${torrentId}/label`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ label: label || null }),
+  });
+  await loadTorrents();
+}
+
+function openLabelPickerModal(torrentId) {
+  const torrent = state.torrents.find((t) => t.torrent_id === torrentId);
+  populateLabelSelects();
+  const sel = qs("#label-picker-select");
+  if (torrent && sel) sel.value = torrent.label || "";
+  openModal("label-picker-modal");
+  const cleanup = (apply) => {
+    qs("#label-picker-ok").onclick = null;
+    qs("#label-picker-cancel").onclick = null;
+    qs("#label-picker-close").onclick = null;
+    closeModal("label-picker-modal");
+    if (apply) setTorrentLabel(torrentId, qs("#label-picker-select").value || null);
+  };
+  qs("#label-picker-ok").onclick = () => cleanup(true);
+  qs("#label-picker-cancel").onclick = () => cleanup(false);
+  qs("#label-picker-close").onclick = () => cleanup(false);
 }
 
 function renderList() {
   renderCounts();
   const visible = state.torrents.filter(matchesFilter);
+  if (!visible.length) {
+    list.innerHTML = `
+      <div class="rt-empty">
+        <div class="rt-empty-mark">${icon("layers", 40)}</div>
+        <div class="rt-empty-title">${state.torrents.length ? "No matches" : "No torrents yet."}</div>
+        <div class="rt-empty-sub">${state.torrents.length ? "Try a different filter or search term." : "Drop a .torrent file or paste a magnet link to get going."}</div>
+      </div>`;
+    return;
+  }
   list.replaceChildren(...visible.map((torrent) => {
     const card = document.createElement("article");
-    card.className = `torrent-card ${torrent.torrent_id === state.selectedId ? "active" : ""}`;
+    card.className = `torrent-card${state.uiSettings.compact ? " compact" : ""}${torrent.torrent_id === state.selectedId ? " active" : ""}`;
     card.onclick = () => selectTorrent(torrent.torrent_id);
-    const rowIcon = torrent.paused ? "play" : torrent.status.toLowerCase().includes("seeding") ? "upload" : "layers";
+    card.oncontextmenu = (e) => { e.preventDefault(); showCtxMenu(e.clientX, e.clientY, torrent.torrent_id); };
+    const playIcon = torrent.paused ? "play" : "pause";
     card.innerHTML = `
-      <div class="torrent-icon">${icon(rowIcon, 16)}</div>
+      <button class="rt-row-play" data-row-toggle="${torrent.torrent_id}" aria-label="${torrent.paused ? "Resume" : "Pause"}" title="${torrent.paused ? "Resume" : "Pause"}">${icon(playIcon, 13)}</button>
       <div>
         <div class="torrent-name">${esc(torrent.name || "metadata loading")}</div>
-        <div class="row-meta"><span class="${pillClass(torrent)}">${esc(torrent.status)}</span> ${torrent.progress.toFixed(1)}% · ${bytes(torrent.downloaded)} / ${bytes(torrent.total_size)}</div>
+        <div class="row-meta"><span class="${pillClass(torrent)}">${esc(torrent.status)}</span> <span class="rt-label-badge rt-label-${labelOf(torrent)}">${labelOf(torrent)}</span> ${torrent.progress.toFixed(1)}% · ${bytes(torrent.downloaded)} / ${bytes(torrent.total_size)}</div>
         <div class="bar"><span style="width:${Math.min(torrent.progress, 100)}%"></span></div>
       </div>
       <div class="speeds">
-        <div><b>DL ${bytes(torrent.download_speed)}/s</b></div>
-        <div><b>UL ${bytes(torrent.upload_speed)}/s</b></div>
+        <div><b>↓ ${bytes(torrent.download_speed)}/s</b></div>
+        <div><b>↑ ${bytes(torrent.upload_speed)}/s</b></div>
       </div>
     `;
     return card;
   }));
 }
+
+list.addEventListener("click", async (e) => {
+  const btn = e.target.closest("[data-row-toggle]");
+  if (!btn) return;
+  e.stopPropagation();
+  const id = btn.dataset.rowToggle;
+  const torrent = state.torrents.find((t) => t.torrent_id === id);
+  if (!torrent) return;
+  await act(`/api/torrents/${id}/${torrent.paused ? "resume" : "pause"}`, "POST");
+});
 
 function renderTotals() {
   const down = state.torrents.reduce((sum, t) => sum + t.download_speed, 0);
@@ -256,27 +364,44 @@ function renderTotals() {
 function drawChart() {
   const canvas = qs("#speed-chart");
   const ctx = canvas.getContext("2d");
-  const width = canvas.width;
-  const height = canvas.height;
+  const { width, height } = canvas;
   ctx.clearRect(0, 0, width, height);
-  ctx.strokeStyle = "#1e293b";
+
+  ctx.strokeStyle = "rgba(30, 39, 51, 0.8)";
+  ctx.lineWidth = 1;
   for (let y = 30; y < height; y += 35) {
     ctx.beginPath();
     ctx.moveTo(0, y);
     ctx.lineTo(width, y);
     ctx.stroke();
   }
+
+  if (!state.speedHistory.length) return;
+
   const max = Math.max(1, ...state.speedHistory.flatMap((p) => [p.down, p.up]));
-  [["down", "#1ee7c2"], ["up", "#ff6b6b"]].forEach(([key, color]) => {
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 3;
+  const series = [
+    { key: "down", stroke: "#1fe3c0", fill: "rgba(31, 227, 192, 0.18)" },
+    { key: "up",   stroke: "#ff7a66", fill: "rgba(255, 122, 102, 0.15)" },
+  ];
+
+  series.forEach(({ key, stroke, fill }) => {
+    const pts = state.speedHistory.map((point, i) => ({
+      x: (i / Math.max(state.speedHistory.length - 1, 1)) * width,
+      y: height - (point[key] / max) * (height - 20) - 10,
+    }));
+
     ctx.beginPath();
-    state.speedHistory.forEach((point, index) => {
-      const x = (index / Math.max(state.speedHistory.length - 1, 1)) * width;
-      const y = height - (point[key] / max) * (height - 20) - 10;
-      if (index === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    });
+    ctx.moveTo(pts[0].x, height);
+    pts.forEach(({ x, y }) => ctx.lineTo(x, y));
+    ctx.lineTo(pts[pts.length - 1].x, height);
+    ctx.closePath();
+    ctx.fillStyle = fill;
+    ctx.fill();
+
+    ctx.beginPath();
+    pts.forEach(({ x, y }, i) => (i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y)));
+    ctx.strokeStyle = stroke;
+    ctx.lineWidth = 2;
     ctx.stroke();
   });
 }
@@ -308,26 +433,80 @@ async function selectTorrent(torrentId) {
   qs("#stat-eta").textContent = eta(torrent.eta);
   qs("#stat-seeds").textContent = torrent.seeds;
   qs("#stat-peers").textContent = torrent.peers;
+  const dlLimit = qs("#torrent-download-limit");
+  const ulLimit = qs("#torrent-upload-limit");
+  if (dlLimit && document.activeElement !== dlLimit) dlLimit.value = fromBytes(torrent.download_limit || 0, "kb");
+  if (ulLimit && document.activeElement !== ulLimit) ulLimit.value = fromBytes(torrent.upload_limit || 0, "kb");
 
   state.speedHistory.push({ down: torrent.download_speed, up: torrent.upload_speed });
   state.speedHistory = state.speedHistory.slice(-48);
   drawChart();
 
-  renderSimpleTable("#tab-files", details.files, "No file metadata yet.", [
-    (f) => f.path,
-    (f) => bytes(f.downloaded),
-    (f) => bytes(f.size),
-  ]);
-  renderSimpleTable("#tab-peers", details.peers, "No connected peers.", [
-    (p) => p.ip,
-    (p) => p.client || "-",
-    (p) => `${bytes(p.download_speed)}/s`,
-  ]);
-  renderSimpleTable("#tab-trackers", details.trackers, "No tracker metadata yet.", [
-    (t) => t.url,
-    (t) => `tier ${t.tier}`,
-    () => "",
-  ]);
+  const pieceMap = qs("#piece-map");
+  if (pieceMap) {
+    const cols = 24;
+    const rows = 5;
+    const cells = cols * rows;
+    const done = Math.floor((torrent.progress / 100) * cells);
+    const hasPartial = done < cells && torrent.progress > 0;
+    pieceMap.innerHTML = Array.from({ length: cells }, (_, i) => {
+      if (i < done) return `<div class="piece-map-cell done"></div>`;
+      if (i === done && hasPartial) return `<div class="piece-map-cell partial"></div>`;
+      return `<div class="piece-map-cell"></div>`;
+    }).join("");
+    const countEl = qs("#piece-map-count");
+    if (countEl) countEl.textContent = `${done} / ${cells}`;
+  }
+
+  const filesEl = qs("#tab-files");
+  if (!details.files.length) {
+    filesEl.innerHTML = `<div class="muted">No file metadata yet.</div>`;
+  } else {
+    filesEl.innerHTML = details.files.map((f) => {
+      const pct = f.size ? Math.min((f.downloaded / f.size) * 100, 100) : 0;
+      const name = f.path.split("/").pop();
+      return `<div class="rt-file-row">
+        <div class="rt-file-main">
+          <div class="rt-file-name" title="${esc(f.path)}">${esc(name)}</div>
+          <div class="rt-file-track"><div class="rt-file-fill" style="width:${pct.toFixed(1)}%"></div></div>
+        </div>
+        <div class="rt-file-size">${bytes(f.downloaded)} / ${bytes(f.size)}</div>
+      </div>`;
+    }).join("");
+  }
+
+  const peersEl = qs("#tab-peers");
+  if (!details.peers.length) {
+    peersEl.innerHTML = `<div class="muted">No connected peers.</div>`;
+  } else {
+    peersEl.innerHTML = details.peers.map((p) => {
+      const active = p.download_speed > 0 || p.upload_speed > 0;
+      return `<div class="rt-tracker-row">
+        <div class="rt-bdot" style="background:${active ? "var(--rt-aqua)" : "var(--rt-fg-4)"}"></div>
+        <div class="rt-tracker-main">
+          <div class="rt-tracker-url">${esc(p.ip)}</div>
+          <div class="rt-tracker-meta">${esc(p.client || "unknown client")} · ↓ ${bytes(p.download_speed)}/s ↑ ${bytes(p.upload_speed || 0)}/s</div>
+        </div>
+        <div class="rt-file-size">${p.progress != null ? p.progress.toFixed(0) + "%" : ""}</div>
+      </div>`;
+    }).join("");
+  }
+
+  const trackersEl = qs("#tab-trackers");
+  if (!details.trackers.length) {
+    trackersEl.innerHTML = `<div class="muted">No tracker metadata yet.</div>`;
+  } else {
+    trackersEl.innerHTML = details.trackers.map((t) => {
+      const ok = t.message && !t.message.toLowerCase().includes("error");
+      return `<div class="rt-tracker-row">
+        <div class="rt-bdot" style="background:${ok ? "var(--rt-success)" : "var(--rt-fg-4)"}"></div>
+        <div class="rt-tracker-main">
+          <div class="rt-tracker-url">${esc(t.url)}</div>
+          <div class="rt-tracker-meta">Tier ${t.tier}${t.message ? " · " + esc(t.message) : ""}</div>
+        </div>
+      </div>`;
+    }).join("");
+  }
 }
 
 async function loadTorrents() {
@@ -507,9 +686,12 @@ function renderRss() {
 }
 
 async function addRssFeed() {
-  const url = window.prompt("RSS feed URL:");
+  const url = await openInputModal("Add RSS feed", "Feed URL");
   if (!url) return;
-  const title = window.prompt("Feed title:", new URL(url).hostname) || url;
+  let hostname = url;
+  try { hostname = new URL(url).hostname; } catch { /* use raw url */ }
+  const title = await openInputModal("Add RSS feed", "Feed title", hostname);
+  if (!title) return;
   await api("/api/rss/feeds", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -519,11 +701,11 @@ async function addRssFeed() {
 }
 
 async function addRssRule() {
-  const label = window.prompt("Rule name:");
+  const label = await openInputModal("New rule", "Rule name");
   if (!label) return;
-  const pattern = window.prompt("Match pattern:", "*");
+  const pattern = await openInputModal("New rule", "Match pattern (use * as wildcard)", "*");
   if (!pattern) return;
-  const destination = window.prompt("Destination folder:", state.storagePath || "/var/lib/torrent-client/downloads");
+  const destination = await openInputModal("New rule", "Destination folder", state.storagePath || "/var/lib/torrent-client/downloads");
   if (!destination) return;
   await api("/api/rss/rules", {
     method: "POST",
@@ -556,6 +738,63 @@ function renderSettingsScreen() {
   }
   if (state.settingsSection === "connection") {
     panel.innerHTML = `<div class="rt-set-group"><div class="rt-set-grouphead">Connection</div>${row("Incoming port", "libtorrent listens on 6881-6891", `<input class="rt-numfield" value="6881" disabled />`)}${row("Map port with UPnP / NAT-PMP", "", toggle("upnp_enabled"))}${row("Distributed Hash Table (DHT)", "Find peers without a tracker", toggle("dht_enabled"))}${row("Local Peer Discovery", "", toggle("lsd_enabled"))}</div>`;
+  }
+  if (state.settingsSection === "labels") {
+    const labelRows = state.labels.map((lbl) => `
+      <div class="rt-set-row">
+        <div class="rt-set-row-text">
+          <div class="rt-set-row-title" style="display:flex;align-items:center;gap:8px;">
+            <span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${esc(lbl.color || "var(--rt-fg-4)")};flex-shrink:0;"></span>
+            ${esc(lbl.name)}${lbl.builtin ? ` <span style="font-size:10px;color:var(--rt-fg-4);font-weight:400;">(built-in)</span>` : ""}
+          </div>
+          <div class="rt-set-row-desc">${lbl.save_path ? esc(lbl.save_path) : "No custom save path"}</div>
+        </div>
+        <div class="rt-set-row-control" style="display:flex;gap:8px;">
+          <button type="button" class="rt-btn rt-btn-secondary rt-btn-auto" data-edit-label="${esc(lbl.name)}">${icon("folder", 13)} Edit path</button>
+          ${!lbl.builtin ? `<button type="button" class="rt-btn rt-btn-danger rt-btn-auto" data-delete-label="${esc(lbl.name)}">${icon("trash", 13)} Delete</button>` : ""}
+        </div>
+      </div>`).join("");
+    panel.innerHTML = `<div class="rt-set-group"><div class="rt-set-grouphead">Labels</div>${labelRows || `<div class="rt-set-row"><div class="rt-set-row-text" style="color:var(--rt-fg-3)">No labels configured.</div></div>`}<div style="padding-top:12px;"><button type="button" class="rt-btn rt-btn-primary rt-btn-auto" id="add-custom-label">${icon("plus", 13)} Add custom label</button></div></div>`;
+    panel.querySelector("#add-custom-label")?.addEventListener("click", async () => {
+      const name = await openInputModal("Add label", "Label name");
+      if (!name) return;
+      const color = await openInputModal("Add label", "Color (CSS value, e.g. #ff7a66)", "#5ba2ff");
+      const save_path = await openInputModal("Add label", "Default save path (optional)", "");
+      try {
+        await api("/api/labels", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, color: color || "#5ba2ff", save_path: save_path || null }) });
+        await loadLabels();
+        renderSettingsScreen();
+        showToast("Label created", "success");
+      } catch (e) { showToast(e.message, "error"); }
+    });
+    panel.querySelectorAll("[data-edit-label]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const name = btn.dataset.editLabel;
+        const lbl = state.labels.find((l) => l.name === name);
+        const save_path = await openInputModal("Edit save path", `Save path for "${name}"`, lbl?.save_path || "");
+        if (save_path === null) return;
+        try {
+          await api(`/api/labels/${encodeURIComponent(name)}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ save_path: save_path || null }) });
+          await loadLabels();
+          renderSettingsScreen();
+          showToast("Label updated", "success");
+        } catch (e) { showToast(e.message, "error"); }
+      });
+    });
+    panel.querySelectorAll("[data-delete-label]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const name = btn.dataset.deleteLabel;
+        const ok = await openConfirmModal("Delete label", `Delete label "${name}"?`, "Delete");
+        if (!ok) return;
+        try {
+          await api(`/api/labels/${encodeURIComponent(name)}`, { method: "DELETE" });
+          await loadLabels();
+          renderSettingsScreen();
+          showToast("Label deleted", "success");
+        } catch (e) { showToast(e.message, "error"); }
+      });
+    });
+    return;
   }
   if (state.settingsSection === "privacy") {
     panel.innerHTML = `<div class="rt-set-group"><div class="rt-set-grouphead">Privacy</div>${row("Protocol encryption", "Stored as a local UI preference until explicit libtorrent encryption settings are exposed", `<div class="rt-seg rt-seg-inline">${["Disabled", "Prefer", "Require"].map((option) => `<button type="button" data-encryption="${option}" class="${ui.encryption === option ? "active" : ""}">${option}</button>`).join("")}</div>`)}${row("Route traffic through VPN interface", "nftables kill-switch restricts torrentclient to tun0 and loopback", `<span class="rt-select">${icon("shield", 14)} enabled</span>`)}${row("Authentication", "Session cookie frontend plus Basic Auth API compatibility", `<span class="rt-select">${icon("lock", 14)} enabled</span>`)}<div class="rt-set-note">${icon("lock", 14)}Riptide stores credentials locally in /etc/torrent-client.env and sends no telemetry.</div></div>`;
@@ -594,7 +833,7 @@ async function loadStorage(path = state.storagePath) {
 
 async function moveStorageItem(path) {
   const name = path.split("/").pop();
-  const destination = window.prompt("Move to full path:", `${state.storagePath}/${name}`);
+  const destination = await openInputModal("Move file", "Destination path", `${state.storagePath}/${name}`);
   if (!destination || destination === path) return;
   await api("/api/files/move", {
     method: "POST",
@@ -605,7 +844,8 @@ async function moveStorageItem(path) {
 }
 
 async function deleteStorageItem(path) {
-  if (!window.confirm(`Delete ${path}?`)) return;
+  const confirmed = await openConfirmModal("Delete file", `Permanently delete "${path.split("/").pop()}"?`, "Delete");
+  if (!confirmed) return;
   await api("/api/files", {
     method: "DELETE",
     headers: { "Content-Type": "application/json" },
@@ -619,12 +859,17 @@ async function loadSettings() {
     const settings = await api("/api/settings");
     state.settings = settings;
     try {
-      state.uiSettings = { ...state.uiSettings, ...JSON.parse(localStorage.getItem("riptide_ui_settings") || "{}") };
+      const stored = JSON.parse(localStorage.getItem("riptide_ui_settings") || "{}");
+      state.uiSettings = { ...state.uiSettings, ...stored };
+      if (!stored.theme && window.matchMedia("(prefers-color-scheme: light)").matches) {
+        state.uiSettings.theme = "Pearl light";
+      }
     } catch {
       localStorage.removeItem("riptide_ui_settings");
     }
     applyThemeOverride();
     applyTheme();
+    qs("#compact-toggle")?.classList.toggle("active", state.uiSettings.compact);
     Object.entries(settings).forEach(([key, value]) => {
       const input = qs(`#${key}`);
       if (!input) return;
@@ -654,13 +899,16 @@ async function limitTorrent(torrentId, downloadLimit, uploadLimit) {
 }
 
 async function deleteTorrent(torrentId) {
-  const deleteFiles = window.confirm("Delete downloaded files too?");
-  const confirmed = window.confirm(deleteFiles ? "Delete torrent and files?" : "Remove torrent from list only?");
+  const confirmed = await openConfirmModal(
+    "Remove torrent",
+    "Remove this torrent from Riptide? Downloaded files will remain on disk.",
+    "Remove"
+  );
   if (!confirmed) return;
-  await act(`/api/torrents/${torrentId}?delete_files=${deleteFiles}`, "DELETE");
+  await act(`/api/torrents/${torrentId}?delete_files=false`, "DELETE");
 }
 
-qs("#add-toggle").onclick = () => qs("#add-panel").classList.toggle("hidden");
+qs("#add-toggle").onclick = () => openModal("add-modal");
 qs("#storage-toggle").onclick = async () => {
   qs("#storage-panel").classList.toggle("hidden");
   if (!qs("#storage-panel").classList.contains("hidden")) await loadStorage(qs("#storage-path").value || state.storagePath);
@@ -669,6 +917,27 @@ qs("#storage-refresh").onclick = () => loadStorage(qs("#storage-path").value);
 qs("#pause-selected").onclick = () => state.selectedId && act(`/api/torrents/${state.selectedId}/pause`, "POST");
 qs("#resume-selected").onclick = () => state.selectedId && act(`/api/torrents/${state.selectedId}/resume`, "POST");
 qs("#delete-selected").onclick = () => state.selectedId && deleteTorrent(state.selectedId);
+qs("#torrent-limit-clear").onclick = async () => {
+  if (!state.selectedId) return;
+  qs("#torrent-download-limit").value = 0;
+  qs("#torrent-upload-limit").value = 0;
+  await limitTorrent(state.selectedId, 0, 0);
+  showMessage("Torrent speed limits cleared");
+  await selectTorrent(state.selectedId);
+};
+qs("#torrent-limit-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (!state.selectedId) return;
+  const downloadLimit = toBytes(qs("#torrent-download-limit").value || 0, "kb");
+  const uploadLimit = toBytes(qs("#torrent-upload-limit").value || 0, "kb");
+  try {
+    await limitTorrent(state.selectedId, downloadLimit, uploadLimit);
+    showMessage("Torrent speed limits saved");
+    await selectTorrent(state.selectedId);
+  } catch (error) {
+    showMessage(error.message, true);
+  }
+});
 qs("#search").oninput = renderList;
 qs("#logout").onclick = async () => {
   await api("/api/auth/logout", { method: "POST" });
@@ -793,8 +1062,9 @@ document.querySelectorAll(".tab").forEach((button) => {
 
 qs("#magnet-form").addEventListener("submit", async (event) => {
   event.preventDefault();
+  const selectedLabel = qs("#magnet-label").value || null;
   try {
-    await api("/api/torrents/add-magnet", {
+    const result = await api("/api/torrents/add-magnet", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -803,52 +1073,41 @@ qs("#magnet-form").addEventListener("submit", async (event) => {
       }),
     });
     event.target.reset();
-    showMessage("Magnet added");
-    await loadTorrents();
+    closeModal("add-modal");
+    showToast("Magnet added", "success");
+    if (selectedLabel && result && result.torrent_id) {
+      await setTorrentLabel(result.torrent_id, selectedLabel);
+    } else {
+      await loadTorrents();
+    }
   } catch (error) {
-    showMessage(error.message, true);
+    showToast(error.message, "error");
   }
 });
 
 qs("#file-form").addEventListener("submit", async (event) => {
   event.preventDefault();
   const file = qs("#torrent-file").files[0];
-  if (!file) return showMessage("Select a .torrent file", true);
+  if (!file) return showToast("Select a .torrent file", "error");
+  const selectedLabel = qs("#file-label").value || null;
   const form = new FormData();
   form.append("file", file);
   form.append("save_path", qs("#file-save-path").value.trim());
   try {
-    await api("/api/torrents/add-file", { method: "POST", body: form });
+    const result = await api("/api/torrents/add-file", { method: "POST", body: form });
     event.target.reset();
-    showMessage(".torrent file added");
-    await loadTorrents();
+    closeModal("add-modal");
+    showToast(".torrent file added", "success");
+    if (selectedLabel && result && result.torrent_id) {
+      await setTorrentLabel(result.torrent_id, selectedLabel);
+    } else {
+      await loadTorrents();
+    }
   } catch (error) {
-    showMessage(error.message, true);
+    showToast(error.message, "error");
   }
 });
 
-qs("#settings-form").addEventListener("submit", async (event) => {
-  event.preventDefault();
-  const payload = {};
-  ["default_download_folder", "max_active_downloads", "global_download_limit", "global_upload_limit"].forEach((key) => {
-    const input = qs(`#${key}`);
-    payload[key] = key === "default_download_folder" ? input.value : toBytes(input.value, input.dataset.unit);
-  });
-  ["dht_enabled", "upnp_enabled", "lsd_enabled"].forEach((key) => {
-    payload[key] = qs(`#${key}`).checked;
-  });
-  try {
-    await api("/api/settings", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    showMessage("Settings saved");
-    await loadSystem();
-  } catch (error) {
-    showMessage(error.message, true);
-  }
-});
 
 qs("#settings-screen-form").addEventListener("click", async (event) => {
   const settingToggle = event.target.closest("[data-setting-toggle]");
@@ -874,7 +1133,7 @@ qs("#settings-screen-form").addEventListener("click", async (event) => {
   }
   if (browse) {
     const current = qs("#screen_default_download_folder")?.value || state.settings.default_download_folder;
-    const next = window.prompt("Default save location:", current);
+    const next = await openInputModal("Save location", "Default save path", current);
     if (next) qs("#screen_default_download_folder").value = next;
   }
   if (theme) {
@@ -939,12 +1198,175 @@ qs("#login-form").addEventListener("submit", async (event) => {
   }
 });
 
+function showToast(text, type = "") {
+  const wrap = qs("#toast-wrap");
+  const el = document.createElement("div");
+  el.className = `rt-toast${type ? " " + type : ""}`;
+  el.textContent = text;
+  wrap.appendChild(el);
+  setTimeout(() => {
+    el.style.animation = "rt-toast-out var(--rt-dur) var(--rt-ease) forwards";
+    setTimeout(() => el.remove(), 250);
+  }, 3000);
+}
+
+function openModal(id) {
+  const el = qs(`#${id}`);
+  el.classList.remove("hidden");
+  el.querySelector("input, button")?.focus();
+}
+
+function closeModal(id) {
+  qs(`#${id}`).classList.add("hidden");
+}
+
+function openConfirmModal(title, text, okLabel = "Confirm") {
+  return new Promise((resolve) => {
+    qs("#confirm-modal-title").textContent = title;
+    qs("#confirm-modal-text").textContent = text;
+    qs("#confirm-modal-ok").textContent = okLabel;
+    openModal("confirm-modal");
+    const cleanup = (val) => {
+      qs("#confirm-modal-ok").onclick = null;
+      qs("#confirm-modal-cancel").onclick = null;
+      qs("#confirm-modal-close").onclick = null;
+      closeModal("confirm-modal");
+      resolve(val);
+    };
+    qs("#confirm-modal-ok").onclick = () => cleanup(true);
+    qs("#confirm-modal-cancel").onclick = () => cleanup(false);
+    qs("#confirm-modal-close").onclick = () => cleanup(false);
+  });
+}
+
+function openInputModal(title, label, defaultValue = "") {
+  return new Promise((resolve) => {
+    qs("#input-modal-title").textContent = title;
+    qs("#input-modal-label").textContent = label;
+    qs("#input-modal-field").value = defaultValue;
+    openModal("input-modal");
+    setTimeout(() => qs("#input-modal-field").focus(), 30);
+    const cleanup = (val) => {
+      qs("#input-modal-ok").onclick = null;
+      qs("#input-modal-cancel").onclick = null;
+      qs("#input-modal-close").onclick = null;
+      qs("#input-modal-field").onkeydown = null;
+      closeModal("input-modal");
+      resolve(val);
+    };
+    qs("#input-modal-ok").onclick = () => cleanup(qs("#input-modal-field").value.trim() || null);
+    qs("#input-modal-cancel").onclick = () => cleanup(null);
+    qs("#input-modal-close").onclick = () => cleanup(null);
+    qs("#input-modal-field").onkeydown = (e) => {
+      if (e.key === "Enter") cleanup(qs("#input-modal-field").value.trim() || null);
+    };
+  });
+}
+
+function showCtxMenu(x, y, torrentId) {
+  const menu = qs("#ctx-menu");
+  const torrent = state.torrents.find((t) => t.torrent_id === torrentId);
+  if (!torrent) return;
+  menu.innerHTML = `
+    <button class="rt-ctx-item hl" data-ctx="select" role="menuitem">
+      <span>${icon("activity", 14)}</span><span>Inspect</span>
+    </button>
+    ${torrent.paused
+      ? `<button class="rt-ctx-item" data-ctx="resume" role="menuitem"><span>${icon("play", 14)}</span><span>Resume</span></button>`
+      : `<button class="rt-ctx-item" data-ctx="pause" role="menuitem"><span>${icon("pause", 14)}</span><span>Pause</span></button>`}
+    <button class="rt-ctx-item" data-ctx="copy-magnet" role="menuitem">
+      <span>${icon("magnet", 14)}</span><span>Copy info hash</span><span class="rt-ctx-key">⌘C</span>
+    </button>
+    <button class="rt-ctx-item" data-ctx="set-label" role="menuitem">
+      <span>${icon("tag", 14)}</span><span>Set label</span>
+    </button>
+    <div class="rt-ctx-sep"></div>
+    <button class="rt-ctx-item danger" data-ctx="delete" role="menuitem">
+      <span>${icon("trash", 14)}</span><span>Remove</span>
+    </button>
+  `;
+  menu.dataset.torrentId = torrentId;
+  menu.style.left = `${Math.min(x, window.innerWidth - 174)}px`;
+  menu.style.top = `${Math.min(y, window.innerHeight - 130)}px`;
+  menu.classList.remove("hidden");
+}
+
+function closeCtxMenu() {
+  qs("#ctx-menu").classList.add("hidden");
+}
+
+qs("#ctx-menu").onclick = async (e) => {
+  const btn = e.target.closest("[data-ctx]");
+  if (!btn) return;
+  const id = qs("#ctx-menu").dataset.torrentId;
+  closeCtxMenu();
+  if (btn.dataset.ctx === "select") await selectTorrent(id);
+  if (btn.dataset.ctx === "resume") await act(`/api/torrents/${id}/resume`, "POST");
+  if (btn.dataset.ctx === "pause") await act(`/api/torrents/${id}/pause`, "POST");
+  if (btn.dataset.ctx === "delete") await deleteTorrent(id);
+  if (btn.dataset.ctx === "set-label") openLabelPickerModal(id);
+  if (btn.dataset.ctx === "copy-magnet") {
+    const torrent = state.torrents.find((t) => t.torrent_id === id);
+    if (torrent) {
+      await navigator.clipboard.writeText(torrent.info_hash || id).catch(() => {});
+      showToast("Info hash copied");
+    }
+  }
+};
+
+qs("#add-modal-close").onclick = () => closeModal("add-modal");
+qs("#add-modal-cancel").onclick = () => closeModal("add-modal");
+
+qs("#about-toggle").onclick = () => {
+  qs("#about-version").textContent = `v${RIPTIDE.version}`;
+  qs("#about-tagline").textContent = RIPTIDE.tagline;
+  qs("#about-brand").textContent = RIPTIDE.brand;
+  qs("#about-engine").textContent = RIPTIDE.engine;
+  qs("#about-stack").textContent = RIPTIDE.stack.join(", ");
+  qs("#about-copy").textContent = RIPTIDE.copyright;
+  openModal("about-modal");
+};
+qs("#about-modal-close").onclick = () => closeModal("about-modal");
+
+qs("#compact-toggle").onclick = () => {
+  state.uiSettings.compact = !state.uiSettings.compact;
+  qs("#compact-toggle").classList.toggle("active", state.uiSettings.compact);
+  localStorage.setItem("riptide_ui_settings", JSON.stringify(state.uiSettings));
+  renderList();
+};
+
+document.addEventListener("keydown", (e) => {
+  if (e.key !== "Escape") return;
+  ["add-modal", "confirm-modal", "input-modal", "about-modal", "label-picker-modal"].forEach((id) => {
+    if (!qs(`#${id}`).classList.contains("hidden")) closeModal(id);
+  });
+  closeCtxMenu();
+});
+
+document.addEventListener("click", (e) => {
+  if (!qs("#ctx-menu").classList.contains("hidden") && !e.target.closest("#ctx-menu")) {
+    closeCtxMenu();
+  }
+  ["add-modal", "confirm-modal", "input-modal", "about-modal", "label-picker-modal"].forEach((id) => {
+    const scrim = qs(`#${id}`);
+    if (!scrim.classList.contains("hidden") && e.target === scrim) closeModal(id);
+  });
+});
+
+window.matchMedia("(prefers-color-scheme: light)").addEventListener("change", (e) => {
+  if (!localStorage.getItem("riptide_ui_settings")) {
+    state.uiSettings.theme = e.matches ? "Pearl light" : "Deep ocean";
+    applyTheme();
+  }
+});
+
 async function boot() {
   try {
     await api("/api/auth/me");
     hideLogin();
     await loadSettings();
     await loadSystem();
+    await loadLabels();
     await loadTorrents();
   } catch {
     showLogin();

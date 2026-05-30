@@ -37,3 +37,15 @@ class TorrentStatus(BaseModel):
     paused: bool
     download_limit: int
     upload_limit: int
+    label: Optional[str] = None
+
+
+class SetLabelRequest(BaseModel):
+    label: Optional[str] = None
+
+
+class LabelOut(BaseModel):
+    name: str
+    color: str
+    save_path: str
+    builtin: bool

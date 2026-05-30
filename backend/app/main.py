@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, Response
 
 from app.api import auth, files, rss, search, settings, system, torrents
+from app.api.labels import router as labels_router
 from app.core.config import CORS_ORIGINS, FRONTEND_DIR, ensure_directories
 from app.core.security import basic_auth_middleware
 from app.core.storage import TorrentRepository
@@ -60,6 +61,7 @@ app.include_router(search.router)
 app.include_router(torrents.router)
 app.include_router(settings.router)
 app.include_router(system.router)
+app.include_router(labels_router)
 
 
 @app.get("/api/health")
@@ -75,6 +77,14 @@ async def index():
 @app.get("/site")
 async def site():
     return HTMLResponse((FRONTEND_DIR / "site.html").read_text(encoding="utf-8"))
+
+
+@app.get("/static/about.js")
+async def frontend_about_js():
+    return Response(
+        (FRONTEND_DIR / "about.js").read_text(encoding="utf-8"),
+        media_type="application/javascript",
+    )
 
 
 @app.get("/static/app.js")

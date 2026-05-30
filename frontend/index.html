@@ -41,15 +41,13 @@
           <button class="nav" data-filter="paused" data-icon="pause">Paused <b id="count-paused">0</b></button>
 
           <div class="sidebar-title">Labels</div>
-          <button class="label" data-label="linux" data-icon="server"><span class="swatch cyan"></span> Linux ISOs <b id="count-linux">0</b></button>
-          <button class="label" data-label="media" data-icon="activity"><span class="swatch red"></span> Media <b id="count-media">0</b></button>
-          <button class="label" data-label="software" data-icon="cpu"><span class="swatch blue"></span> Software <b id="count-software">0</b></button>
-          <button class="label" data-label="archives" data-icon="folder"><span class="swatch amber"></span> Archives <b id="count-archives">0</b></button>
+          <div id="sidebar-labels"></div>
 
           <div class="sidebar-title">Tools</div>
           <button class="tool-nav" data-screen="search" data-icon="search">Search</button>
           <button class="tool-nav" data-screen="rss" data-icon="rss">RSS feeds <b id="count-rss">0</b></button>
           <button class="tool-nav" data-screen="settings" data-icon="settings">Settings</button>
+          <button class="tool-nav" id="about-toggle" data-icon="info">About</button>
 
           <div class="free-space">
             <div><span>Free space</span><b id="free-space">-</b></div>
@@ -65,32 +63,7 @@
             <button id="pause-selected" class="icon" data-icon="pause" title="Pause selected" aria-label="Pause selected"></button>
             <input id="search" class="search" placeholder="Filter torrents..." autocomplete="off" />
             <button id="storage-toggle" class="icon" data-icon="folderOpen">Files</button>
-          </div>
-
-          <div id="add-panel" class="drawer hidden">
-            <form id="magnet-form" class="add-grid">
-              <input id="magnet" placeholder="magnet:?xt=urn:btih:..." autocomplete="off" />
-              <input id="save-path" placeholder="/var/lib/torrent-client/downloads/name" autocomplete="off" />
-              <button type="submit" data-icon="magnet">Add magnet</button>
-            </form>
-            <form id="file-form" class="add-grid">
-              <input id="torrent-file" type="file" accept=".torrent" />
-              <input id="file-save-path" placeholder="/var/lib/torrent-client/downloads/name" autocomplete="off" />
-              <button type="submit" data-icon="upload">Upload file</button>
-            </form>
-          </div>
-
-          <div id="settings-panel" class="drawer hidden">
-            <form id="settings-form" class="settings-grid">
-              <label>Default folder <input id="default_download_folder" /></label>
-              <label>Max active <input id="max_active_downloads" type="number" min="1" /></label>
-              <label>Global DL KB/s <input id="global_download_limit" data-unit="kb" type="number" min="0" /></label>
-              <label>Global UL KB/s <input id="global_upload_limit" data-unit="kb" type="number" min="0" /></label>
-              <label class="check"><input id="dht_enabled" type="checkbox" /> DHT</label>
-              <label class="check"><input id="upnp_enabled" type="checkbox" /> UPnP</label>
-              <label class="check"><input id="lsd_enabled" type="checkbox" /> LSD</label>
-              <button type="submit" data-icon="check">Save settings</button>
-            </form>
+            <button id="compact-toggle" class="icon" data-icon="list" title="Toggle compact view" aria-label="Toggle compact view"></button>
           </div>
 
           <div id="storage-panel" class="drawer hidden">
@@ -143,6 +116,7 @@
                 <button class="settings-section rt-set-navitem" data-section="bandwidth" data-icon="gauge">Bandwidth</button>
                 <button class="settings-section rt-set-navitem" data-section="connection" data-icon="wifi">Connection</button>
                 <button class="settings-section rt-set-navitem" data-section="privacy" data-icon="shield">Privacy</button>
+                <button class="settings-section rt-set-navitem" data-section="labels" data-icon="tag">Labels</button>
               </nav>
               <form id="settings-screen-form" class="rt-set-panel"></form>
             </div>
@@ -166,7 +140,17 @@
               <button class="tab" data-tab="trackers" data-icon="server">Trackers</button>
             </nav>
             <section id="tab-general" class="tab-page active">
-              <canvas id="speed-chart" width="620" height="170"></canvas>
+              <div class="rt-graph-wrap">
+                <div class="rt-graph-legend">
+                  <span><span class="rt-lg-dot" style="background:#1fe3c0"></span>Download</span>
+                  <span><span class="rt-lg-dot" style="background:#ff7a66"></span>Upload</span>
+                </div>
+                <canvas id="speed-chart" width="620" height="120"></canvas>
+              </div>
+              <div class="rt-insp-sechead">
+                <span>Pieces</span><span id="piece-map-count"></span>
+              </div>
+              <div id="piece-map" class="piece-map" aria-label="Piece availability map"></div>
               <div class="stats-grid">
                 <div><span>Progress</span><b id="stat-progress">-</b></div>
                 <div><span>Downloaded</span><b id="stat-downloaded">-</b></div>
@@ -175,6 +159,23 @@
                 <div><span>Seeds</span><b id="stat-seeds">-</b></div>
                 <div><span>Peers</span><b id="stat-peers">-</b></div>
               </div>
+              <form id="torrent-limit-form" class="limit-panel">
+                <div class="limit-panel-head">
+                  <span>Speed limits</span>
+                  <button type="button" id="torrent-limit-clear" class="rt-link-btn">Unlimited</button>
+                </div>
+                <div class="limit-grid">
+                  <label>
+                    <span>Download</span>
+                    <div class="rt-numunit"><input id="torrent-download-limit" class="rt-numfield" type="number" min="0" step="1" /><span>KB/s</span></div>
+                  </label>
+                  <label>
+                    <span>Upload</span>
+                    <div class="rt-numunit"><input id="torrent-upload-limit" class="rt-numfield" type="number" min="0" step="1" /><span>KB/s</span></div>
+                  </label>
+                </div>
+                <button class="rt-btn rt-btn-primary rt-btn-auto" type="submit">Save limits</button>
+              </form>
             </section>
             <section id="tab-files" class="tab-page"></section>
             <section id="tab-peers" class="tab-page"></section>
@@ -190,6 +191,130 @@
         <span id="footer-ratio">Ratio 0.00</span>
       </footer>
     </main>
-    <script src="/static/app.js"></script>
+    <script src="/static/about.js" defer></script>
+    <script src="/static/app.js" defer></script>
+
+    <!-- Add Torrent Modal -->
+    <div id="add-modal" class="rt-modal-scrim hidden" role="dialog" aria-modal="true" aria-labelledby="add-modal-title">
+      <div class="rt-modal">
+        <div class="rt-modal-head">
+          <span class="rt-modal-title" id="add-modal-title">Add torrent</span>
+          <button class="rt-modal-close" id="add-modal-close" aria-label="Close">&times;</button>
+        </div>
+        <div class="rt-modal-body">
+          <form id="magnet-form">
+            <label class="rt-modal-label">Magnet link</label>
+            <input id="magnet" class="rt-modal-input" placeholder="magnet:?xt=urn:btih:..." autocomplete="off" />
+            <label class="rt-modal-label">Save path <span style="font-weight:400;opacity:.6">(optional)</span></label>
+            <input id="save-path" class="rt-modal-input" placeholder="/var/lib/torrent-client/downloads/name" autocomplete="off" />
+            <label class="rt-modal-label">Category <span style="font-weight:400;opacity:.6">(optional)</span></label>
+            <select id="magnet-label" class="rt-modal-input"><option value="">Auto-detect</option></select>
+            <div class="rt-modal-foot">
+              <button type="button" class="rt-btn rt-btn-ghost" id="add-modal-cancel">Cancel</button>
+              <button type="submit" class="rt-btn rt-btn-primary" data-icon="magnet">Add magnet</button>
+            </div>
+          </form>
+          <div class="rt-modal-divider">or upload a file</div>
+          <form id="file-form">
+            <label class="rt-modal-label">Torrent file</label>
+            <input id="torrent-file" type="file" accept=".torrent" />
+            <label class="rt-modal-label">Save path <span style="font-weight:400;opacity:.6">(optional)</span></label>
+            <input id="file-save-path" class="rt-modal-input" placeholder="/var/lib/torrent-client/downloads/name" autocomplete="off" />
+            <label class="rt-modal-label">Category <span style="font-weight:400;opacity:.6">(optional)</span></label>
+            <select id="file-label" class="rt-modal-input"><option value="">Auto-detect</option></select>
+            <div class="rt-modal-foot">
+              <button type="submit" class="rt-btn rt-btn-primary" data-icon="upload">Upload file</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Confirm Modal -->
+    <div id="confirm-modal" class="rt-modal-scrim hidden" role="dialog" aria-modal="true" aria-labelledby="confirm-modal-title">
+      <div class="rt-modal rt-modal-sm">
+        <div class="rt-modal-head">
+          <span class="rt-modal-title" id="confirm-modal-title">Confirm</span>
+          <button class="rt-modal-close" id="confirm-modal-close" aria-label="Close">&times;</button>
+        </div>
+        <div class="rt-modal-body">
+          <p id="confirm-modal-text" class="rt-modal-msg"></p>
+        </div>
+        <div class="rt-modal-foot">
+          <button type="button" class="rt-btn rt-btn-ghost" id="confirm-modal-cancel">Cancel</button>
+          <button type="button" class="rt-btn rt-btn-danger" id="confirm-modal-ok">Confirm</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Input Modal -->
+    <div id="input-modal" class="rt-modal-scrim hidden" role="dialog" aria-modal="true" aria-labelledby="input-modal-title">
+      <div class="rt-modal rt-modal-sm">
+        <div class="rt-modal-head">
+          <span class="rt-modal-title" id="input-modal-title">Enter value</span>
+          <button class="rt-modal-close" id="input-modal-close" aria-label="Close">&times;</button>
+        </div>
+        <div class="rt-modal-body">
+          <label class="rt-modal-label" id="input-modal-label"></label>
+          <input id="input-modal-field" class="rt-modal-input" autocomplete="off" />
+        </div>
+        <div class="rt-modal-foot">
+          <button type="button" class="rt-btn rt-btn-ghost" id="input-modal-cancel">Cancel</button>
+          <button type="button" class="rt-btn rt-btn-primary" id="input-modal-ok">OK</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- About Modal -->
+    <div id="about-modal" class="rt-modal-scrim hidden" role="dialog" aria-modal="true" aria-labelledby="about-modal-title">
+      <div class="rt-modal rt-modal-sm">
+        <div class="rt-modal-head">
+          <span class="rt-modal-title" id="about-modal-title">About Riptide</span>
+          <button class="rt-modal-close" id="about-modal-close" aria-label="Close">&times;</button>
+        </div>
+        <div class="rt-modal-body rt-about-body">
+          <div class="rt-about-logo">
+            <img src="/static/assets/logo-mark.svg" alt="" width="48" height="48" />
+            <div>
+              <div class="rt-about-name">RIPTIDE</div>
+              <div class="rt-about-version" id="about-version"></div>
+            </div>
+          </div>
+          <div class="rt-about-tagline" id="about-tagline"></div>
+          <div class="rt-about-table">
+            <div><span>Brand</span><b id="about-brand"></b></div>
+            <div><span>Engine</span><b id="about-engine"></b></div>
+            <div><span>Stack</span><b id="about-stack"></b></div>
+          </div>
+          <div class="rt-about-copy" id="about-copy"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Label Picker Modal -->
+    <div id="label-picker-modal" class="rt-modal-scrim hidden" role="dialog" aria-modal="true" aria-labelledby="label-picker-title">
+      <div class="rt-modal rt-modal-sm">
+        <div class="rt-modal-head">
+          <span class="rt-modal-title" id="label-picker-title">Set label</span>
+          <button class="rt-modal-close" id="label-picker-close" aria-label="Close">&times;</button>
+        </div>
+        <div class="rt-modal-body">
+          <label class="rt-modal-label">Category</label>
+          <select id="label-picker-select" class="rt-modal-input">
+            <option value="">Auto-detect</option>
+          </select>
+        </div>
+        <div class="rt-modal-foot">
+          <button type="button" class="rt-btn rt-btn-ghost" id="label-picker-cancel">Cancel</button>
+          <button type="button" class="rt-btn rt-btn-primary" id="label-picker-ok">Apply</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Context Menu -->
+    <div id="ctx-menu" class="rt-ctx hidden" role="menu"></div>
+
+    <!-- Toast Container -->
+    <div id="toast-wrap" class="rt-toast-wrap" aria-live="polite" aria-atomic="false"></div>
   </body>
 </html>

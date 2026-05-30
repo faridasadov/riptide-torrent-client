@@ -89,6 +89,33 @@ def init_db() -> None:
             )
             """
         )
+        try:
+            conn.execute("ALTER TABLE torrents ADD COLUMN label TEXT DEFAULT NULL")
+        except Exception:
+            pass  # column already exists
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS labels (
+                name TEXT PRIMARY KEY,
+                color TEXT NOT NULL DEFAULT '#1fe3c0',
+                save_path TEXT NOT NULL DEFAULT '',
+                builtin INTEGER NOT NULL DEFAULT 0
+            )
+            """
+        )
+        for row in [
+            ("iso",      "#1fe3c0", "", 1),
+            ("media",    "#ff7a66", "", 1),
+            ("software", "#60a5fa", "", 1),
+            ("games",    "#a78bfa", "", 1),
+            ("books",    "#34d399", "", 1),
+            ("archives", "#fbbf24", "", 1),
+            ("other",    "#6b7280", "", 1),
+        ]:
+            conn.execute(
+                "INSERT OR IGNORE INTO labels (name, color, save_path, builtin) VALUES (?, ?, ?, ?)",
+                row,
+            )
         for key, value in DEFAULT_SETTINGS.items():
             conn.execute(
                 "INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)",
