@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Riptide — Move at the speed of the swarm</title>
+    <link rel="stylesheet" href="/static/design-tokens.css" />
+    <link rel="stylesheet" href="/static/web.css" />
+  </head>
+  <body>
+    <div class="w-page">
+      <nav class="w-nav scrolled">
+        <div class="w-nav-inner">
+          <a class="w-brand" href="/site">
+            <img src="/static/assets/logo-mark.svg" width="22" height="22" alt="" />
+            <span>RIPTIDE</span>
+          </a>
+          <div class="w-nav-links">
+            <a href="#features">Features</a>
+            <a href="#showcase">Interface</a>
+            <a href="/">Open app</a>
+          </div>
+          <a class="w-btn w-btn-sm w-btn-primary" href="/">Open app</a>
+        </div>
+      </nav>
+
+      <section class="w-hero">
+        <div class="w-hero-glow"></div>
+        <div class="w-hero-inner">
+          <div class="w-eyebrow"><span class="w-eyebrow-dot"></span>Local BitTorrent client</div>
+          <h1 class="w-h1">Move at the speed<br />of the swarm.</h1>
+          <p class="w-lede">Riptide is a fast, calm torrent client that makes every peer, tracker, file, and transfer rate legible in real time.</p>
+          <div class="w-cta">
+            <a href="/" class="w-btn w-btn-primary">Open the app</a>
+            <a href="#features" class="w-btn w-btn-ghost">See features</a>
+          </div>
+          <div class="w-cta-note">FastAPI · libtorrent · local storage · VPN kill-switch ready</div>
+        </div>
+        <div class="w-hero-visual">
+          <div class="w-window">
+            <div class="wm-bar">
+              <span class="wm-dot" style="background:#ff5f57"></span>
+              <span class="wm-dot" style="background:#febc2e"></span>
+              <span class="wm-dot" style="background:#28c840"></span>
+              <div class="wm-bar-spd"><span style="color:#34eacb">↓ 28.1 MB/s</span><span style="color:#ff7a66">↑ 5.4 MB/s</span></div>
+            </div>
+            <div class="wm-body">
+              <div class="wm-list">
+                <div class="wm-row">
+                <div class="wm-ico" data-site-icon="download" style="background:rgba(31,227,192,.14);color:#1fe3c0"></div>
+                  <div class="wm-main">
+                    <div class="wm-top"><span class="wm-name">Ubuntu 24.04.2 Desktop.iso</span><span class="wm-badge" style="color:#1fe3c0;background:rgba(31,227,192,.14)">Downloading</span></div>
+                    <div class="wm-track"><div class="wm-fill" style="width:68%;background:#1fe3c0;box-shadow:0 0 8px #1fe3c0"></div></div>
+                  </div>
+                  <div class="wm-spd"><span style="color:#34eacb">↓18.4</span><span style="color:#ff7a66">↑1.1</span></div>
+                </div>
+                <div class="wm-row">
+                <div class="wm-ico" data-site-icon="upload" style="background:rgba(255,122,102,.14);color:#ff7a66"></div>
+                  <div class="wm-main">
+                    <div class="wm-top"><span class="wm-name">Charge — 4K master.mkv</span><span class="wm-badge" style="color:#ff7a66;background:rgba(255,122,102,.14)">Seeding</span></div>
+                    <div class="wm-track"><div class="wm-fill" style="width:100%;background:#ff7a66"></div></div>
+                  </div>
+                  <div class="wm-spd"><span style="color:#3e4a57">↓—</span><span style="color:#ff7a66">↑3.2</span></div>
+                </div>
+                <div class="wm-row">
+                <div class="wm-ico" data-site-icon="download" style="background:rgba(31,227,192,.14);color:#1fe3c0"></div>
+                  <div class="wm-main">
+                    <div class="wm-top"><span class="wm-name">Debian 12.5 netinst.iso</span><span class="wm-badge" style="color:#1fe3c0;background:rgba(31,227,192,.14)">Downloading</span></div>
+                    <div class="wm-track"><div class="wm-fill" style="width:23%;background:#1fe3c0;box-shadow:0 0 8px #1fe3c0"></div></div>
+                  </div>
+                  <div class="wm-spd"><span style="color:#34eacb">↓9.7</span><span style="color:#ff7a66">↑0.3</span></div>
+                </div>
+              </div>
+              <div class="wm-insp">
+                <div class="wm-insp-label">↓ 18.4 · ↑ 1.1 MB/s</div>
+                <svg class="wm-graph" viewBox="0 0 100 46" preserveAspectRatio="none">
+                  <defs><linearGradient id="wmg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1fe3c0" stop-opacity=".3" /><stop offset="1" stop-color="#1fe3c0" stop-opacity="0" /></linearGradient></defs>
+                  <path d="M0,38 L12,30 L24,33 L36,18 L48,24 L60,10 L72,16 L84,8 L100,14 L100,46 L0,46 Z" fill="url(#wmg)" />
+                  <path d="M0,38 L12,30 L24,33 L36,18 L48,24 L60,10 L72,16 L84,8 L100,14" fill="none" stroke="#1fe3c0" stroke-width="1.4" vector-effect="non-scaling-stroke" />
+                  <path d="M0,42 L18,40 L36,41 L54,38 L72,40 L90,37 L100,39" fill="none" stroke="#ff7a66" stroke-width="1.4" vector-effect="non-scaling-stroke" opacity=".85" />
+                </svg>
+                <div class="wm-stats">
+                  <div><span>Progress</span><b>68.2%</b></div>
+                  <div><span>Ratio</span><b>0.34</b></div>
+                  <div><span>Peers</span><b>38</b></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="w-section" id="features">
+        <div class="w-sec-inner">
+          <div class="w-sec-head">
+            <div class="w-kicker">Why Riptide</div>
+            <h2 class="w-h2">A torrent client that respects your screen and your time.</h2>
+          </div>
+          <div class="w-feat-grid">
+            <article class="w-feat"><div class="w-feat-ico" data-site-icon="users"></div><h3 class="w-feat-title">See the whole swarm</h3><p class="w-feat-body">Peers, files, trackers, speeds, ratio, and ETA stay visible without burying you in grey tables.</p></article>
+            <article class="w-feat"><div class="w-feat-ico" data-site-icon="gauge"></div><h3 class="w-feat-title">Readable throughput</h3><p class="w-feat-body">Aquamarine means download and coral means upload across the app, charts, badges, and rows.</p></article>
+            <article class="w-feat"><div class="w-feat-ico" data-site-icon="folder"></div><h3 class="w-feat-title">Storage control</h3><p class="w-feat-body">Browse, move, and delete downloaded files inside the configured allowlisted download root.</p></article>
+            <article class="w-feat"><div class="w-feat-ico" data-site-icon="lock"></div><h3 class="w-feat-title">Session login</h3><p class="w-feat-body">The frontend uses a clean login flow while API clients can still use Basic Auth.</p></article>
+            <article class="w-feat"><div class="w-feat-ico" data-site-icon="refresh"></div><h3 class="w-feat-title">Self-healing service</h3><p class="w-feat-body">A systemd timer can restart the backend if the health endpoint stops responding.</p></article>
+            <article class="w-feat"><div class="w-feat-ico" data-site-icon="shield"></div><h3 class="w-feat-title">VPN kill-switch</h3><p class="w-feat-body">nftables rules restrict the torrent service user to loopback and the configured VPN interface.</p></article>
+          </div>
+        </div>
+      </section>
+
+      <section class="w-section w-section-alt" id="showcase">
+        <div class="w-sec-inner w-showcase">
+          <div class="w-showcase-copy">
+            <div class="w-kicker">The interface</div>
+            <h2 class="w-h2">Designed like an instrument, not a spreadsheet.</h2>
+            <p class="w-lede w-lede-sm">Riptide puts live status, detail inspection, and download folder operations into one dense desktop-style surface.</p>
+            <ul class="w-checklist">
+              <li><span class="w-check" data-site-icon="check"></span>Selected rows use the canonical aqua inset bar</li>
+              <li><span class="w-check" data-site-icon="check"></span>Numbers use tabular mono typography</li>
+              <li><span class="w-check" data-site-icon="check"></span>Accents are semantic, never decorative</li>
+            </ul>
+          </div>
+          <div class="w-showcase-visual"><img src="/static/assets/logo-mark.svg" alt="" style="width:180px;display:block;margin:auto;filter:drop-shadow(0 0 28px rgba(31,227,192,.28))" /></div>
+        </div>
+      </section>
+
+      <section class="w-section" id="download">
+        <div class="w-cta-band">
+          <div class="w-cta-glow"></div>
+          <h2 class="w-h2 w-cta-title">Open Riptide.</h2>
+          <p class="w-lede w-cta-sub">The deployed app is running locally behind nginx.</p>
+          <div class="w-platforms">
+            <a href="/" class="w-plat"><span data-site-icon="play"></span><div><span>Launch</span><b>Web app</b></div></a>
+            <a href="/api/health" class="w-plat"><span data-site-icon="activity"></span><div><span>Check</span><b>Health</b></div></a>
+          </div>
+          <div class="w-cta-foot">Local deployment · no tracker search · legal content only</div>
+        </div>
+      </section>
+
+      <footer class="w-footer">
+        <div class="w-footer-inner">
+          <div class="w-footer-brand">
+            <a class="w-brand" href="/site"><img src="/static/assets/logo-mark.svg" width="22" height="22" alt="" /><span>RIPTIDE</span></a>
+            <p>Deep-ocean dark torrent management for a local server.</p>
+          </div>
+          <div class="w-footer-cols">
+            <div class="w-footer-col"><div class="w-footer-h">Product</div><a href="/">App</a><a href="#features">Features</a></div>
+            <div class="w-footer-col"><div class="w-footer-h">System</div><a href="/api/health">Health</a><a href="#showcase">Design</a></div>
+          </div>
+        </div>
+        <div class="w-footer-base"><span>Riptide local deployment</span><span>Move at the speed of the swarm.</span></div>
+      </footer>
+    </div>
+    <script src="/static/icons.js"></script>
+  </body>
+</html>

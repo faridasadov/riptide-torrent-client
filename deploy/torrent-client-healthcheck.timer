@@ -1,0 +1,11 @@
+[Unit]
+Description=Run Local Torrent Client health check every minute
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=1min
+AccuracySec=10s
+Unit=torrent-client-healthcheck.service
+
+[Install]
+WantedBy=timers.target

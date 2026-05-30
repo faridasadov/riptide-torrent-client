@@ -1,0 +1,151 @@
+/* ============================================================
+   RIPTIDE — Design Tokens
+   Colors + Typography foundation for the Riptide torrent client
+   ------------------------------------------------------------
+   Theme: deep-ocean dark. Aquamarine = primary / download / active.
+   Coral = upload / seed / warm contrast.
+   Type:  Space Grotesk (UI + display) · JetBrains Mono (data)
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+:root {
+  /* ---------- FONT FAMILIES ---------- */
+  --rt-font-display: 'Space Grotesk', system-ui, sans-serif;
+  --rt-font-sans:    'Space Grotesk', system-ui, sans-serif;
+  --rt-font-mono:    'JetBrains Mono', ui-monospace, 'SF Mono', monospace;
+
+  /* ============================================================
+     BASE COLOR PALETTE
+     ============================================================ */
+
+  /* Surfaces — deep ocean, near-black with a cool blue undertone.
+     Stack from abyss (app chrome) up to the highest raised surface. */
+  --rt-bg-abyss: #070A0F;   /* window chrome / behind everything */
+  --rt-bg-0:     #0B0F16;   /* app background */
+  --rt-bg-1:     #11161F;   /* base surface (panels) */
+  --rt-bg-2:     #161D28;   /* cards / rows */
+  --rt-bg-3:     #1E2733;   /* hover / elevated */
+  --rt-bg-4:     #27323F;   /* highest / active */
+
+  /* Borders & dividers */
+  --rt-border:        #222C39;
+  --rt-border-strong: #344150;
+  --rt-border-faint:  #18202B;
+
+  /* Foreground / text */
+  --rt-fg-1: #EAF1F7;   /* primary text */
+  --rt-fg-2: #9DAAB8;   /* secondary text */
+  --rt-fg-3: #62707E;   /* muted / tertiary */
+  --rt-fg-4: #3E4A57;   /* faint / disabled / placeholder */
+
+  /* ============================================================
+     ACCENTS
+     ============================================================ */
+
+  /* Aquamarine — PRIMARY. Download, active, interactive, focus. */
+  --rt-aqua-100: #C7FBEF;
+  --rt-aqua-300: #5FF0D6;
+  --rt-aqua-400: #34EACB;
+  --rt-aqua-500: #1FE3C0;   /* base */
+  --rt-aqua-600: #14C2A3;
+  --rt-aqua-700: #0E9B82;
+  --rt-aqua:     #1FE3C0;
+
+  /* Coral — SECONDARY. Upload, seeding, warm contrast. */
+  --rt-coral-300: #FFB0A2;
+  --rt-coral-500: #FF7A66;   /* base */
+  --rt-coral-600: #ED5A45;
+  --rt-coral:     #FF7A66;
+
+  /* Tints (for fills / hover washes / progress tracks) */
+  --rt-aqua-wash:  rgba(31, 227, 192, 0.10);
+  --rt-aqua-wash2: rgba(31, 227, 192, 0.18);
+  --rt-coral-wash: rgba(255, 122, 102, 0.12);
+
+  /* ============================================================
+     SEMANTIC STATUS
+     ============================================================ */
+  --rt-success: #3FD98B;   /* completed / seeding healthy */
+  --rt-warning: #FFB84D;   /* stalled / checking */
+  --rt-danger:  #FF5D5D;   /* error / no peers */
+  --rt-info:    #5BA2FF;   /* metadata / info */
+  --rt-paused:  #6B7888;   /* paused / idle */
+
+  --rt-success-wash: rgba(63, 217, 139, 0.12);
+  --rt-warning-wash: rgba(255, 184, 77, 0.12);
+  --rt-danger-wash:  rgba(255, 93, 93, 0.12);
+  --rt-info-wash:    rgba(91, 162, 255, 0.12);
+
+  /* ============================================================
+     TYPOGRAPHY SCALE (semantic)
+     ============================================================ */
+  --rt-display-size: 44px; --rt-display-weight: 700; --rt-display-ls: -0.02em; --rt-display-lh: 1.05;
+  --rt-h1-size: 32px;      --rt-h1-weight: 700;      --rt-h1-ls: -0.015em;     --rt-h1-lh: 1.1;
+  --rt-h2-size: 24px;      --rt-h2-weight: 600;      --rt-h2-ls: -0.01em;      --rt-h2-lh: 1.2;
+  --rt-h3-size: 18px;      --rt-h3-weight: 600;      --rt-h3-ls: -0.005em;     --rt-h3-lh: 1.3;
+  --rt-title-size: 15px;   --rt-title-weight: 600;   --rt-title-ls: 0;         --rt-title-lh: 1.4;
+  --rt-body-size: 14px;    --rt-body-weight: 400;    --rt-body-lh: 1.55;
+  --rt-body-sm-size: 13px; --rt-body-sm-weight: 400; --rt-body-sm-lh: 1.5;
+  --rt-label-size: 11.5px; --rt-label-weight: 600;   --rt-label-ls: 0.08em;   /* UPPERCASE */
+  --rt-caption-size: 11px; --rt-caption-weight: 500;
+  --rt-data-size: 13px;    --rt-data-weight: 500;    /* JetBrains Mono */
+  --rt-data-lg-size: 16px; --rt-data-lg-weight: 600;
+
+  /* ============================================================
+     SPACING (4px base)
+     ============================================================ */
+  --rt-space-1: 4px;
+  --rt-space-2: 8px;
+  --rt-space-3: 12px;
+  --rt-space-4: 16px;
+  --rt-space-5: 20px;
+  --rt-space-6: 24px;
+  --rt-space-8: 32px;
+  --rt-space-10: 40px;
+  --rt-space-12: 48px;
+  --rt-space-16: 64px;
+
+  /* ============================================================
+     RADII
+     ============================================================ */
+  --rt-radius-sm: 4px;
+  --rt-radius-md: 6px;
+  --rt-radius-lg: 8px;
+  --rt-radius-xl: 12px;
+  --rt-radius-2xl: 16px;
+  --rt-radius-pill: 999px;
+
+  /* ============================================================
+     ELEVATION / SHADOW
+     ============================================================ */
+  --rt-shadow-sm: 0 1px 2px rgba(0,0,0,0.4);
+  --rt-shadow-md: 0 6px 20px rgba(0,0,0,0.45);
+  --rt-shadow-lg: 0 20px 56px rgba(0,0,0,0.6);
+  --rt-glow-aqua: 0 0 0 1px rgba(31,227,192,0.45), 0 0 28px rgba(31,227,192,0.28);
+  --rt-glow-coral: 0 0 0 1px rgba(255,122,102,0.45), 0 0 28px rgba(255,122,102,0.25);
+
+  /* ============================================================
+     MOTION
+     ============================================================ */
+  --rt-ease: cubic-bezier(0.22, 1, 0.36, 1);     /* default ease-out */
+  --rt-ease-snappy: cubic-bezier(0.4, 0, 0.2, 1);
+  --rt-dur-fast: 120ms;
+  --rt-dur: 200ms;
+  --rt-dur-slow: 360ms;
+}
+
+/* ============================================================
+   SEMANTIC TEXT CLASSES
+   ============================================================ */
+.rt-display { font-family: var(--rt-font-display); font-size: var(--rt-display-size); font-weight: var(--rt-display-weight); letter-spacing: var(--rt-display-ls); line-height: var(--rt-display-lh); color: var(--rt-fg-1); }
+.rt-h1 { font-family: var(--rt-font-display); font-size: var(--rt-h1-size); font-weight: var(--rt-h1-weight); letter-spacing: var(--rt-h1-ls); line-height: var(--rt-h1-lh); color: var(--rt-fg-1); }
+.rt-h2 { font-family: var(--rt-font-display); font-size: var(--rt-h2-size); font-weight: var(--rt-h2-weight); letter-spacing: var(--rt-h2-ls); line-height: var(--rt-h2-lh); color: var(--rt-fg-1); }
+.rt-h3 { font-family: var(--rt-font-display); font-size: var(--rt-h3-size); font-weight: var(--rt-h3-weight); letter-spacing: var(--rt-h3-ls); line-height: var(--rt-h3-lh); color: var(--rt-fg-1); }
+.rt-title { font-family: var(--rt-font-sans); font-size: var(--rt-title-size); font-weight: var(--rt-title-weight); line-height: var(--rt-title-lh); color: var(--rt-fg-1); }
+.rt-body { font-family: var(--rt-font-sans); font-size: var(--rt-body-size); font-weight: var(--rt-body-weight); line-height: var(--rt-body-lh); color: var(--rt-fg-2); }
+.rt-body-sm { font-family: var(--rt-font-sans); font-size: var(--rt-body-sm-size); line-height: var(--rt-body-sm-lh); color: var(--rt-fg-2); }
+.rt-label { font-family: var(--rt-font-sans); font-size: var(--rt-label-size); font-weight: var(--rt-label-weight); letter-spacing: var(--rt-label-ls); text-transform: uppercase; color: var(--rt-fg-3); }
+.rt-caption { font-family: var(--rt-font-sans); font-size: var(--rt-caption-size); font-weight: var(--rt-caption-weight); color: var(--rt-fg-3); }
+.rt-data { font-family: var(--rt-font-mono); font-size: var(--rt-data-size); font-weight: var(--rt-data-weight); color: var(--rt-fg-1); font-variant-numeric: tabular-nums; }
+.rt-data-lg { font-family: var(--rt-font-mono); font-size: var(--rt-data-lg-size); font-weight: var(--rt-data-lg-weight); color: var(--rt-fg-1); font-variant-numeric: tabular-nums; }

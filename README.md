@@ -9,10 +9,15 @@ Simple local torrent client built with FastAPI, SQLite and `python-libtorrent`.
 - List progress, speed, seeds, peers and ETA
 - Pause, resume and delete torrents
 - Per-torrent and global speed limits through the API
+- Cookie-based login session with logout, while still supporting Basic Auth for API clients
 - SQLite persistence and libtorrent resume data files
 - Basic Auth protection
 - Download path allowlist, upload size limit and free-space guard
+- Download folder browser with delete and move actions inside the allowlisted roots
+- Local search across persisted torrents and the configured download roots
+- RSS feed and auto-download rule storage with RSS/Atom item fetching
 - Periodic resume-data and status snapshot saving
+- Optional systemd health-check timer and nftables VPN kill-switch
 - Basic HTML/CSS/JS frontend
 
 This app is for legal content only. It does not search torrent sites, provide tracker catalogs or bypass copyright controls.
@@ -93,6 +98,21 @@ Backend Uvicorn only binds to `127.0.0.1:8123`.
 - `POST /api/torrents/{torrent_id}/resume`
 - `DELETE /api/torrents/{torrent_id}?delete_files=false`
 - `POST /api/torrents/{torrent_id}/limit`
+- `POST /api/auth/login`
+- `POST /api/auth/logout`
+- `GET /api/files`
+- `POST /api/files/move`
+- `DELETE /api/files`
+- `GET /api/search?q=term`
+- `GET /api/rss/feeds`
+- `POST /api/rss/feeds`
+- `PUT /api/rss/feeds/{feed_id}`
+- `DELETE /api/rss/feeds/{feed_id}`
+- `GET /api/rss/feeds/{feed_id}/items`
+- `GET /api/rss/rules`
+- `POST /api/rss/rules`
+- `PUT /api/rss/rules/{rule_id}`
+- `DELETE /api/rss/rules/{rule_id}`
 - `GET /api/settings`
 - `PUT /api/settings`
 
@@ -111,6 +131,7 @@ Configured through environment variables:
 
 - `TORRENT_CLIENT_USERNAME`
 - `TORRENT_CLIENT_PASSWORD`
+- `TORRENT_CLIENT_SESSION_SECRET`
 - `TORRENT_CLIENT_AUTH_ENABLED`
 - `TORRENT_CLIENT_CORS_ORIGINS`
 - `TORRENT_CLIENT_DATA_DIR`
@@ -118,8 +139,35 @@ Configured through environment variables:
 - `TORRENT_CLIENT_ALLOWED_DOWNLOAD_ROOTS`
 - `TORRENT_CLIENT_MAX_TORRENT_FILE_BYTES`
 - `TORRENT_CLIENT_MIN_FREE_SPACE_BYTES`
+- `TORRENT_CLIENT_VPN_IFACE`
+- `TORRENT_CLIENT_SERVICE_USER`
 
-The deployed service uses Basic Auth and only allows downloads under `/var/lib/torrent-client/downloads`.
+The deployed service uses a login session for the frontend, keeps Basic Auth support for API clients,
+and only allows downloads and file-management actions under `/var/lib/torrent-client/downloads`.
+
+## Optional Operations
+
+Install the health-check timer:
+
+```bash
+sudo cp deploy/torrent-client-healthcheck.sh /usr/local/sbin/
+sudo cp deploy/torrent-client-healthcheck.service /etc/systemd/system/
+sudo cp deploy/torrent-client-healthcheck.timer /etc/systemd/system/
+sudo chmod +x /usr/local/sbin/torrent-client-healthcheck.sh
+sudo systemctl daemon-reload
+sudo systemctl enable --now torrent-client-healthcheck.timer
+```
+
+Install the VPN kill-switch. This restricts the `torrentclient` service user's outbound traffic to
+loopback and `TORRENT_CLIENT_VPN_IFACE`:
+
+```bash
+sudo cp deploy/torrent-client-killswitch.sh /usr/local/sbin/
+sudo cp deploy/torrent-client-killswitch.service /etc/systemd/system/
+sudo chmod +x /usr/local/sbin/torrent-client-killswitch.sh
+sudo systemctl daemon-reload
+sudo systemctl enable --now torrent-client-killswitch.service
+```
 
 ## Manual Test
 

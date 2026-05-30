@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, Response
 
-from app.api import settings, system, torrents
+from app.api import auth, files, rss, search, settings, system, torrents
 from app.core.config import CORS_ORIGINS, FRONTEND_DIR, ensure_directories
 from app.core.security import basic_auth_middleware
 from app.core.storage import TorrentRepository
@@ -53,6 +53,10 @@ app.add_middleware(
     allow_credentials=True,
 )
 app.middleware("http")(basic_auth_middleware)
+app.include_router(auth.router)
+app.include_router(files.router)
+app.include_router(rss.router)
+app.include_router(search.router)
 app.include_router(torrents.router)
 app.include_router(settings.router)
 app.include_router(system.router)
@@ -68,6 +72,11 @@ async def index():
     return HTMLResponse((FRONTEND_DIR / "index.html").read_text(encoding="utf-8"))
 
 
+@app.get("/site")
+async def site():
+    return HTMLResponse((FRONTEND_DIR / "site.html").read_text(encoding="utf-8"))
+
+
 @app.get("/static/app.js")
 async def frontend_js():
     return Response(
@@ -81,4 +90,36 @@ async def frontend_css():
     return Response(
         (FRONTEND_DIR / "style.css").read_text(encoding="utf-8"),
         media_type="text/css",
+    )
+
+
+@app.get("/static/design-tokens.css")
+async def design_tokens_css():
+    return Response(
+        (FRONTEND_DIR / "design-tokens.css").read_text(encoding="utf-8"),
+        media_type="text/css",
+    )
+
+
+@app.get("/static/web.css")
+async def website_css():
+    return Response(
+        (FRONTEND_DIR / "web.css").read_text(encoding="utf-8"),
+        media_type="text/css",
+    )
+
+
+@app.get("/static/icons.js")
+async def site_icons_js():
+    return Response(
+        (FRONTEND_DIR / "icons.js").read_text(encoding="utf-8"),
+        media_type="application/javascript",
+    )
+
+
+@app.get("/static/assets/logo-mark.svg")
+async def logo_mark():
+    return Response(
+        (FRONTEND_DIR / "assets" / "logo-mark.svg").read_text(encoding="utf-8"),
+        media_type="image/svg+xml",
     )

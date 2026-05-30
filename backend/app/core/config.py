@@ -13,6 +13,8 @@ FRONTEND_DIR = PROJECT_DIR / "frontend"
 AUTH_USERNAME = os.getenv("TORRENT_CLIENT_USERNAME", "admin")
 AUTH_PASSWORD = os.getenv("TORRENT_CLIENT_PASSWORD", "admin")
 AUTH_ENABLED = os.getenv("TORRENT_CLIENT_AUTH_ENABLED", "1") != "0"
+SESSION_SECRET = os.getenv("TORRENT_CLIENT_SESSION_SECRET", AUTH_PASSWORD)
+SESSION_COOKIE_NAME = os.getenv("TORRENT_CLIENT_SESSION_COOKIE_NAME", "torrent_client_session")
 CORS_ORIGINS = [
     origin.strip()
     for origin in os.getenv("TORRENT_CLIENT_CORS_ORIGINS", "http://127.0.0.1,http://localhost").split(",")

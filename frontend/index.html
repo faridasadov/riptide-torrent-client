@@ -7,33 +7,49 @@
     <link rel="stylesheet" href="/static/style.css" />
   </head>
   <body>
+    <section id="login-screen" class="login-screen hidden">
+      <form id="login-form" class="login-panel">
+        <h1>RIPTIDE</h1>
+        <input id="login-username" placeholder="Username" autocomplete="username" />
+        <input id="login-password" type="password" placeholder="Password" autocomplete="current-password" />
+        <button type="submit">Log in</button>
+        <div id="login-message" class="message"></div>
+      </form>
+    </section>
     <main class="shell">
       <header class="titlebar">
         <div class="brand">
           <span class="dot red"></span>
           <span class="dot yellow"></span>
           <span class="dot green"></span>
+          <img class="logo-mark" src="/static/assets/logo-mark.svg" alt="" />
           <span class="logo">RIPTIDE</span>
         </div>
         <div class="top-stats">
           <span id="global-down">DL 0 B/s</span>
           <span id="global-up">UL 0 B/s</span>
+          <button id="logout" class="top-action" data-icon="x">Logout</button>
         </div>
       </header>
 
       <section class="workspace">
         <aside class="sidebar">
-          <button class="nav active" data-filter="all">All torrents <b id="count-all">0</b></button>
-          <button class="nav" data-filter="downloading">Downloading <b id="count-downloading">0</b></button>
-          <button class="nav" data-filter="seeding">Seeding <b id="count-seeding">0</b></button>
-          <button class="nav" data-filter="completed">Completed <b id="count-completed">0</b></button>
-          <button class="nav" data-filter="paused">Paused <b id="count-paused">0</b></button>
+          <button class="nav active" data-filter="all" data-icon="list">All torrents <b id="count-all">0</b></button>
+          <button class="nav" data-filter="downloading" data-icon="download">Downloading <b id="count-downloading">0</b></button>
+          <button class="nav" data-filter="seeding" data-icon="upload">Seeding <b id="count-seeding">0</b></button>
+          <button class="nav" data-filter="completed" data-icon="check">Completed <b id="count-completed">0</b></button>
+          <button class="nav" data-filter="paused" data-icon="pause">Paused <b id="count-paused">0</b></button>
 
           <div class="sidebar-title">Labels</div>
-          <button class="label" data-label="linux"><span class="swatch cyan"></span> Linux ISOs <b id="count-linux">0</b></button>
-          <button class="label" data-label="media"><span class="swatch red"></span> Media <b id="count-media">0</b></button>
-          <button class="label" data-label="software"><span class="swatch blue"></span> Software <b id="count-software">0</b></button>
-          <button class="label" data-label="archives"><span class="swatch amber"></span> Archives <b id="count-archives">0</b></button>
+          <button class="label" data-label="linux" data-icon="server"><span class="swatch cyan"></span> Linux ISOs <b id="count-linux">0</b></button>
+          <button class="label" data-label="media" data-icon="activity"><span class="swatch red"></span> Media <b id="count-media">0</b></button>
+          <button class="label" data-label="software" data-icon="cpu"><span class="swatch blue"></span> Software <b id="count-software">0</b></button>
+          <button class="label" data-label="archives" data-icon="folder"><span class="swatch amber"></span> Archives <b id="count-archives">0</b></button>
+
+          <div class="sidebar-title">Tools</div>
+          <button class="tool-nav" data-screen="search" data-icon="search">Search</button>
+          <button class="tool-nav" data-screen="rss" data-icon="rss">RSS feeds <b id="count-rss">0</b></button>
+          <button class="tool-nav" data-screen="settings" data-icon="settings">Settings</button>
 
           <div class="free-space">
             <div><span>Free space</span><b id="free-space">-</b></div>
@@ -42,24 +58,25 @@
         </aside>
 
         <section class="main-pane">
+          <div id="torrent-screen" class="screen-page active">
           <div class="toolbar">
-            <button id="add-toggle" class="primary">+ Add torrent</button>
-            <button id="resume-selected" class="icon">Play</button>
-            <button id="pause-selected" class="icon">Pause</button>
+            <button id="add-toggle" class="primary" data-icon="plus">Add torrent</button>
+            <button id="resume-selected" class="icon" data-icon="play" title="Resume selected" aria-label="Resume selected"></button>
+            <button id="pause-selected" class="icon" data-icon="pause" title="Pause selected" aria-label="Pause selected"></button>
             <input id="search" class="search" placeholder="Filter torrents..." autocomplete="off" />
-            <button id="settings-toggle" class="icon">Settings</button>
+            <button id="storage-toggle" class="icon" data-icon="folderOpen">Files</button>
           </div>
 
           <div id="add-panel" class="drawer hidden">
             <form id="magnet-form" class="add-grid">
               <input id="magnet" placeholder="magnet:?xt=urn:btih:..." autocomplete="off" />
               <input id="save-path" placeholder="/var/lib/torrent-client/downloads/name" autocomplete="off" />
-              <button type="submit">Add magnet</button>
+              <button type="submit" data-icon="magnet">Add magnet</button>
             </form>
             <form id="file-form" class="add-grid">
               <input id="torrent-file" type="file" accept=".torrent" />
               <input id="file-save-path" placeholder="/var/lib/torrent-client/downloads/name" autocomplete="off" />
-              <button type="submit">Upload file</button>
+              <button type="submit" data-icon="upload">Upload file</button>
             </form>
           </div>
 
@@ -72,12 +89,64 @@
               <label class="check"><input id="dht_enabled" type="checkbox" /> DHT</label>
               <label class="check"><input id="upnp_enabled" type="checkbox" /> UPnP</label>
               <label class="check"><input id="lsd_enabled" type="checkbox" /> LSD</label>
-              <button type="submit">Save settings</button>
+              <button type="submit" data-icon="check">Save settings</button>
             </form>
+          </div>
+
+          <div id="storage-panel" class="drawer hidden">
+            <div class="storage-head">
+              <input id="storage-path" autocomplete="off" />
+              <button id="storage-refresh" type="button" data-icon="refresh">Refresh</button>
+            </div>
+            <div id="storage-list" class="storage-list"></div>
           </div>
 
           <div id="message" class="message"></div>
           <div id="torrent-list" class="torrent-list"></div>
+          </div>
+
+          <div id="search-screen" class="screen-page rt-screen">
+            <div class="rt-screen-head">
+              <div class="rt-screen-title"><span class="title-icon" data-icon="search"></span>Search torrents</div>
+              <div class="rt-bigsearch">
+                <span class="search-icon-slot" data-icon="search"></span>
+                <input id="global-search" placeholder="Search local torrents and downloaded files..." autocomplete="off" />
+                <button id="global-search-run" class="rt-btn rt-btn-primary rt-btn-search" data-icon="search">Search</button>
+              </div>
+            </div>
+            <div id="search-results" class="rt-screen-body"></div>
+          </div>
+
+          <div id="rss-screen" class="screen-page rt-screen">
+            <div class="rt-screen-head">
+              <div class="rt-screen-title"><span class="title-icon" data-icon="rss"></span>RSS feeds
+                <div class="rt-screen-actions">
+                  <button id="rss-rules-toggle" class="rt-btn rt-btn-secondary rt-btn-auto" data-icon="sliders">Auto-download rules</button>
+                  <button id="rss-add-feed" class="rt-btn rt-btn-primary rt-btn-auto" data-icon="plus">Add feed</button>
+                </div>
+              </div>
+            </div>
+            <div class="rt-rss-body">
+              <div id="rss-feeds" class="rt-rss-feeds"></div>
+              <div id="rss-panel" class="rt-rss-content"></div>
+            </div>
+          </div>
+
+          <div id="settings-screen" class="screen-page rt-screen">
+            <div class="rt-screen-head">
+              <div class="rt-screen-title"><span class="title-icon" data-icon="settings"></span>Settings</div>
+            </div>
+            <div class="rt-set-body">
+              <nav class="rt-set-nav">
+                <button class="settings-section rt-set-navitem active" data-section="general" data-icon="sliders">General</button>
+                <button class="settings-section rt-set-navitem" data-section="downloads" data-icon="download">Downloads</button>
+                <button class="settings-section rt-set-navitem" data-section="bandwidth" data-icon="gauge">Bandwidth</button>
+                <button class="settings-section rt-set-navitem" data-section="connection" data-icon="wifi">Connection</button>
+                <button class="settings-section rt-set-navitem" data-section="privacy" data-icon="shield">Privacy</button>
+              </nav>
+              <form id="settings-screen-form" class="rt-set-panel"></form>
+            </div>
+          </div>
         </section>
 
         <aside class="detail-pane">
@@ -88,13 +157,13 @@
                 <span id="detail-status" class="pill">-</span>
                 <h2 id="detail-name">-</h2>
               </div>
-              <button id="delete-selected" class="close">Delete</button>
+              <button id="delete-selected" class="close" data-icon="trash">Delete</button>
             </div>
             <nav class="tabs">
-              <button class="tab active" data-tab="general">General</button>
-              <button class="tab" data-tab="files">Files</button>
-              <button class="tab" data-tab="peers">Peers</button>
-              <button class="tab" data-tab="trackers">Trackers</button>
+              <button class="tab active" data-tab="general" data-icon="activity">General</button>
+              <button class="tab" data-tab="files" data-icon="file">Files</button>
+              <button class="tab" data-tab="peers" data-icon="users">Peers</button>
+              <button class="tab" data-tab="trackers" data-icon="server">Trackers</button>
             </nav>
             <section id="tab-general" class="tab-page active">
               <canvas id="speed-chart" width="620" height="170"></canvas>

@@ -1,0 +1,7 @@
+[Unit]
+Description=Health check Local Torrent Client
+
+[Service]
+Type=oneshot
+EnvironmentFile=-/etc/torrent-client.env
+ExecStart=/usr/local/sbin/torrent-client-healthcheck.sh

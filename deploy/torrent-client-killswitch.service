@@ -1,0 +1,13 @@
+[Unit]
+Description=Restrict torrent-client traffic to VPN interface
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=-/etc/torrent-client.env
+ExecStart=/usr/local/sbin/torrent-client-killswitch.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
