@@ -963,7 +963,8 @@ function drawChart() {
   const { width, height } = canvas;
   ctx.clearRect(0, 0, width, height);
 
-  ctx.strokeStyle = "rgba(30, 39, 51, 0.8)";
+  const isLight = document.body.classList.contains("theme-light");
+  ctx.strokeStyle = isLight ? "rgba(180, 200, 210, 0.9)" : "rgba(30, 39, 51, 0.8)";
   ctx.lineWidth = 1;
   for (let y = 30; y < height; y += 35) {
     ctx.beginPath();
@@ -975,10 +976,15 @@ function drawChart() {
   if (!state.speedHistory.length) return;
 
   const max = Math.max(1, ...state.speedHistory.flatMap((p) => [p.down, p.up]));
-  const series = [
-    { key: "down", stroke: "#1fe3c0", fill: "rgba(31, 227, 192, 0.18)" },
-    { key: "up",   stroke: "#ff7a66", fill: "rgba(255, 122, 102, 0.15)" },
-  ];
+  const series = isLight
+    ? [
+        { key: "down", stroke: "#0aa98f", fill: "rgba(10, 169, 143, 0.28)" },
+        { key: "up",   stroke: "#dc604f", fill: "rgba(220, 96, 79, 0.22)" },
+      ]
+    : [
+        { key: "down", stroke: "#1fe3c0", fill: "rgba(31, 227, 192, 0.18)" },
+        { key: "up",   stroke: "#ff7a66", fill: "rgba(255, 122, 102, 0.15)" },
+      ];
 
   series.forEach(({ key, stroke, fill }) => {
     const pts = state.speedHistory.map((point, i) => ({

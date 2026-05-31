@@ -163,6 +163,22 @@ body.theme-light .dot.green {
   background: #18bfa3;
 }
 
+body.theme-light .torrent-card {
+  box-shadow: 0 1px 3px rgba(31, 49, 57, 0.08);
+}
+body.theme-light .torrent-card.active {
+  box-shadow: 0 0 0 2px var(--rt-aqua), 0 2px 8px rgba(10, 169, 143, 0.15);
+}
+body.theme-light .rt-tog:not(.on) {
+  background: #c8d8df;
+}
+body.theme-light .rt-set-group {
+  box-shadow: 0 1px 4px rgba(31, 49, 57, 0.07);
+}
+body.theme-light .rt-modal {
+  box-shadow: 0 24px 70px rgba(31, 49, 57, 0.18);
+}
+
 body {
   margin: 0;
   overflow: hidden;
