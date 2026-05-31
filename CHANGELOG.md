@@ -2,7 +2,7 @@
 
 All user-visible changes bump the patch version by one step.
 
-## 0.0.8
+## 0.1.7
 
 - Fixed storage `Actions` button so the file tools menu stays open.
 - Added centralized release manifest in `release.json`.
@@ -10,23 +10,23 @@ All user-visible changes bump the patch version by one step.
 - Added tracker reorder controls and next-announce timing in the UI.
 - Added optional skip-hash-check for `.torrent` imports.
 
-## 0.0.7
+## 0.1.6
 
-- Added downloaded file tools.
-- Added checksum, archive inspect and archive extract actions.
-- Added ISO mount endpoint and storage file action menu.
+- Fixed settings save button visibility in light mode.
+- Added responsive detail pane overlay on smaller screens.
+- Improved Pearl light contrast.
+- Added changelog to About modal.
 
-## 0.0.6
+## 0.1.5
 
-- Added English language and more qBittorrent controls.
-- Added PEX toggle, listen port, random port and super seeding.
+- Fixed Pearl light theme visuals.
+- Improved graph, card shadow and toggle contrast.
 
-## 0.0.5
+## 0.1.4
 
-- Added Azerbaijani and Russian language switch.
-- Expanded translated shell, modal and control text.
+- Completed EN/AZ/RU settings translation coverage.
+- Polished privacy settings translation strings.
 
-## 0.0.4
+## 0.1.3
 
-- Expanded qBittorrent parity controls.
-- Added richer torrent details, preview and recheck flow.
+- Moved version tracking into a dedicated source.

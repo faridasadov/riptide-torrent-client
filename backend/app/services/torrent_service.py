@@ -154,7 +154,23 @@ class TorrentService:
 
     def delete(self, torrent_id: str, delete_files: bool = False) -> None:
         row = self.torrent_repo.get(torrent_id.lower())
-        self.engine.remove_torrent(torrent_id.lower(), delete_files)
+        content_roots: list[str] = []
+        if row and delete_files:
+            content_roots = self.engine.get_content_roots(
+                torrent_id.lower(),
+                str(row.get("save_path") or ""),
+                str(row.get("name") or ""),
+            )
+        self.engine.remove_torrent(torrent_id.lower(), delete_files=False)
+        for root in content_roots:
+            target = Path(root)
+            try:
+                if target.is_dir():
+                    shutil.rmtree(target, ignore_errors=True)
+                elif target.exists():
+                    target.unlink(missing_ok=True)
+            except Exception:
+                pass
         resume_file = RESUME_DIR / f"{torrent_id.lower()}.fastresume"
         if resume_file.exists():
             resume_file.unlink()
@@ -258,9 +274,19 @@ class TorrentService:
         self.torrent_repo.update_save_path(torrent_id.lower(), target)
         return target
 
-    def block_peer_ip(self, ip: str) -> str:
+    def block_peer_ip(self, torrent_id: str, ip: str) -> str:
+        row = self.torrent_repo.get(torrent_id.lower())
+        if not row:
+            raise KeyError("Torrent not found")
+        import ipaddress
+        ip_obj = ipaddress.ip_address(ip)
+        entry = f"{ip_obj}/32" if ip_obj.version == 4 else f"{ip_obj}/128"
         settings = self.settings_repo.get_all()
-        merged = self.engine.block_peer_ip(ip, settings)
+        existing = str(settings.get("ip_filter", "") or "").strip()
+        lines = [line.strip() for line in existing.splitlines() if line.strip()]
+        if entry not in lines:
+            lines.append(entry)
+        merged = "\n".join(lines)
         self.settings_repo.update({"ip_filter": merged})
         return merged
 

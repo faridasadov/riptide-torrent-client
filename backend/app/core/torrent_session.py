@@ -348,10 +348,26 @@ class TorrentSessionManager:
         with self._lock:
             handle = self.handles.pop(torrent_id.lower(), None)
         if handle and handle.is_valid():
-            flags = 0
-            if delete_files:
-                flags = getattr(self.lt.options_t, "delete_files", 1)
-            self.session.remove_torrent(handle, flags)
+            self.session.remove_torrent(handle, 0)
+
+    def get_content_roots(self, torrent_id: str, save_path: str, fallback_name: str = "") -> list[str]:
+        with self._lock:
+            handle = self.handles.get(torrent_id.lower())
+        roots = set()
+        if handle and handle.is_valid() and handle.has_metadata():
+            try:
+                info = handle.get_torrent_info()
+                files = info.files()
+                for index in range(files.num_files()):
+                    parts = [part for part in files.file_path(index).split("/") if part]
+                    if not parts:
+                        continue
+                    roots.add(str(Path(save_path) / parts[0]))
+            except Exception:
+                pass
+        if not roots and fallback_name:
+            roots.add(str(Path(save_path) / fallback_name))
+        return sorted(roots)
 
     def set_torrent_limits(self, torrent_id: str, download_limit=None, upload_limit=None) -> None:
         handle = self.get_handle(torrent_id)

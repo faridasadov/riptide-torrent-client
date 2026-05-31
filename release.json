@@ -1,6 +1,6 @@
 {
   "name": "Riptide",
-  "version": "0.0.8",
+  "version": "0.1.7",
   "tagline": "Fast. Private. Yours.",
   "brand": "faridasadov",
   "author": "Farid Asadov",
@@ -10,29 +10,29 @@
     "brand": "https://faridasadov.com"
   },
   "changelog": {
-    "0.0.8": [
+    "0.1.7": [
       "Fixed storage Actions button so file tools menu stays open and works reliably",
       "Added release manifest with centralized version and changelog data",
       "Added torrent move-content, force-start, peer block and port status features",
       "Added tracker reorder controls and next-announce timing in the UI",
       "Added optional skip-hash-check for .torrent imports and better storage action labels"
     ],
-    "0.0.7": [
-      "Added downloaded file tools",
-      "Added checksum, archive inspect and archive extract actions",
-      "Added ISO mount endpoint and storage file action menu"
+    "0.1.6": [
+      "Settings save button fix in light mode",
+      "Responsive detail pane overlay on small screens",
+      "Pearl light contrast improvements",
+      "Changelog added to About modal"
     ],
-    "0.0.6": [
-      "Added English language and more qBittorrent controls",
-      "Added PEX toggle, listen port, random port and super seeding"
+    "0.1.5": [
+      "Pearl light theme visual fixes",
+      "Graph, card shadow and toggle contrast polish"
     ],
-    "0.0.5": [
-      "Added Azerbaijani and Russian language switch",
-      "Expanded translated shell, modal and control text"
+    "0.1.4": [
+      "Completed settings translation coverage in EN, AZ and RU",
+      "Privacy note and IP filter description translation polish"
     ],
-    "0.0.4": [
-      "Expanded qBittorrent parity controls",
-      "Added richer torrent details, preview and recheck flow"
+    "0.1.3": [
+      "Version tracking moved into a dedicated release source"
     ]
   }
 }

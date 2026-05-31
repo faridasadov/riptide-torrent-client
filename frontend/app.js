@@ -2243,7 +2243,7 @@ qs("#file-form").addEventListener("submit", async (event) => {
 
 qs("#magnet-label").addEventListener("change", () => {
   const label = state.labels.find((l) => l.name === qs("#magnet-label").value);
-  if (label?.save_path) qs("#magnet-save-path").value = label.save_path;
+  if (label?.save_path) qs("#save-path").value = label.save_path;
 });
 qs("#file-label").addEventListener("change", () => {
   const label = state.labels.find((l) => l.name === qs("#file-label").value);
@@ -2864,7 +2864,7 @@ window.addEventListener("focus", async () => {
     if (text.startsWith("magnet:?") && text !== _lastClipboard) {
       _lastClipboard = text;
       showToast(`${l("clipboardMagnet")} — ${l("clickToAdd")}`, "info", () => {
-        qs("#magnet-input").value = text;
+        qs("#magnet").value = text;
         openModal("add-modal");
       });
     }

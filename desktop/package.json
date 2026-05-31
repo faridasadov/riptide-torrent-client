@@ -1,6 +1,6 @@
 {
   "name": "riptide-desktop",
-  "version": "0.0.8",
+  "version": "0.1.7",
   "private": true,
   "description": "Native desktop shell for the Riptide torrent client.",
   "main": "main.js",

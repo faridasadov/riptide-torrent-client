@@ -137,6 +137,14 @@ async def list_torrents(request: Request):
         raise _handle_error(exc)
 
 
+@router.get("/session-stats")
+async def session_stats(request: Request):
+    try:
+        return _service(request).get_session_stats()
+    except Exception as exc:
+        raise _handle_error(exc)
+
+
 @router.get("/{torrent_id}")
 async def get_torrent(torrent_id: str, request: Request):
     try:
@@ -338,15 +346,7 @@ async def move_content(torrent_id: str, payload: MoveContentRequest, request: Re
 @router.post("/{torrent_id}/peers/block")
 async def block_peer(torrent_id: str, payload: BlockPeerRequest, request: Request):
     try:
-        ip_filter = _service(request).block_peer_ip(payload.ip)
+        ip_filter = _service(request).block_peer_ip(torrent_id, payload.ip)
         return {"success": True, "ip_filter": ip_filter}
-    except Exception as exc:
-        raise _handle_error(exc)
-
-
-@router.get("/session-stats")
-async def session_stats(request: Request):
-    try:
-        return _service(request).get_session_stats()
     except Exception as exc:
         raise _handle_error(exc)
