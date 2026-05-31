@@ -2,6 +2,12 @@
 
 All user-visible changes bump the patch version by one step.
 
+## 0.1.11
+
+- Completed torrents now show completed state instead of paused state in the list.
+- Torrent row action icon now switches to a completed check icon after finishing.
+- Completed status and pill priority now override paused state in the main list.
+
 ## 0.1.10
 
 - Added clickable table headers, checkbox multi-select and better bulk actions in table view.

@@ -752,17 +752,23 @@ function matchesFilter(torrent) {
   return true;
 }
 
+function isCompletedTorrent(torrent) {
+  const s = String(torrent.status || "").toLowerCase();
+  return Number(torrent.progress || 0) >= 100 || s.includes("seeding") || s === "finished";
+}
+
 function pillClass(torrent) {
+  if (isCompletedTorrent(torrent)) return "pill completed";
   if (torrent.paused) return "pill paused";
   const s = torrent.status.toLowerCase();
   if (s.includes("seeding")) return "pill seeding";
-  if (torrent.progress >= 100) return "pill completed";
   if (s.includes("downloading") || s === "metadata loading" || s === "queued") return "pill downloading";
   if (s === "not loaded" || s === "checking" || s === "checking resume data") return "pill paused";
   return "pill";
 }
 
 function statusText(torrent) {
+  if (isCompletedTorrent(torrent)) return l("statusCompleted");
   if (torrent.paused) return l("statusPaused");
   const s = torrent.status.toLowerCase();
   if (s.includes("seeding")) return l("statusSeeding");
@@ -771,8 +777,16 @@ function statusText(torrent) {
   if (s === "queued") return l("statusQueued");
   if (s === "checking" || s === "checking resume data") return l("statusChecking");
   if (s === "not loaded") return l("statusNotLoaded");
-  if (torrent.progress >= 100) return l("statusCompleted");
   return torrent.status;
+}
+
+function rowActionMeta(torrent) {
+  if (isCompletedTorrent(torrent)) {
+    return { iconName: "check", label: l("statusCompleted") };
+  }
+  return torrent.paused
+    ? { iconName: "play", label: l("resume") }
+    : { iconName: "pause", label: l("pause") };
 }
 
 function renderCounts() {
@@ -918,6 +932,7 @@ function renderTableList(visible) {
   visible.forEach((torrent) => {
     const row = document.createElement("div");
     const isMultiSel = state.selectedIds.has(torrent.torrent_id);
+    const actionMeta = rowActionMeta(torrent);
     row.className = `rt-table-row${torrent.torrent_id === state.selectedId ? " active" : ""}${isMultiSel ? " multi-sel" : ""}`;
     row.onclick = (e) => {
       if (e.target.closest("[data-row-toggle]") || e.target.closest("[data-row-check]") || e.target.closest(".rt-table-check")) return;
@@ -940,7 +955,7 @@ function renderTableList(visible) {
         <input type="checkbox" data-row-check="${torrent.torrent_id}" ${isMultiSel ? "checked" : ""} />
       </label>
       <span class="rt-table-toggle">
-        <button class="rt-row-play" data-row-toggle="${torrent.torrent_id}" aria-label="${torrent.paused ? "Resume" : "Pause"}" title="${torrent.paused ? "Resume" : "Pause"}">${icon(torrent.paused ? "play" : "pause", 13)}</button>
+        <button class="rt-row-play" data-row-toggle="${torrent.torrent_id}" aria-label="${actionMeta.label}" title="${actionMeta.label}">${icon(actionMeta.iconName, 13)}</button>
       </span>
       <span class="rt-table-name">
         <span class="rt-table-name-top">${esc(torrent.name || l("metadataLoading"))}</span>
@@ -994,6 +1009,7 @@ function renderList() {
   list.replaceChildren(...visible.map((torrent) => {
     const card = document.createElement("article");
     const isMultiSel = state.selectedIds.has(torrent.torrent_id);
+    const actionMeta = rowActionMeta(torrent);
     card.className = `torrent-card${state.uiSettings.compact ? " compact" : ""}${torrent.torrent_id === state.selectedId ? " active" : ""}${isMultiSel ? " multi-sel" : ""}`;
     card.onclick = (e) => {
       if (e.ctrlKey || e.metaKey) {
@@ -1007,9 +1023,8 @@ function renderList() {
       selectTorrent(torrent.torrent_id);
     };
     card.oncontextmenu = (e) => { e.preventDefault(); showCtxMenu(e.clientX, e.clientY, torrent.torrent_id); };
-    const playIcon = torrent.paused ? "play" : "pause";
     card.innerHTML = `
-      <button class="rt-row-play" data-row-toggle="${torrent.torrent_id}" aria-label="${torrent.paused ? "Resume" : "Pause"}" title="${torrent.paused ? "Resume" : "Pause"}">${icon(playIcon, 13)}</button>
+      <button class="rt-row-play" data-row-toggle="${torrent.torrent_id}" aria-label="${actionMeta.label}" title="${actionMeta.label}">${icon(actionMeta.iconName, 13)}</button>
       <div>
         <div class="torrent-name">${esc(torrent.name || l("metadataLoading"))}</div>
         <div class="row-meta"><span class="${pillClass(torrent)}">${esc(statusText(torrent))}</span> <span class="rt-label-badge rt-label-${labelOf(torrent)}">${labelOf(torrent)}</span> <span class="rt-health-dot" style="background:${healthColor(torrent.seeds)}" title="${torrent.seeds} seeds"></span> ${torrent.progress.toFixed(1)}% · ${bytes(torrent.downloaded)} / ${bytes(torrent.total_size)}${torrent.added_at ? ` · <span class="rt-age">${relativeTime(torrent.added_at)}</span>` : ""}</div>

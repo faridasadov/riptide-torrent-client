@@ -1,4 +1,9 @@
 const RIPTIDE_CHANGELOG = Object.freeze({
+  "0.1.11": [
+    "Completed torrents now show completed state instead of paused state in the list",
+    "Torrent row action icon now switches to a completed check icon after finishing",
+    "Completed status and pill priority now override paused state in the main list"
+  ],
   "0.1.10": [
     "Added clickable table headers, checkbox multi-select and better bulk actions in table view",
     "Improved add-torrent preview with a file tree and per-file priority controls",
@@ -27,7 +32,7 @@ const RIPTIDE_CHANGELOG = Object.freeze({
 
 const RIPTIDE = Object.freeze({
   name: "Riptide",
-  version: "0.1.10",
+  version: "0.1.11",
   tagline: "Fast. Private. Yours.",
   brand: "faridasadov",
   author: "Farid Asadov",
