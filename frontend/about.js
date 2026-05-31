@@ -8,7 +8,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 const RIPTIDE = Object.freeze({
   name: "Riptide",
-  version: "0.0.4-beta",
+  version: "0.0.5-beta",
   tagline: "Fast. Private. Yours.",
   brand: "faridasadov",
   author: "Farid Asadov",

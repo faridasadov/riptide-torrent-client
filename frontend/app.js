@@ -20,6 +20,7 @@ const state = {
     autostart: true,
     notifications: false,
     theme: "Deep ocean",
+    language: "az",
     incomplete_folder: true,
     encryption: "Prefer",
     compact: false,
@@ -79,6 +80,169 @@ function icon(name, size = 16) {
 
 function applyTheme() {
   document.body.classList.toggle("theme-light", state.uiSettings.theme === "Pearl light");
+}
+
+const I18N = {
+  az: {
+    logout: "Çıxış",
+    all: "Hamısı",
+    downloading: "Yüklənənlər",
+    seeding: "Paylaşanlar",
+    completed: "Tamamlananlar",
+    paused: "Dayandırılanlar",
+    labels: "Etiketlər",
+    tools: "Alətlər",
+    search: "Axtarış",
+    rss: "RSS lentlər",
+    settings: "Tənzimləmələr",
+    about: "Haqqında",
+    freeSpace: "Boş yer",
+    addTorrent: "Torrent əlavə et",
+    files: "Fayllar",
+    filterTorrents: "Torrentləri süz...",
+    searchTitle: "Torrent axtar",
+    searchPlaceholder: "Lokal torrent və yüklənmiş fayllarda axtar...",
+    rssTitle: "RSS lentlər",
+    rules: "Avto-yükləmə qaydaları",
+    addFeed: "Lent əlavə et",
+    selectTorrent: "Torrent seç",
+    delete: "Sil",
+    general: "Ümumi",
+    peers: "Peer-lər",
+    trackers: "Tracker-lər",
+    progress: "İrəliləyiş",
+    downloaded: "Yüklənib",
+    ratio: "Reytinq",
+    eta: "Qalan vaxt",
+    seeds: "Seed-lər",
+    speedLimits: "Sürət limitləri",
+    unlimited: "Limitsiz",
+    download: "Download",
+    upload: "Upload",
+    saveLimits: "Limitləri saxla",
+    magnetLink: "Magnet link",
+    savePath: "Saxlama yeri",
+    category: "Kateqoriya",
+    cancel: "Ləğv et",
+    addMagnet: "Magnet əlavə et",
+    uploadFile: "Fayl yüklə",
+    torrentFile: "Torrent faylı",
+    startPaused: "Dayandırılmış başlat",
+    sequential: "Ardıcıl yükləmə",
+    language: "Dil",
+  },
+  ru: {
+    logout: "Выйти",
+    all: "Все",
+    downloading: "Загружаются",
+    seeding: "Раздаются",
+    completed: "Завершены",
+    paused: "Остановлены",
+    labels: "Метки",
+    tools: "Инструменты",
+    search: "Поиск",
+    rss: "RSS",
+    settings: "Настройки",
+    about: "О программе",
+    freeSpace: "Свободно",
+    addTorrent: "Добавить торрент",
+    files: "Файлы",
+    filterTorrents: "Фильтр торрентов...",
+    searchTitle: "Поиск торрентов",
+    searchPlaceholder: "Поиск локальных торрентов и загруженных файлов...",
+    rssTitle: "RSS-ленты",
+    rules: "Правила автозагрузки",
+    addFeed: "Добавить ленту",
+    selectTorrent: "Выберите торрент",
+    delete: "Удалить",
+    general: "Общее",
+    peers: "Пиры",
+    trackers: "Трекеры",
+    progress: "Прогресс",
+    downloaded: "Загружено",
+    ratio: "Рейтинг",
+    eta: "Осталось",
+    seeds: "Сиды",
+    speedLimits: "Ограничения скорости",
+    unlimited: "Без лимита",
+    download: "Загрузка",
+    upload: "Отдача",
+    saveLimits: "Сохранить лимиты",
+    magnetLink: "Magnet-ссылка",
+    savePath: "Путь сохранения",
+    category: "Категория",
+    cancel: "Отмена",
+    addMagnet: "Добавить magnet",
+    uploadFile: "Загрузить файл",
+    torrentFile: "Torrent-файл",
+    startPaused: "Запустить остановленным",
+    sequential: "Последовательная загрузка",
+    language: "Язык",
+  },
+};
+
+function l(key) {
+  const lang = state.uiSettings.language || "az";
+  return I18N[lang]?.[key] || I18N.az[key] || key;
+}
+
+function setText(selector, text) {
+  const el = qs(selector);
+  if (el) el.textContent = text;
+}
+
+function applyLanguage() {
+  document.documentElement.lang = state.uiSettings.language === "ru" ? "ru" : "az";
+  setText("#logout span", l("logout"));
+  const filterLabels = { all: l("all"), downloading: l("downloading"), seeding: l("seeding"), completed: l("completed"), paused: l("paused") };
+  Object.entries(filterLabels).forEach(([key, value]) => {
+    const btn = qs(`[data-filter="${key}"]`);
+    const count = btn?.querySelector("b")?.outerHTML || "";
+    if (btn) btn.innerHTML = `${icon(btn.dataset.icon)}<span>${value}</span>${count}`;
+  });
+  document.querySelectorAll(".sidebar-title").forEach((el, idx) => { el.textContent = idx === 0 ? l("labels") : l("tools"); });
+  const screens = { search: l("search"), rss: l("rss"), settings: l("settings") };
+  Object.entries(screens).forEach(([key, value]) => {
+    const btn = qs(`[data-screen="${key}"]`);
+    const count = btn?.querySelector("b")?.outerHTML || "";
+    if (btn) btn.innerHTML = `${icon(btn.dataset.icon)}<span>${value}</span>${count}`;
+  });
+  const about = qs("#about-toggle");
+  if (about) about.innerHTML = `${icon("info")}<span>${l("about")}</span>`;
+  const free = qs(".free-space span");
+  if (free) free.textContent = l("freeSpace");
+  setText("#add-toggle span", l("addTorrent"));
+  setText("#storage-toggle span", l("files"));
+  qs("#search")?.setAttribute("placeholder", l("filterTorrents"));
+  setText("#search-screen .rt-screen-title", l("searchTitle"));
+  qs("#global-search")?.setAttribute("placeholder", l("searchPlaceholder"));
+  setText("#rss-screen .rt-screen-title", l("rssTitle"));
+  setText("#rss-rules-toggle span", l("rules"));
+  setText("#rss-add-feed span", l("addFeed"));
+  setText("#settings-screen .rt-screen-title", l("settings"));
+  setText("#detail-empty", l("selectTorrent"));
+  setText("#delete-selected span", l("delete"));
+  const tabs = { general: l("general"), files: l("files"), peers: l("peers"), trackers: l("trackers") };
+  Object.entries(tabs).forEach(([key, value]) => setText(`.tab[data-tab="${key}"] span`, value));
+  const statLabels = ["progress", "downloaded", "ratio", "eta", "seeds", "peers"];
+  document.querySelectorAll(".stats-grid span").forEach((el, idx) => { el.textContent = l(statLabels[idx]); });
+  setText(".limit-panel-head span", l("speedLimits"));
+  setText("#torrent-limit-clear", l("unlimited"));
+  document.querySelectorAll(".limit-grid label > span").forEach((el, idx) => { el.textContent = idx === 0 ? l("download") : l("upload"); });
+  setText("#torrent-limit-form button[type='submit']", l("saveLimits"));
+  setText("#add-modal-title", l("addTorrent"));
+  const modalLabels = document.querySelectorAll("#add-modal .rt-modal-label");
+  [l("magnetLink"), l("savePath"), l("category"), l("torrentFile"), l("savePath"), l("category")].forEach((text, idx) => {
+    if (modalLabels[idx]) modalLabels[idx].childNodes[0].textContent = text + " ";
+  });
+  setText("#add-modal-cancel", l("cancel"));
+  setText("#magnet-form button[type='submit'] span", l("addMagnet"));
+  setText("#file-form button[type='submit'] span", l("uploadFile"));
+  setText('label[for="magnet-start-paused"]', l("startPaused"));
+  document.querySelectorAll(".rt-add-options label").forEach((el) => {
+    if (el.querySelector("#magnet-start-paused,#file-start-paused")) el.lastChild.textContent = " " + l("startPaused");
+    if (el.querySelector("#magnet-sequential,#file-sequential")) el.lastChild.textContent = " " + l("sequential");
+  });
 }
 
 function applyThemeOverride() {
@@ -840,7 +1004,7 @@ function renderSettingsScreen() {
   const toggle = (key) => `<button type="button" class="rt-tog ${s[key] ? "on" : "off"}" data-setting-toggle="${key}"><span class="rt-tog-knob"></span></button>`;
   const uiToggle = (key) => `<button type="button" class="rt-tog ${ui[key] ? "on" : "off"}" data-ui-toggle="${key}"><span class="rt-tog-knob"></span></button>`;
   if (state.settingsSection === "general") {
-    panel.innerHTML = `<div class="rt-set-group"><div class="rt-set-grouphead">General</div>${row("Launch Riptide on system startup", "Stored as a local UI preference; systemd service stays enabled separately", uiToggle("autostart"))}${row("Desktop notifications", "Notify when a download completes in this browser", uiToggle("notifications"))}${row("Theme", "", `<button type="button" class="rt-select" data-cycle-theme>${icon("settings", 14)} ${esc(ui.theme)}</button>`)}</div>`;
+    panel.innerHTML = `<div class="rt-set-group"><div class="rt-set-grouphead">General</div>${row("Launch Riptide on system startup", "Stored as a local UI preference; systemd service stays enabled separately", uiToggle("autostart"))}${row("Desktop notifications", "Notify when a download completes in this browser", uiToggle("notifications"))}${row("Theme", "", `<button type="button" class="rt-select" data-cycle-theme>${icon("settings", 14)} ${esc(ui.theme)}</button>`)}${row(l("language"), "", `<div class="rt-seg rt-seg-inline"><button type="button" data-lang="az" class="${ui.language !== "ru" ? "active" : ""}">AZ</button><button type="button" data-lang="ru" class="${ui.language === "ru" ? "active" : ""}">RU</button></div>`)}</div>`;
   }
   if (state.settingsSection === "downloads") {
     panel.innerHTML = `<div class="rt-set-group"><div class="rt-set-grouphead">Downloads</div>${row("Default save location", "", `<div class="rt-pathfield">${icon("folder", 14)}<input id="screen_default_download_folder" value="${esc(s.default_download_folder || "")}" /><button type="button" class="rt-path-btn" data-browse-download>Browse</button></div>`)}${row("Watch folder", "Auto-import .torrent files from this directory", `<div class="rt-pathfield">${icon("folderOpen", 14)}<input id="screen_watch_folder" value="${esc(s.watch_folder || "")}" placeholder="/var/lib/torrent-client/watch" /></div>`)}${row("Enable watch folder", "", toggle("watch_folder_enabled"))}${row("Keep incomplete files in download root", "Stored as a local UI preference until incomplete-folder backend support is added", uiToggle("incomplete_folder"))}${row("Maximum active downloads", "", `<input class="rt-numfield" id="screen_max_active_downloads" type="number" min="1" value="${s.max_active_downloads || 3}" />`)}</div>`;
@@ -1054,6 +1218,7 @@ async function loadSettings() {
     }
     applyThemeOverride();
     applyTheme();
+    applyLanguage();
     qs("#compact-toggle")?.classList.toggle("active", state.uiSettings.compact);
     Object.entries(settings).forEach(([key, value]) => {
       const input = qs(`#${key}`);
@@ -1388,6 +1553,7 @@ qs("#settings-screen-form").addEventListener("click", async (event) => {
   const exportSettings = event.target.closest("[data-export-settings]");
   const importSettings = event.target.closest("[data-import-settings]");
   const mixedMode = event.target.closest("[data-mixed-mode]");
+  const lang = event.target.closest("[data-lang]");
   if (settingToggle) {
     const key = settingToggle.dataset.settingToggle;
     state.settings[key] = !state.settings[key];
@@ -1409,6 +1575,12 @@ qs("#settings-screen-form").addEventListener("click", async (event) => {
     state.settings.utp_tcp_mixed_mode = Number(state.settings.utp_tcp_mixed_mode || 0) === 0 ? 1 : 0;
     renderSettingsScreen();
   }
+  if (lang) {
+    state.uiSettings.language = lang.dataset.lang;
+    localStorage.setItem("riptide_ui_settings", JSON.stringify(state.uiSettings));
+    renderSettingsScreen();
+    applyLanguage();
+  }
   if (browse) {
     const current = qs("#screen_default_download_folder")?.value || state.settings.default_download_folder;
     const next = await openInputModal("Save location", "Default save path", current);
@@ -1419,6 +1591,7 @@ qs("#settings-screen-form").addEventListener("click", async (event) => {
     localStorage.setItem("riptide_ui_settings", JSON.stringify(state.uiSettings));
     applyTheme();
     renderSettingsScreen();
+    applyLanguage();
   }
   if (exportSettings) {
     try {
@@ -1832,6 +2005,7 @@ async function boot() {
 applyThemeOverride();
 applyTheme();
 applyStaticIcons();
+applyLanguage();
 boot();
 setInterval(() => state.authenticated && loadTorrents(), 2000);
 setInterval(() => state.authenticated && loadSystem(), 10000);
