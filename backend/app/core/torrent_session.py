@@ -154,6 +154,9 @@ class TorrentSessionManager:
             pack = self.session.get_settings()
             pack["choking_algorithm"] = 0           # fixed_slots
             pack["seed_choking_algorithm"] = 1      # fastest_upload
+            pack["mixed_mode_algorithm"] = 0        # prefer_tcp, matching qBittorrent's default
+            pack["rate_limit_ip_overhead"] = False  # keep ACK/protocol overhead outside user upload caps
+            pack["rate_limit_utp"] = False          # qBittorrent-style rate limits do not throttle uTP by default
             pack["unchoke_slots_limit"] = 100
             pack["connections_limit"] = 500
             pack["max_peerlist_size"] = 5000
