@@ -98,6 +98,7 @@ def init_db() -> None:
             "ALTER TABLE torrents ADD COLUMN ratio_limit REAL NOT NULL DEFAULT 0",
             "ALTER TABLE torrents ADD COLUMN seeding_time_limit INTEGER NOT NULL DEFAULT 0",
             "ALTER TABLE torrents ADD COLUMN custom_name TEXT DEFAULT NULL",
+            "ALTER TABLE torrents ADD COLUMN completed_action TEXT NOT NULL DEFAULT 'seed'",
         ]:
             try:
                 conn.execute(ddl)

@@ -180,6 +180,17 @@ class TorrentService:
     def rename(self, torrent_id: str, name: str) -> None:
         self.torrent_repo.update_custom_name(torrent_id.lower(), name.strip())
 
+    def set_completed_action(self, torrent_id: str, action: str) -> None:
+        if action not in ("seed", "stop"):
+            raise ValueError(f"Invalid completed action: {action}")
+        self.torrent_repo.update_completed_action(torrent_id.lower(), action)
+
+    def check_completed_actions(self) -> None:
+        rows = self.torrent_repo.list()
+        applied = self.engine.apply_completed_actions(rows)
+        for info_hash in applied:
+            self.torrent_repo.update_paused(info_hash, True)
+
     def set_sequential(self, torrent_id: str, enabled: bool) -> None:
         self.engine.set_sequential_download(torrent_id, enabled)
 

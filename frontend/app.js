@@ -206,6 +206,8 @@ const I18N = {
     sortName: "Name", sortSize: "Size", sortProgress: "Progress", sortSpeed: "Speed",
     bulkPause: "Pause selected", bulkResume: "Resume selected", bulkDelete: "Delete selected",
     selectedCount: "selected",
+    completedAction: "When done", actionSeed: "Keep seeding", actionStop: "Stop",
+    testRule: "Test", testRuleTitle: "Rule test results", noRuleMatches: "No matching items found.",
   },
   az: {
     logout: "Çıxış", all: "Hamısı", downloading: "Yüklənənlər", seeding: "Paylaşanlar",
@@ -330,6 +332,8 @@ const I18N = {
     sortName: "Ad", sortSize: "Ölçü", sortProgress: "İrəliləyiş", sortSpeed: "Sürət",
     bulkPause: "Seçilənləri dayandır", bulkResume: "Seçilənləri davam et", bulkDelete: "Seçilənləri sil",
     selectedCount: "seçilib",
+    completedAction: "Bitdikdə", actionSeed: "Paylaşmağa davam et", actionStop: "Dayandır",
+    testRule: "Sına", testRuleTitle: "Qayda test nəticələri", noRuleMatches: "Uyğun element tapılmadı.",
   },
   ru: {
     logout: "Выйти", all: "Все", downloading: "Загружаются", seeding: "Раздаются",
@@ -457,6 +461,8 @@ const I18N = {
     sortName: "Имя", sortSize: "Размер", sortProgress: "Прогресс", sortSpeed: "Скорость",
     bulkPause: "Остановить выбранные", bulkResume: "Возобновить выбранные", bulkDelete: "Удалить выбранные",
     selectedCount: "выбрано",
+    completedAction: "По завершении", actionSeed: "Продолжать раздачу", actionStop: "Остановить",
+    testRule: "Тест", testRuleTitle: "Результаты теста правила", noRuleMatches: "Совпадений не найдено.",
   },
 };
 
@@ -869,6 +875,22 @@ function renderTotals() {
   qs("#footer-ratio").textContent = `Ratio ${downloaded ? (uploaded / downloaded).toFixed(2) : "0.00"}`;
 }
 
+const _geoCache = new Map();
+async function fetchGeo(ip) {
+  if (_geoCache.has(ip)) return _geoCache.get(ip);
+  _geoCache.set(ip, null);
+  try {
+    const r = await fetch(`http://ip-api.com/json/${ip}?fields=countryCode`, { cache: "force-cache" });
+    const d = await r.json();
+    _geoCache.set(ip, d.countryCode || null);
+  } catch { /* offline or rate-limited */ }
+  return _geoCache.get(ip);
+}
+function countryFlag(code) {
+  if (!code || code.length !== 2) return "";
+  return [...code.toUpperCase()].map(c => String.fromCodePoint(c.charCodeAt(0) + 127397)).join("");
+}
+
 function drawChart() {
   const canvas = qs("#speed-chart");
   if (!canvas) return;
@@ -947,8 +969,11 @@ async function selectTorrent(torrentId) {
   if (dlLimit && document.activeElement !== dlLimit) dlLimit.value = fromBytes(torrent.download_limit || 0, "kb");
   if (ulLimit && document.activeElement !== ulLimit) ulLimit.value = fromBytes(torrent.upload_limit || 0, "kb");
 
+  const lsSpeedKey = `rt_speed_${torrentId}`;
+  try { state.speedHistory = JSON.parse(localStorage.getItem(lsSpeedKey) || "[]"); } catch { state.speedHistory = []; }
   state.speedHistory.push({ down: torrent.download_speed, up: torrent.upload_speed });
   state.speedHistory = state.speedHistory.slice(-48);
+  try { localStorage.setItem(lsSpeedKey, JSON.stringify(state.speedHistory)); } catch { /* storage full */ }
   drawChart();
 
   const pieceMap = qs("#piece-map");
@@ -969,7 +994,26 @@ async function selectTorrent(torrentId) {
   const props = details.properties || {};
   const general = qs("#tab-general");
   general.querySelector(".rt-props-grid")?.remove();
+  general.querySelector(".rt-complete-action-row")?.remove();
   const created = props.creation_date ? new Date(props.creation_date * 1000).toLocaleString() : "-";
+  const completedActionVal = torrent.completed_action || "seed";
+  general.insertAdjacentHTML("beforeend", `
+    <div class="rt-complete-action-row">
+      <span>${l("completedAction")}</span>
+      <select class="rt-select rt-complete-action-sel" data-torrent-id="${esc(torrent.info_hash)}">
+        <option value="seed" ${completedActionVal === "seed" ? "selected" : ""}>${l("actionSeed")}</option>
+        <option value="stop" ${completedActionVal === "stop" ? "selected" : ""}>${l("actionStop")}</option>
+      </select>
+    </div>
+  `);
+  general.querySelector(".rt-complete-action-sel").onchange = async (e) => {
+    try {
+      await api(`/api/torrents/${torrent.info_hash}/completed-action`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: e.target.value }),
+      });
+    } catch (err) { showToast(err.message, "error"); }
+  };
   general.insertAdjacentHTML("beforeend", `
     <div class="rt-props-grid">
       <div><span>${l("propHash")}</span><b>${esc(torrent.info_hash)}</b></div>
@@ -1044,17 +1088,24 @@ async function selectTorrent(torrentId) {
   if (!details.peers.length) {
     peersEl.innerHTML = `<div class="muted">${l("noConnectedPeers")}</div>`;
   } else {
-    peersEl.innerHTML = details.peers.map((p) => {
+    peersEl.innerHTML = details.peers.map((p, i) => {
       const active = p.download_speed > 0 || p.upload_speed > 0;
+      const cachedFlag = _geoCache.has(p.ip) ? (countryFlag(_geoCache.get(p.ip)) || "") : "";
       return `<div class="rt-tracker-row">
         <div class="rt-bdot" style="background:${active ? "var(--rt-aqua)" : "var(--rt-fg-4)"}"></div>
         <div class="rt-tracker-main">
-          <div class="rt-tracker-url">${esc(p.ip)}</div>
+          <div class="rt-tracker-url"><span class="rt-peer-flag" data-peer-idx="${i}">${cachedFlag}</span>${esc(p.ip)}</div>
           <div class="rt-tracker-meta">${esc(p.client || l("unknownClient"))} · ${esc(p.connection_type || "BT")} · ↓ ${bytes(p.download_speed)}/s ↑ ${bytes(p.upload_speed || 0)}/s · got ${bytes(p.downloaded || 0)} sent ${bytes(p.uploaded || 0)}</div>
         </div>
         <div class="rt-file-size">${p.progress != null ? p.progress.toFixed(0) + "%" : ""}</div>
       </div>`;
     }).join("");
+    details.peers.forEach((p, i) => {
+      fetchGeo(p.ip).then(code => {
+        const flagEl = peersEl.querySelector(`[data-peer-idx="${i}"]`);
+        if (flagEl && code) flagEl.textContent = countryFlag(code);
+      });
+    });
   }
 
   const trackersEl = qs("#tab-trackers");
@@ -1260,10 +1311,29 @@ function renderRss() {
             <div class="rt-rule-dest">${icon("folder", 12)}${esc(rule.destination)}</div>
           </div>
           <div class="rt-rule-hits"><b>${rule.hits || 0}</b><span>matched</span></div>
+          <button class="rt-btn rt-btn-secondary rt-btn-auto rt-rule-test-btn" data-test-rule-id="${rule.id}" data-test-pattern="${esc(rule.pattern)}" data-test-feed="${rule.feed_id || ""}">${l("testRule")}</button>
         </div>
       `).join("") || `<div class="rt-table-empty">No rules yet.</div>`}</div>
     `;
     qs("#rss-add-rule").onclick = addRssRule;
+    qs("#rss-panel").querySelectorAll(".rt-rule-test-btn").forEach(btn => {
+      btn.onclick = async () => {
+        btn.disabled = true;
+        btn.textContent = "…";
+        try {
+          const result = await api("/api/rss/rules/test", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ pattern: btn.dataset.testPattern, feed_id: btn.dataset.testFeed ? parseInt(btn.dataset.testFeed) : null }),
+          });
+          const items = result.matches || [];
+          const msg = items.length
+            ? items.slice(0, 20).map(m => `[${m.feed}] ${m.title}`).join("\n")
+            : l("noRuleMatches");
+          openTextPreviewModal(`${l("testRuleTitle")} (${result.total})`, msg);
+        } catch (e) { showToast(e.message, "error"); }
+        finally { btn.disabled = false; btn.textContent = l("testRule"); }
+      };
+    });
     return;
   }
 

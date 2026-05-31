@@ -1,3 +1,4 @@
+import fnmatch
 import ipaddress
 import xml.etree.ElementTree as ET
 from urllib.parse import urlparse
@@ -161,3 +162,34 @@ async def update_rule(rule_id: int, payload: RuleUpdate):
 async def delete_rule(rule_id: int):
     RssRepository().delete_rule(rule_id)
     return {"success": True}
+
+
+class RuleTestRequest(BaseModel):
+    pattern: str = Field(min_length=1, max_length=300)
+    feed_id: Optional[int] = None
+
+
+@router.post("/rules/test")
+async def test_rule(payload: RuleTestRequest):
+    repo = RssRepository()
+    all_feeds = repo.list_feeds()
+    if payload.feed_id:
+        feeds = [f for f in all_feeds if f["id"] == payload.feed_id]
+    else:
+        feeds = [f for f in all_feeds if f.get("active")]
+
+    matches = []
+    for feed in feeds[:5]:
+        try:
+            _validate_rss_url(feed["url"])
+            async with httpx.AsyncClient(timeout=8, follow_redirects=False) as client:
+                resp = await client.get(feed["url"])
+                resp.raise_for_status()
+            root = ET.fromstring(resp.text)
+            for item in root.findall("./channel/item")[:80]:
+                title = item.findtext("title", default="")
+                if fnmatch.fnmatch(title.lower(), payload.pattern.lower()):
+                    matches.append({"title": title, "feed": feed["title"]})
+        except Exception:
+            continue
+    return {"matches": matches, "total": len(matches)}

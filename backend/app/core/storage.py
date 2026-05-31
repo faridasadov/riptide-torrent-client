@@ -110,6 +110,13 @@ class TorrentRepository:
                 (name or None, info_hash),
             )
 
+    def update_completed_action(self, info_hash: str, action: str) -> None:
+        with get_conn() as conn:
+            conn.execute(
+                "UPDATE torrents SET completed_action = ? WHERE info_hash = ?",
+                (action, info_hash),
+            )
+
     def delete(self, info_hash: str) -> None:
         with get_conn() as conn:
             conn.execute("DELETE FROM torrents WHERE info_hash = ?", (info_hash,))

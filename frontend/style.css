@@ -530,6 +530,21 @@ input:focus-visible {
 .rt-bulk-bar span { font-size: 13px; color: var(--rt-text2); margin-right: auto; }
 .rt-bulk-bar button { font-size: 13px; padding: 4px 10px; }
 
+.rt-complete-action-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--rt-border);
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: var(--rt-text2);
+}
+.rt-complete-action-row select { font-size: 13px; }
+
+.rt-peer-flag { margin-right: 4px; font-size: 15px; }
+.rt-rule-test-btn { margin-left: auto; flex-shrink: 0; }
+
 .rt-modal-check {
   display: flex;
   align-items: center;

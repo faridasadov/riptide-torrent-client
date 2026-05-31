@@ -28,6 +28,17 @@ async def periodic_alt_speed(app: FastAPI) -> None:
                 pass
 
 
+async def periodic_completed_actions(app: FastAPI) -> None:
+    while True:
+        await asyncio.sleep(30)
+        service = app.state.torrent_service
+        if hasattr(service, "engine"):
+            try:
+                await asyncio.to_thread(service.check_completed_actions)
+            except Exception:
+                pass
+
+
 async def periodic_watch_folder(app: FastAPI) -> None:
     _settings_repo = SettingsRepository()
     seen = set()
@@ -72,12 +83,14 @@ async def lifespan(app: FastAPI):
     resume_task = None
     alt_speed_task = None
     watch_task = None
+    completed_task = None
     try:
         app.state.torrent_service = create_service()
         ResumeService(app.state.torrent_service.engine, TorrentRepository()).restore_torrents()
         resume_task = asyncio.create_task(periodic_resume_save(app))
         alt_speed_task = asyncio.create_task(periodic_alt_speed(app))
         watch_task = asyncio.create_task(periodic_watch_folder(app))
+        completed_task = asyncio.create_task(periodic_completed_actions(app))
     except Exception as exc:
         app.state.torrent_service = UnavailableTorrentService(exc)
     yield
@@ -87,6 +100,8 @@ async def lifespan(app: FastAPI):
         alt_speed_task.cancel()
     if watch_task:
         watch_task.cancel()
+    if completed_task:
+        completed_task.cancel()
     service = app.state.torrent_service
     if hasattr(service, "engine"):
         ResumeService(service.engine, TorrentRepository()).save_resume_data()

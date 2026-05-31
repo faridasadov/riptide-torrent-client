@@ -9,7 +9,7 @@ from fastapi.responses import FileResponse
 from app.core.config import MAX_TORRENT_FILE_BYTES
 from app.core.storage import TorrentRepository
 from app.core.torrent_session import TorrentEngineUnavailable
-from app.models.torrent import AddMagnetRequest, AddTorrentResponse, CreateTorrentRequest, FilePriorityRequest, LimitRequest, RenameRequest, SeedingLimitsRequest, SequentialRequest, SetLabelRequest, SuperSeedingRequest, TrackerListRequest
+from app.models.torrent import AddMagnetRequest, AddTorrentResponse, CompletedActionRequest, CreateTorrentRequest, FilePriorityRequest, LimitRequest, RenameRequest, SeedingLimitsRequest, SequentialRequest, SetLabelRequest, SuperSeedingRequest, TrackerListRequest
 
 router = APIRouter(prefix="/api/torrents", tags=["torrents"])
 _torrent_repo = TorrentRepository()
@@ -292,5 +292,16 @@ async def rename_torrent(torrent_id: str, payload: RenameRequest, request: Reque
     try:
         _service(request).rename(torrent_id, payload.name)
         return {"success": True}
+    except Exception as exc:
+        raise _handle_error(exc)
+
+
+@router.patch("/{torrent_id}/completed-action")
+async def set_completed_action(torrent_id: str, payload: CompletedActionRequest, request: Request):
+    try:
+        _service(request).set_completed_action(torrent_id, payload.action)
+        return {"success": True}
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
     except Exception as exc:
         raise _handle_error(exc)

@@ -477,7 +477,36 @@ class TorrentSessionManager:
             "queue_position": int((db_row or {}).get("queue_position", 0) or 0),
             "ratio_limit": float((db_row or {}).get("ratio_limit", 0) or 0),
             "seeding_time_limit": int((db_row or {}).get("seeding_time_limit", 0) or 0),
+            "completed_action": (db_row or {}).get("completed_action", "seed"),
         }
+
+    def apply_completed_actions(self, db_rows: list) -> list:
+        """Return list of info_hashes where completed_action was applied."""
+        applied = []
+        for row in db_rows:
+            action = row.get("completed_action", "seed")
+            if action == "seed":
+                continue
+            info_hash = row.get("info_hash", "")
+            handle = self.get_handle(info_hash) if info_hash else None
+            if not handle or not handle.is_valid():
+                continue
+            try:
+                s = handle.status()
+                state_val = int(getattr(s, "state", -1))
+                progress = float(getattr(s, "progress", 0))
+            except Exception:
+                continue
+            if state_val not in (4, 5) or progress < 0.999:
+                continue
+            if action == "stop":
+                try:
+                    handle.unset_flags(self.lt.torrent_flags.auto_managed)
+                except Exception:
+                    pass
+                handle.pause()
+                applied.append(info_hash)
+        return applied
 
     def check_alt_speed(self, settings: Dict[str, Any]) -> None:
         if not settings.get("alt_speed_enabled"):

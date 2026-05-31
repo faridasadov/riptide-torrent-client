@@ -78,6 +78,10 @@ class RenameRequest(BaseModel):
     name: str = Field(min_length=1, max_length=255)
 
 
+class CompletedActionRequest(BaseModel):
+    action: str = Field(pattern="^(seed|stop)$")
+
+
 class LabelOut(BaseModel):
     name: str
     color: str
