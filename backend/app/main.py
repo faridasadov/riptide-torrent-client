@@ -92,7 +92,7 @@ async def lifespan(app: FastAPI):
         ResumeService(service.engine, TorrentRepository()).save_resume_data()
 
 
-app = FastAPI(title="Local Torrent Client", version="0.1.0", lifespan=lifespan)
+app = FastAPI(title="Local Torrent Client", version="0.0.3", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=CORS_ORIGINS,

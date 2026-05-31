@@ -15,6 +15,7 @@ const state = {
   rssSelectedFeed: null,
   rssShowRules: false,
   labels: [],
+  addFilePreview: null,
   uiSettings: {
     autostart: true,
     notifications: false,
@@ -474,6 +475,25 @@ async function selectTorrent(torrentId) {
     const countEl = qs("#piece-map-count");
     if (countEl) countEl.textContent = `${done} / ${cells}`;
   }
+  const props = details.properties || {};
+  const general = qs("#tab-general");
+  general.querySelector(".rt-props-grid")?.remove();
+  const created = props.creation_date ? new Date(props.creation_date * 1000).toLocaleString() : "-";
+  general.insertAdjacentHTML("beforeend", `
+    <div class="rt-props-grid">
+      <div><span>Hash</span><b>${esc(torrent.info_hash)}</b></div>
+      <div><span>Save path</span><b>${esc(torrent.save_path || "-")}</b></div>
+      <div><span>Piece size</span><b>${props.piece_size ? bytes(props.piece_size) : "-"}</b></div>
+      <div><span>Pieces</span><b>${esc(props.pieces ?? "-")}</b></div>
+      <div><span>Files</span><b>${esc(props.num_files ?? "-")}</b></div>
+      <div><span>Created by</span><b>${esc(props.created_by || "-")}</b></div>
+      <div><span>Created</span><b>${esc(created)}</b></div>
+      <div><span>Private</span><b>${props.private ? "yes" : "no"}</b></div>
+      <div><span>Max connections</span><b>${esc(props.max_connections ?? "-")}</b></div>
+      <div><span>Max uploads</span><b>${esc(props.max_uploads ?? "-")}</b></div>
+      ${props.comment ? `<div class="wide"><span>Comment</span><b>${esc(props.comment)}</b></div>` : ""}
+    </div>
+  `);
 
   const filesEl = qs("#tab-files");
   if (!details.files.length) {
@@ -539,7 +559,7 @@ async function selectTorrent(torrentId) {
         <div class="rt-bdot" style="background:${active ? "var(--rt-aqua)" : "var(--rt-fg-4)"}"></div>
         <div class="rt-tracker-main">
           <div class="rt-tracker-url">${esc(p.ip)}</div>
-          <div class="rt-tracker-meta">${esc(p.client || "unknown client")} · ↓ ${bytes(p.download_speed)}/s ↑ ${bytes(p.upload_speed || 0)}/s</div>
+          <div class="rt-tracker-meta">${esc(p.client || "unknown client")} · ${esc(p.connection_type || "BT")} · ↓ ${bytes(p.download_speed)}/s ↑ ${bytes(p.upload_speed || 0)}/s · got ${bytes(p.downloaded || 0)} sent ${bytes(p.uploaded || 0)}</div>
         </div>
         <div class="rt-file-size">${p.progress != null ? p.progress.toFixed(0) + "%" : ""}</div>
       </div>`;
@@ -556,12 +576,12 @@ async function selectTorrent(torrentId) {
     trackersEl.innerHTML = `${trackerControls}<div class="muted">No tracker metadata yet.</div>`;
   } else {
     trackersEl.innerHTML = trackerControls + details.trackers.map((t) => {
-      const ok = t.message && !t.message.toLowerCase().includes("error");
+      const ok = !t.message || !t.message.toLowerCase().includes("error");
       return `<div class="rt-tracker-row">
         <div class="rt-bdot" style="background:${ok ? "var(--rt-success)" : "var(--rt-fg-4)"}"></div>
         <div class="rt-tracker-main">
           <div class="rt-tracker-url">${esc(t.url)}</div>
-          <div class="rt-tracker-meta">Tier ${esc(String(t.tier ?? ""))}${t.message ? " · " + esc(t.message) : ""}</div>
+          <div class="rt-tracker-meta">Tier ${esc(String(t.tier ?? ""))} · seeds ${esc(t.scrape_complete ?? "-")} · leechers ${esc(t.scrape_incomplete ?? "-")}${t.message ? " · " + esc(t.message) : ""}</div>
         </div>
       </div>`;
     }).join("");
@@ -848,7 +868,22 @@ function renderSettingsScreen() {
       </div>`;
   }
   if (state.settingsSection === "connection") {
-    panel.innerHTML = `<div class="rt-set-group"><div class="rt-set-grouphead">Connection</div>${row("Incoming port", "libtorrent listens on 6881-6891", `<input class="rt-numfield" value="6881" disabled />`)}${row("Map port with UPnP / NAT-PMP", "", toggle("upnp_enabled"))}${row("Distributed Hash Table (DHT)", "Find peers without a tracker", toggle("dht_enabled"))}${row("Local Peer Discovery", "", toggle("lsd_enabled"))}</div>`;
+    panel.innerHTML = `
+      <div class="rt-set-group">
+        <div class="rt-set-grouphead">Connection</div>
+        ${row("Incoming port", "libtorrent listens on 6881-6891", `<input class="rt-numfield" value="6881" disabled />`)}
+        ${row("Map port with UPnP / NAT-PMP", "", toggle("upnp_enabled"))}
+        ${row("Distributed Hash Table (DHT)", "Find peers without a tracker", toggle("dht_enabled"))}
+        ${row("Local Peer Discovery", "", toggle("lsd_enabled"))}
+        ${row("Global connections", "", `<input class="rt-numfield" id="screen_global_connections_limit" type="number" min="1" value="${s.global_connections_limit || 500}" />`)}
+        ${row("Connections per torrent", "", `<input class="rt-numfield" id="screen_torrent_connections_limit" type="number" min="1" value="${s.torrent_connections_limit || 100}" />`)}
+        ${row("Global upload slots", "", `<input class="rt-numfield" id="screen_global_upload_slots" type="number" min="1" value="${s.global_upload_slots || 20}" />`)}
+        ${row("Upload slots per torrent", "", `<input class="rt-numfield" id="screen_torrent_upload_slots" type="number" min="1" value="${s.torrent_upload_slots || 4}" />`)}
+        ${row("Connection speed", "New outgoing connections per second", `<input class="rt-numfield" id="screen_connection_speed" type="number" min="1" value="${s.connection_speed || 30}" />`)}
+        ${row("Queueing", "qBittorrent-style active torrent limits", toggle("queueing_enabled"))}
+        ${row("Max active torrents", "", `<input class="rt-numfield" id="screen_max_active_torrents" type="number" min="1" value="${s.max_active_torrents || 500}" />`)}
+        ${row("Max active uploads", "", `<input class="rt-numfield" id="screen_max_active_uploads" type="number" min="1" value="${s.max_active_uploads || 5}" />`)}
+      </div>`;
   }
   if (state.settingsSection === "labels") {
     const labelRows = state.labels.map((lbl) => `
@@ -908,7 +943,10 @@ function renderSettingsScreen() {
     return;
   }
   if (state.settingsSection === "privacy") {
-    panel.innerHTML = `<div class="rt-set-group"><div class="rt-set-grouphead">Privacy</div>${row("Protocol encryption", "Stored as a local UI preference until explicit libtorrent encryption settings are exposed", `<div class="rt-seg rt-seg-inline">${["Disabled", "Prefer", "Require"].map((option) => `<button type="button" data-encryption="${option}" class="${ui.encryption === option ? "active" : ""}">${option}</button>`).join("")}</div>`)}${row("IP filter", "One CIDR or start-end range per line", `<textarea id="screen_ip_filter" class="rt-textarea" placeholder="203.0.113.0/24">${esc(s.ip_filter || "")}</textarea>`)}${row("Route traffic through VPN interface", "nftables kill-switch restricts torrentclient to tun0 and loopback", `<span class="rt-select">${icon("shield", 14)} enabled</span>`)}${row("Authentication", "Session cookie frontend plus Basic Auth API compatibility", `<span class="rt-select">${icon("lock", 14)} enabled</span>`)}<div class="rt-set-note">${icon("lock", 14)}Riptide stores credentials locally in /etc/torrent-client.env and sends no telemetry.</div></div>`;
+    const encButtons = [["Disabled", 0], ["Prefer", 1], ["Require", 2]].map(([label, value]) =>
+      `<button type="button" data-encryption="${label}" data-enc-policy="${value}" class="${Number(s.encryption_policy || 0) === value ? "active" : ""}">${label}</button>`
+    ).join("");
+    panel.innerHTML = `<div class="rt-set-group"><div class="rt-set-grouphead">Privacy</div>${row("Protocol encryption", "", `<div class="rt-seg rt-seg-inline">${encButtons}</div>`)}${row("Prefer TCP over uTP", "Matches qBittorrent mixed mode", `<button type="button" class="rt-tog ${Number(s.utp_tcp_mixed_mode || 0) === 0 ? "on" : "off"}" data-mixed-mode><span class="rt-tog-knob"></span></button>`)}${row("Limit TCP overhead", "qBittorrent default is off", toggle("limit_tcp_overhead"))}${row("Limit uTP rate", "qBittorrent default is on", toggle("limit_utp_rate"))}${row("Allow multiple connections from same IP", "", toggle("allow_multiple_connections_from_same_ip"))}${row("Anonymous mode", "", toggle("anonymous_mode"))}${row("IP filter", "One CIDR or start-end range per line", `<textarea id="screen_ip_filter" class="rt-textarea" placeholder="203.0.113.0/24">${esc(s.ip_filter || "")}</textarea>`)}${row("Route traffic through VPN interface", "nftables kill-switch restricts torrentclient to tun0 and loopback", `<span class="rt-select">${icon("shield", 14)} enabled</span>`)}${row("Authentication", "Session cookie frontend plus Basic Auth API compatibility", `<span class="rt-select">${icon("lock", 14)} enabled</span>`)}<div class="rt-set-note">${icon("lock", 14)}Riptide stores credentials locally in /etc/torrent-client.env and sends no telemetry.</div></div>`;
   }
   if (state.settingsSection === "general") {
     panel.insertAdjacentHTML("beforeend", `<div class="rt-set-group"><div class="rt-set-grouphead">Backup</div>${row("Import / export settings", "Includes settings, labels, RSS feeds and RSS rules", `<div class="rt-inline-actions"><button type="button" class="rt-btn rt-btn-secondary rt-btn-auto" data-export-settings>${icon("download", 13)} Export</button><button type="button" class="rt-btn rt-btn-secondary rt-btn-auto" data-import-settings>${icon("upload", 13)} Import</button><input id="settings-import-file" class="hidden" type="file" accept="application/json,.json" /></div>`)}</div>`);
@@ -1260,6 +1298,8 @@ qs("#magnet-form").addEventListener("submit", async (event) => {
       body: JSON.stringify({
         magnet: qs("#magnet").value.trim(),
         save_path: qs("#save-path").value.trim() || null,
+        start_paused: qs("#magnet-start-paused")?.checked || false,
+        sequential: qs("#magnet-sequential")?.checked || false,
       }),
     });
     event.target.reset();
@@ -1283,6 +1323,12 @@ qs("#file-form").addEventListener("submit", async (event) => {
   const form = new FormData();
   form.append("file", file);
   form.append("save_path", qs("#file-save-path").value.trim());
+  form.append("start_paused", qs("#file-start-paused")?.checked ? "true" : "false");
+  form.append("sequential", qs("#file-sequential")?.checked ? "true" : "false");
+  const previewPriorities = state.addFilePreview?.files?.map((_, idx) =>
+    Number(qs(`[data-preview-pri="${idx}"]`)?.value ?? 4)
+  );
+  if (previewPriorities?.length) form.append("priorities", JSON.stringify(previewPriorities));
   try {
     const result = await api("/api/torrents/add-file", { method: "POST", body: form });
     event.target.reset();
@@ -1313,12 +1359,14 @@ qs("#torrent-file").addEventListener("change", async () => {
   const file = qs("#torrent-file").files[0];
   box.classList.add("hidden");
   box.innerHTML = "";
+  state.addFilePreview = null;
   if (!file) return;
   const form = new FormData();
   form.append("file", file);
   try {
     const preview = await api("/api/torrents/preview-file", { method: "POST", body: form });
-    const shownFiles = preview.files.slice(0, 6).map((f) => `<div>${esc(f.path)} <span>${bytes(f.size)}</span></div>`).join("");
+    state.addFilePreview = preview;
+    const shownFiles = preview.files.slice(0, 20).map((f, idx) => `<div><span>${esc(f.path)}</span><span>${bytes(f.size)}</span><select data-preview-pri="${idx}" class="rt-file-pri"><option value="0">Skip</option><option value="1">Low</option><option value="4" selected>Normal</option><option value="7">High</option></select></div>`).join("");
     box.innerHTML = `
       <div class="rt-preview-title">${icon("file", 13)} ${esc(preview.name)}</div>
       <div class="rt-preview-meta">${bytes(preview.total_size)} · ${preview.files.length} files · ${preview.trackers.length} trackers</div>
@@ -1339,6 +1387,7 @@ qs("#settings-screen-form").addEventListener("click", async (event) => {
   const theme = event.target.closest("[data-cycle-theme]");
   const exportSettings = event.target.closest("[data-export-settings]");
   const importSettings = event.target.closest("[data-import-settings]");
+  const mixedMode = event.target.closest("[data-mixed-mode]");
   if (settingToggle) {
     const key = settingToggle.dataset.settingToggle;
     state.settings[key] = !state.settings[key];
@@ -1352,7 +1401,12 @@ qs("#settings-screen-form").addEventListener("click", async (event) => {
   }
   if (encryption) {
     state.uiSettings.encryption = encryption.dataset.encryption;
+    state.settings.encryption_policy = Number(encryption.dataset.encPolicy || 0);
     localStorage.setItem("riptide_ui_settings", JSON.stringify(state.uiSettings));
+    renderSettingsScreen();
+  }
+  if (mixedMode) {
+    state.settings.utp_tcp_mixed_mode = Number(state.settings.utp_tcp_mixed_mode || 0) === 0 ? 1 : 0;
     renderSettingsScreen();
   }
   if (browse) {
@@ -1431,9 +1485,23 @@ qs("#settings-screen-form").addEventListener("submit", async (event) => {
     payload.dht_enabled = state.settings.dht_enabled;
     payload.upnp_enabled = state.settings.upnp_enabled;
     payload.lsd_enabled = state.settings.lsd_enabled;
+    payload.queueing_enabled = state.settings.queueing_enabled;
+    payload.global_connections_limit = Number(qs("#screen_global_connections_limit")?.value || 500);
+    payload.torrent_connections_limit = Number(qs("#screen_torrent_connections_limit")?.value || 100);
+    payload.global_upload_slots = Number(qs("#screen_global_upload_slots")?.value || 20);
+    payload.torrent_upload_slots = Number(qs("#screen_torrent_upload_slots")?.value || 4);
+    payload.connection_speed = Number(qs("#screen_connection_speed")?.value || 30);
+    payload.max_active_torrents = Number(qs("#screen_max_active_torrents")?.value || 500);
+    payload.max_active_uploads = Number(qs("#screen_max_active_uploads")?.value || 5);
   }
   if (state.settingsSection === "privacy") {
     payload.ip_filter = qs("#screen_ip_filter")?.value || "";
+    payload.encryption_policy = Number(state.settings.encryption_policy || 0);
+    payload.utp_tcp_mixed_mode = Number(state.settings.utp_tcp_mixed_mode || 0);
+    payload.limit_tcp_overhead = state.settings.limit_tcp_overhead;
+    payload.limit_utp_rate = state.settings.limit_utp_rate;
+    payload.allow_multiple_connections_from_same_ip = state.settings.allow_multiple_connections_from_same_ip;
+    payload.anonymous_mode = state.settings.anonymous_mode;
   }
   if (!Object.keys(payload).length) {
     localStorage.setItem("riptide_ui_settings", JSON.stringify(state.uiSettings));
@@ -1572,6 +1640,9 @@ function showCtxMenu(x, y, torrentId) {
     <button class="rt-ctx-item" data-ctx="reannounce" role="menuitem">
       <span>${icon("refresh", 14)}</span><span>Force reannounce</span>
     </button>
+    <button class="rt-ctx-item" data-ctx="recheck" role="menuitem">
+      <span>${icon("check", 14)}</span><span>Force recheck</span>
+    </button>
     <button class="rt-ctx-item" data-ctx="edit-trackers" role="menuitem">
       <span>${icon("server", 14)}</span><span>Edit trackers</span>
     </button>
@@ -1639,6 +1710,15 @@ qs("#ctx-menu").onclick = async (e) => {
     try {
       await api(`/api/torrents/${id}/reannounce`, { method: "POST" });
       showToast("Reannounce sent", "success");
+    } catch (e) { showToast(e.message, "error"); }
+  }
+  if (btn.dataset.ctx === "recheck") {
+    const ok = await openConfirmModal("Force recheck", "Recheck downloaded pieces for this torrent?", "Recheck");
+    if (!ok) return;
+    try {
+      await api(`/api/torrents/${id}/recheck`, { method: "POST" });
+      showToast("Recheck started", "success");
+      await loadTorrents();
     } catch (e) { showToast(e.message, "error"); }
   }
   if (btn.dataset.ctx === "edit-trackers") {

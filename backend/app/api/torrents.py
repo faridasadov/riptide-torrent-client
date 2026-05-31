@@ -1,5 +1,6 @@
 import tempfile
 import logging
+import json
 from pathlib import Path
 
 from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
@@ -33,7 +34,12 @@ def _handle_error(exc: Exception) -> HTTPException:
 @router.post("/add-magnet", response_model=AddTorrentResponse)
 async def add_magnet(payload: AddMagnetRequest, request: Request):
     try:
-        result = _service(request).add_magnet(payload.magnet, payload.save_path)
+        result = _service(request).add_magnet(
+            payload.magnet,
+            payload.save_path,
+            payload.start_paused,
+            payload.sequential,
+        )
         return {"success": True, **result}
     except Exception as exc:
         raise _handle_error(exc)
@@ -44,6 +50,9 @@ async def add_file(
     request: Request,
     file: UploadFile = File(...),
     save_path: str = Form(None),
+    start_paused: bool = Form(False),
+    sequential: bool = Form(False),
+    priorities: str = Form(None),
 ):
     if not file.filename or not file.filename.endswith(".torrent"):
         raise HTTPException(status_code=400, detail="Only .torrent files are accepted")
@@ -59,7 +68,17 @@ async def add_file(
         with tempfile.NamedTemporaryFile(delete=False, suffix=".torrent") as tmp:
             tmp.write(content)
             tmp_path = tmp.name
-        result = _service(request).add_torrent_file(tmp_path, file.filename, save_path)
+        parsed_priorities = None
+        if priorities:
+            parsed_priorities = [int(value) for value in json.loads(priorities)]
+        result = _service(request).add_torrent_file(
+            tmp_path,
+            file.filename,
+            save_path,
+            start_paused,
+            sequential,
+            parsed_priorities,
+        )
         return {"success": True, **result}
     except Exception as exc:
         raise _handle_error(exc)
@@ -191,6 +210,15 @@ async def set_file_priorities(torrent_id: str, payload: FilePriorityRequest, req
 async def reannounce(torrent_id: str, request: Request):
     try:
         _service(request).reannounce(torrent_id)
+        return {"success": True}
+    except Exception as exc:
+        raise _handle_error(exc)
+
+
+@router.post("/{torrent_id}/recheck")
+async def recheck(torrent_id: str, request: Request):
+    try:
+        _service(request).recheck(torrent_id)
         return {"success": True}
     except Exception as exc:
         raise _handle_error(exc)

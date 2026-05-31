@@ -53,6 +53,23 @@ DEFAULT_SETTINGS = {
     "watch_folder": "",
     "watch_folder_enabled": False,
     "ip_filter": "",
+    "queueing_enabled": False,
+    "max_active_torrents": 500,
+    "max_active_uploads": 5,
+    "global_connections_limit": 500,
+    "torrent_connections_limit": 100,
+    "global_upload_slots": 20,
+    "torrent_upload_slots": 4,
+    "connection_speed": 30,
+    "limit_tcp_overhead": False,
+    "limit_utp_rate": True,
+    "utp_tcp_mixed_mode": 0,
+    "allow_multiple_connections_from_same_ip": False,
+    "anonymous_mode": False,
+    "encryption_policy": 0,
+    "file_pool_size": 100,
+    "async_io_threads": 10,
+    "disk_cache": -1,
 }
 
 

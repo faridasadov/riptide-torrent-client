@@ -128,8 +128,8 @@ class TorrentSessionManager:
             int(settings.get("global_download_limit", 0) or 0),
             int(settings.get("global_upload_limit", 0) or 0),
         )
-        self._set_active_downloads(int(settings.get("max_active_downloads", 3) or 3))
-        self._apply_choking_settings()
+        self._set_queue_settings(settings)
+        self._apply_choking_settings(settings)
         self._apply_ip_filter(str(settings.get("ip_filter", "") or ""))
 
     def _apply_ip_filter(self, text: str) -> None:
@@ -149,28 +149,49 @@ class TorrentSessionManager:
         except Exception as e:
             logger.warning("Failed to apply IP filter: %s", e)
 
-    def _apply_choking_settings(self) -> None:
+    def _apply_choking_settings(self, settings: Optional[Dict[str, Any]] = None) -> None:
+        settings = settings or {}
         try:
             pack = self.session.get_settings()
             pack["choking_algorithm"] = 0           # fixed_slots
             pack["seed_choking_algorithm"] = 1      # fastest_upload
-            pack["mixed_mode_algorithm"] = 0        # prefer_tcp, matching qBittorrent's default
-            pack["rate_limit_ip_overhead"] = False  # keep ACK/protocol overhead outside user upload caps
-            pack["rate_limit_utp"] = True
-            pack["unchoke_slots_limit"] = 20
-            pack["connections_limit"] = 500
+            pack["mixed_mode_algorithm"] = int(settings.get("utp_tcp_mixed_mode", 0) or 0)
+            pack["rate_limit_ip_overhead"] = bool(settings.get("limit_tcp_overhead", False))
+            pack["rate_limit_utp"] = bool(settings.get("limit_utp_rate", True))
+            pack["unchoke_slots_limit"] = int(settings.get("global_upload_slots", 20) or 20)
+            pack["connections_limit"] = int(settings.get("global_connections_limit", 500) or 500)
             pack["max_peerlist_size"] = 5000
             pack["num_want"] = 400
-            pack["connection_speed"] = 30
+            pack["connection_speed"] = int(settings.get("connection_speed", 30) or 30)
             pack["torrent_connect_boost"] = 100     # aggressive initial peer connections
-            pack["allow_multiple_connections_per_ip"] = False
+            pack["allow_multiple_connections_per_ip"] = bool(settings.get("allow_multiple_connections_from_same_ip", False))
+            pack["anonymous_mode"] = bool(settings.get("anonymous_mode", False))
             pack["listen_queue_size"] = 30
             pack["peer_turnover"] = 4
             pack["peer_turnover_cutoff"] = 90
             pack["peer_turnover_interval"] = 300
             pack["send_buffer_watermark"] = 512 * 1024
             pack["send_buffer_low_watermark"] = 10 * 1024
+            pack["file_pool_size"] = int(settings.get("file_pool_size", 100) or 100)
+            pack["aio_threads"] = int(settings.get("async_io_threads", 10) or 10)
+            disk_cache = int(settings.get("disk_cache", -1))
+            if disk_cache >= 0:
+                pack["cache_size"] = disk_cache
+            enc = int(settings.get("encryption_policy", 0) or 0)
+            if enc == 1:  # prefer encryption
+                pack["out_enc_policy"] = 1
+                pack["in_enc_policy"] = 1
+            elif enc == 2:  # require encryption
+                pack["out_enc_policy"] = 2
+                pack["in_enc_policy"] = 2
+            else:
+                pack["out_enc_policy"] = 0
+                pack["in_enc_policy"] = 0
             self.session.apply_settings(pack)
+            with self._lock:
+                handles = list(self.handles.values())
+            for handle in handles:
+                self._apply_torrent_peer_limits(handle, settings)
         except Exception as e:
             logger.warning("Failed to apply choking settings: %s", e)
 
@@ -184,18 +205,26 @@ class TorrentSessionManager:
         pack["upload_rate_limit"] = upload_limit
         self.session.apply_settings(pack)
 
-    def _set_active_downloads(self, limit: int) -> None:
+    def _set_queue_settings(self, settings: Dict[str, Any]) -> None:
         try:
             pack = self.session.get_settings()
-            pack["active_downloads"] = limit
+            if settings.get("queueing_enabled"):
+                pack["active_downloads"] = int(settings.get("max_active_downloads", 3) or 3)
+                pack["active_seeds"] = int(settings.get("max_active_uploads", 5) or 5)
+                pack["active_limit"] = int(settings.get("max_active_torrents", 500) or 500)
+            else:
+                pack["active_downloads"] = -1
+                pack["active_seeds"] = -1
+                pack["active_limit"] = -1
             self.session.apply_settings(pack)
         except Exception as e:
-            logger.warning("Failed to set active downloads: %s", e)
+            logger.warning("Failed to set queue settings: %s", e)
 
-    def _apply_torrent_peer_limits(self, handle: Any) -> None:
+    def _apply_torrent_peer_limits(self, handle: Any, settings: Optional[Dict[str, Any]] = None) -> None:
+        settings = settings or {}
         try:
-            handle.set_max_connections(100)
-            handle.set_max_uploads(4)
+            handle.set_max_connections(int(settings.get("torrent_connections_limit", 100) or 100))
+            handle.set_max_uploads(int(settings.get("torrent_upload_slots", 4) or 4))
         except Exception as e:
             logger.debug("Failed to apply per-torrent peer limits: %s", e)
 
@@ -287,6 +316,10 @@ class TorrentSessionManager:
     def set_sequential_download(self, torrent_id: str, enabled: bool) -> None:
         handle = self.get_handle(torrent_id)
         handle.set_sequential_download(enabled)
+
+    def force_recheck(self, torrent_id: str) -> None:
+        handle = self.get_handle(torrent_id)
+        handle.force_recheck()
 
     def set_file_priorities(self, torrent_id: str, priorities: list) -> None:
         handle = self.get_handle(torrent_id)
@@ -440,6 +473,7 @@ class TorrentSessionManager:
             "files": [],
             "peers": [],
             "trackers": [],
+            "properties": {},
         }
         if not handle or not handle.is_valid() or not handle.has_metadata():
             return details
@@ -464,9 +498,29 @@ class TorrentSessionManager:
                 )
             details["files"] = files
             details["trackers"] = [
-                {"url": tracker.url, "tier": int(getattr(tracker, "tier", 0) or 0)}
+                {
+                    "url": tracker.url,
+                    "tier": int(getattr(tracker, "tier", 0) or 0),
+                    "message": str(getattr(tracker, "message", "") or ""),
+                    "next_announce": int(getattr(tracker, "next_announce", 0) or 0),
+                    "min_announce": int(getattr(tracker, "min_announce", 0) or 0),
+                    "scrape_incomplete": int(getattr(tracker, "scrape_incomplete", -1) or -1),
+                    "scrape_complete": int(getattr(tracker, "scrape_complete", -1) or -1),
+                }
                 for tracker in info.trackers()
             ]
+            details["properties"] = {
+                "comment": str(getattr(info, "comment", lambda: "")() or ""),
+                "created_by": str(getattr(info, "creator", lambda: "")() or ""),
+                "creation_date": int(getattr(info, "creation_date", lambda: 0)() or 0),
+                "piece_size": int(info.piece_length()),
+                "pieces": int(info.num_pieces()),
+                "private": bool(info.priv()),
+                "total_size": int(info.total_size()),
+                "num_files": int(file_storage.num_files()),
+                "max_connections": int(handle.max_connections()),
+                "max_uploads": int(handle.max_uploads()),
+            }
         except Exception as e:
             logger.warning("Failed to get torrent file/tracker details for %s: %s", torrent_id, e)
 
@@ -480,8 +534,13 @@ class TorrentSessionManager:
                         "client": str(getattr(peer, "client", "")),
                         "download_speed": int(getattr(peer, "down_speed", 0) or 0),
                         "upload_speed": int(getattr(peer, "up_speed", 0) or 0),
+                        "downloaded": int(getattr(peer, "total_download", 0) or 0),
+                        "uploaded": int(getattr(peer, "total_upload", 0) or 0),
                         "progress": round(float(getattr(peer, "progress", 0.0) or 0.0) * 100, 2),
                         "interesting": bool(flags & getattr(self.lt.peer_info, "interesting", 0)),
+                        "flags": flags,
+                        "source": int(getattr(peer, "source", 0) or 0),
+                        "connection_type": "uTP" if bool(flags & getattr(self.lt.peer_info, "utp_socket", 0)) else "BT",
                     }
                 )
             details["peers"] = peers

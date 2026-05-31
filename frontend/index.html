@@ -209,6 +209,10 @@
             <input id="save-path" class="rt-modal-input" placeholder="/var/lib/torrent-client/downloads/name" autocomplete="off" />
             <label class="rt-modal-label">Category <span style="font-weight:400;opacity:.6">(optional)</span></label>
             <select id="magnet-label" class="rt-modal-input"><option value="">Auto-detect</option></select>
+            <div class="rt-add-options">
+              <label><input id="magnet-start-paused" type="checkbox" /> Start paused</label>
+              <label><input id="magnet-sequential" type="checkbox" /> Sequential download</label>
+            </div>
             <div class="rt-modal-foot">
               <button type="button" class="rt-btn rt-btn-ghost" id="add-modal-cancel">Cancel</button>
               <button type="submit" class="rt-btn rt-btn-primary" data-icon="magnet">Add magnet</button>
@@ -223,6 +227,10 @@
             <input id="file-save-path" class="rt-modal-input" placeholder="/var/lib/torrent-client/downloads/name" autocomplete="off" />
             <label class="rt-modal-label">Category <span style="font-weight:400;opacity:.6">(optional)</span></label>
             <select id="file-label" class="rt-modal-input"><option value="">Auto-detect</option></select>
+            <div class="rt-add-options">
+              <label><input id="file-start-paused" type="checkbox" /> Start paused</label>
+              <label><input id="file-sequential" type="checkbox" /> Sequential download</label>
+            </div>
             <div class="rt-modal-foot">
               <button type="submit" class="rt-btn rt-btn-primary" data-icon="upload">Upload file</button>
             </div>

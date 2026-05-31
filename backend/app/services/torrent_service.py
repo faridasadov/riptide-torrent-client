@@ -24,7 +24,13 @@ class TorrentService:
         self.torrent_repo = torrent_repo
         self.settings_repo = settings_repo
 
-    def add_magnet(self, magnet: str, save_path: str = None) -> Dict[str, str]:
+    def add_magnet(
+        self,
+        magnet: str,
+        save_path: str = None,
+        start_paused: bool = False,
+        sequential: bool = False,
+    ) -> Dict[str, str]:
         candidate_hash = extract_info_hash_from_magnet(magnet)
         if not candidate_hash:
             raise ValueError("Invalid magnet link")
@@ -33,6 +39,10 @@ class TorrentService:
 
         final_path = validate_save_path(save_path or self.settings_repo.get_all()["default_download_folder"])
         torrent_id = self.engine.add_magnet(magnet, final_path)
+        if sequential:
+            self.engine.set_sequential_download(torrent_id, True)
+        if start_paused:
+            self.engine.pause_torrent(torrent_id)
         try:
             if self.torrent_repo.exists(torrent_id):
                 self.engine.remove_torrent(torrent_id, delete_files=False)
@@ -43,6 +53,7 @@ class TorrentService:
                     "name": "",
                     "magnet": magnet,
                     "save_path": final_path,
+                    "paused": start_paused,
                 }
             )
         except Exception:
@@ -53,7 +64,15 @@ class TorrentService:
             raise
         return {"torrent_id": torrent_id, "message": "Torrent added"}
 
-    def add_torrent_file(self, source_file: str, filename: str, save_path: str = None) -> Dict[str, str]:
+    def add_torrent_file(
+        self,
+        source_file: str,
+        filename: str,
+        save_path: str = None,
+        start_paused: bool = False,
+        sequential: bool = False,
+        priorities: list[int] | None = None,
+    ) -> Dict[str, str]:
         final_path = validate_save_path(save_path or self.settings_repo.get_all()["default_download_folder"])
         info = self.engine.get_torrent_file_info(source_file)
         torrent_id = info["torrent_id"]
@@ -67,6 +86,12 @@ class TorrentService:
         shutil.copyfile(source_file, stored_path)
 
         added = self.engine.add_torrent_file(str(stored_path), final_path)
+        if sequential:
+            self.engine.set_sequential_download(torrent_id, True)
+        if priorities:
+            self.engine.set_file_priorities(torrent_id, priorities)
+        if start_paused:
+            self.engine.pause_torrent(torrent_id)
         try:
             self.torrent_repo.upsert(
                 {
@@ -74,6 +99,7 @@ class TorrentService:
                     "name": added.get("name") or info.get("name") or "",
                     "torrent_file_path": str(stored_path),
                     "save_path": final_path,
+                    "paused": start_paused,
                 }
             )
         except Exception:
@@ -144,6 +170,9 @@ class TorrentService:
 
     def reannounce(self, torrent_id: str) -> None:
         self.engine.force_reannounce(torrent_id.lower())
+
+    def recheck(self, torrent_id: str) -> None:
+        self.engine.force_recheck(torrent_id.lower())
 
     def replace_trackers(self, torrent_id: str, urls: list[str]) -> None:
         self.engine.replace_trackers(torrent_id.lower(), urls)

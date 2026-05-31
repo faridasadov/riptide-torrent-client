@@ -2271,6 +2271,7 @@ select.rt-modal-input {
 
 .rt-preview-files div {
   display: flex;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
   font-family: var(--rt-font-mono);
@@ -2280,6 +2281,21 @@ select.rt-modal-input {
 .rt-preview-error {
   color: var(--rt-danger);
   font-size: 12px;
+}
+
+.rt-add-options {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 12px;
+  color: var(--rt-fg-2);
+  font-size: 12px;
+}
+
+.rt-add-options label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .rt-modal-divider {
@@ -2465,6 +2481,41 @@ select.rt-modal-input {
   gap: 8px;
   flex-wrap: wrap;
   margin-bottom: 8px;
+}
+
+.rt-props-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.rt-props-grid div {
+  background: var(--rt-bg-2);
+  border: 1px solid var(--rt-border);
+  border-radius: var(--rt-radius-md);
+  padding: 9px 10px;
+  min-width: 0;
+}
+
+.rt-props-grid .wide {
+  grid-column: 1 / -1;
+}
+
+.rt-props-grid span {
+  display: block;
+  color: var(--rt-fg-3);
+  font-size: 10.5px;
+  margin-bottom: 4px;
+}
+
+.rt-props-grid b {
+  display: block;
+  color: var(--rt-fg-1);
+  font-family: var(--rt-font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
 }
 
 .rt-file-main {

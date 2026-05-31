@@ -20,6 +20,23 @@ class Settings(BaseModel):
     watch_folder: str = ""
     watch_folder_enabled: bool = False
     ip_filter: str = ""
+    queueing_enabled: bool = False
+    max_active_torrents: int = Field(default=500, ge=1, le=5000)
+    max_active_uploads: int = Field(default=5, ge=1, le=1000)
+    global_connections_limit: int = Field(default=500, ge=1, le=10000)
+    torrent_connections_limit: int = Field(default=100, ge=1, le=5000)
+    global_upload_slots: int = Field(default=20, ge=1, le=1000)
+    torrent_upload_slots: int = Field(default=4, ge=1, le=1000)
+    connection_speed: int = Field(default=30, ge=1, le=1000)
+    limit_tcp_overhead: bool = False
+    limit_utp_rate: bool = True
+    utp_tcp_mixed_mode: int = Field(default=0, ge=0, le=1)
+    allow_multiple_connections_from_same_ip: bool = False
+    anonymous_mode: bool = False
+    encryption_policy: int = Field(default=0, ge=0, le=2)
+    file_pool_size: int = Field(default=100, ge=1, le=10000)
+    async_io_threads: int = Field(default=10, ge=1, le=128)
+    disk_cache: int = Field(default=-1, ge=-1, le=1048576)
 
 
 class SettingsUpdate(BaseModel):
@@ -39,3 +56,20 @@ class SettingsUpdate(BaseModel):
     watch_folder: Optional[str] = None
     watch_folder_enabled: Optional[bool] = None
     ip_filter: Optional[str] = None
+    queueing_enabled: Optional[bool] = None
+    max_active_torrents: Optional[int] = Field(default=None, ge=1, le=5000)
+    max_active_uploads: Optional[int] = Field(default=None, ge=1, le=1000)
+    global_connections_limit: Optional[int] = Field(default=None, ge=1, le=10000)
+    torrent_connections_limit: Optional[int] = Field(default=None, ge=1, le=5000)
+    global_upload_slots: Optional[int] = Field(default=None, ge=1, le=1000)
+    torrent_upload_slots: Optional[int] = Field(default=None, ge=1, le=1000)
+    connection_speed: Optional[int] = Field(default=None, ge=1, le=1000)
+    limit_tcp_overhead: Optional[bool] = None
+    limit_utp_rate: Optional[bool] = None
+    utp_tcp_mixed_mode: Optional[int] = Field(default=None, ge=0, le=1)
+    allow_multiple_connections_from_same_ip: Optional[bool] = None
+    anonymous_mode: Optional[bool] = None
+    encryption_policy: Optional[int] = Field(default=None, ge=0, le=2)
+    file_pool_size: Optional[int] = Field(default=None, ge=1, le=10000)
+    async_io_threads: Optional[int] = Field(default=None, ge=1, le=128)
+    disk_cache: Optional[int] = Field(default=None, ge=-1, le=1048576)
