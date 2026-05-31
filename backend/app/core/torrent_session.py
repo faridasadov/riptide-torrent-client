@@ -156,14 +156,14 @@ class TorrentSessionManager:
             pack["seed_choking_algorithm"] = 1      # fastest_upload
             pack["mixed_mode_algorithm"] = 0        # prefer_tcp, matching qBittorrent's default
             pack["rate_limit_ip_overhead"] = False  # keep ACK/protocol overhead outside user upload caps
-            pack["rate_limit_utp"] = False          # qBittorrent-style rate limits do not throttle uTP by default
-            pack["unchoke_slots_limit"] = 100
+            pack["rate_limit_utp"] = True
+            pack["unchoke_slots_limit"] = 20
             pack["connections_limit"] = 500
             pack["max_peerlist_size"] = 5000
             pack["num_want"] = 400
-            pack["connection_speed"] = 20
+            pack["connection_speed"] = 30
             pack["torrent_connect_boost"] = 100     # aggressive initial peer connections
-            pack["allow_multiple_connections_per_ip"] = True
+            pack["allow_multiple_connections_per_ip"] = False
             pack["listen_queue_size"] = 30
             pack["peer_turnover"] = 4
             pack["peer_turnover_cutoff"] = 90
@@ -192,6 +192,13 @@ class TorrentSessionManager:
         except Exception as e:
             logger.warning("Failed to set active downloads: %s", e)
 
+    def _apply_torrent_peer_limits(self, handle: Any) -> None:
+        try:
+            handle.set_max_connections(100)
+            handle.set_max_uploads(4)
+        except Exception as e:
+            logger.debug("Failed to apply per-torrent peer limits: %s", e)
+
     def add_magnet(self, magnet: str, save_path: str, resume_data: Optional[bytes] = None) -> str:
         info_hash = extract_info_hash_from_magnet(magnet)
         if not info_hash:
@@ -201,6 +208,7 @@ class TorrentSessionManager:
         if resume_data:
             params["resume_data"] = resume_data
         handle = self.lt.add_magnet_uri(self.session, magnet, params)
+        self._apply_torrent_peer_limits(handle)
         torrent_id = str(handle.info_hash()).lower() if handle.info_hash() else info_hash
         with self._lock:
             self.handles[torrent_id] = handle
@@ -224,6 +232,7 @@ class TorrentSessionManager:
             handle = self.session.add_torrent(params)
         except RuntimeError as exc:
             raise ValueError(f"Could not add .torrent file: {exc}") from exc
+        self._apply_torrent_peer_limits(handle)
         torrent_id = str(info.info_hash()).lower()
         with self._lock:
             self.handles[torrent_id] = handle
