@@ -161,6 +161,9 @@ class TorrentService:
                 str(row.get("save_path") or ""),
                 str(row.get("name") or ""),
             )
+            fallback_dir = Path(str(row.get("save_path") or "")) / str(row.get("name") or "")
+            if row.get("name") and str(fallback_dir) not in content_roots:
+                content_roots.append(str(fallback_dir))
         self.engine.remove_torrent(torrent_id.lower(), delete_files=False)
         for root in content_roots:
             target = Path(root)

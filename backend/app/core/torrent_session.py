@@ -357,6 +357,9 @@ class TorrentSessionManager:
         if handle and handle.is_valid() and handle.has_metadata():
             try:
                 info = handle.get_torrent_info()
+                torrent_root = Path(save_path) / str(info.name() or "")
+                if torrent_root.exists():
+                    roots.add(str(torrent_root))
                 files = info.files()
                 for index in range(files.num_files()):
                     parts = [part for part in files.file_path(index).split("/") if part]
@@ -481,7 +484,7 @@ class TorrentSessionManager:
                 creator.add_tracker(tracker.strip())
         if comment:
             creator.set_comment(comment)
-        root = str(source if source.is_dir() else source.parent)
+        root = str(source.parent)
         self.lt.set_piece_hashes(creator, root)
         target = Path(tempfile.gettempdir()) / f"{source.name or 'riptide'}.torrent"
         target.write_bytes(self.lt.bencode(creator.generate()))

@@ -1,4 +1,9 @@
 const RIPTIDE_CHANGELOG = Object.freeze({
+  "0.1.8": [
+    "Fixed torrent file creation for directory-based fixtures and local content",
+    "Validated delete-with-files using a controlled fixture",
+    "Version line corrected to continue from 0.1.7 to 0.1.8"
+  ],
   "0.1.7": [
     "Fixed storage Actions button so file tools menu stays open and works reliably",
     "Added release manifest with centralized version and changelog data",
@@ -10,7 +15,7 @@ const RIPTIDE_CHANGELOG = Object.freeze({
 
 const RIPTIDE = Object.freeze({
   name: "Riptide",
-  version: "0.1.7",
+  version: "0.1.8",
   tagline: "Fast. Private. Yours.",
   brand: "faridasadov",
   author: "Farid Asadov",

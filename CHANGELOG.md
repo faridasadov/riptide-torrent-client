@@ -2,6 +2,12 @@
 
 All user-visible changes bump the patch version by one step.
 
+## 0.1.8
+
+- Fixed torrent file creation for directory-based fixtures and local content.
+- Validated delete-with-files using a controlled fixture.
+- Continued version line correctly from `0.1.7` to `0.1.8`.
+
 ## 0.1.7
 
 - Fixed storage `Actions` button so the file tools menu stays open.
