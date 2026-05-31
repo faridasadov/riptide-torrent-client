@@ -1,5 +1,6 @@
 import fnmatch
 import ipaddress
+import re
 import xml.etree.ElementTree as ET
 from urllib.parse import urlparse
 
@@ -68,6 +69,27 @@ def _values(payload):
     if hasattr(payload, "model_dump"):
         return payload.model_dump(exclude_none=True)
     return payload.dict(exclude_none=True)
+
+
+def _matches_pattern(title: str, pattern: str) -> bool:
+    value = title or ""
+    raw = pattern or ""
+    if raw.startswith("re:"):
+        try:
+            return re.search(raw[3:], value, re.IGNORECASE) is not None
+        except re.error as exc:
+            raise HTTPException(status_code=400, detail=f"Invalid regex: {exc}")
+    return fnmatch.fnmatch(value.lower(), raw.lower())
+
+
+def _validate_pattern(pattern: str) -> None:
+    raw = pattern or ""
+    if not raw.startswith("re:"):
+      return
+    try:
+        re.compile(raw[3:], re.IGNORECASE)
+    except re.error as exc:
+        raise HTTPException(status_code=400, detail=f"Invalid regex: {exc}")
 
 
 @router.get("/feeds")
@@ -171,6 +193,7 @@ class RuleTestRequest(BaseModel):
 
 @router.post("/rules/test")
 async def test_rule(payload: RuleTestRequest):
+    _validate_pattern(payload.pattern)
     repo = RssRepository()
     all_feeds = repo.list_feeds()
     if payload.feed_id:
@@ -188,7 +211,7 @@ async def test_rule(payload: RuleTestRequest):
             root = ET.fromstring(resp.text)
             for item in root.findall("./channel/item")[:80]:
                 title = item.findtext("title", default="")
-                if fnmatch.fnmatch(title.lower(), payload.pattern.lower()):
+                if _matches_pattern(title, payload.pattern):
                     matches.append({"title": title, "feed": feed["title"]})
         except Exception:
             continue

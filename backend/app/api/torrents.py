@@ -9,7 +9,7 @@ from fastapi.responses import FileResponse
 from app.core.config import MAX_TORRENT_FILE_BYTES
 from app.core.storage import TorrentRepository
 from app.core.torrent_session import TorrentEngineUnavailable, extract_info_hash_from_magnet
-from app.models.torrent import AddMagnetRequest, AddTorrentResponse, BlockPeerRequest, CompletedActionRequest, CreateTorrentRequest, FilePriorityRequest, ForceStartRequest, LimitRequest, MoveContentRequest, RenameRequest, SeedingLimitsRequest, SequentialRequest, SetLabelRequest, SuperSeedingRequest, TrackerListRequest
+from app.models.torrent import AddLocalTorrentRequest, AddMagnetRequest, AddTorrentResponse, BlockPeerRequest, CompletedActionRequest, CreateTorrentRequest, FilePriorityRequest, ForceStartRequest, LimitRequest, MoveContentRequest, RenameRequest, SeedingLimitsRequest, SequentialRequest, SetLabelRequest, SuperSeedingRequest, TrackerListRequest
 
 router = APIRouter(prefix="/api/torrents", tags=["torrents"])
 _torrent_repo = TorrentRepository()
@@ -43,6 +43,7 @@ async def add_magnet(payload: AddMagnetRequest, request: Request):
             payload.start_paused,
             payload.sequential,
             payload.force_start,
+            payload.rename,
         )
         return {"success": True, **result}
     except HTTPException:
@@ -61,6 +62,8 @@ async def add_file(
     priorities: str = Form(None),
     skip_hash_check: bool = Form(False),
     force_start: bool = Form(False),
+    rename: str = Form(None),
+    trackers_override: str = Form(None),
 ):
     if not file.filename or not file.filename.endswith(".torrent"):
         raise HTTPException(status_code=400, detail="Only .torrent files are accepted")
@@ -79,6 +82,9 @@ async def add_file(
         parsed_priorities = None
         if priorities:
             parsed_priorities = [int(value) for value in json.loads(priorities)]
+        parsed_trackers_override = None
+        if trackers_override:
+            parsed_trackers_override = [str(value).strip() for value in json.loads(trackers_override) if str(value).strip()]
         result = _service(request).add_torrent_file(
             tmp_path,
             file.filename,
@@ -88,6 +94,8 @@ async def add_file(
             parsed_priorities,
             skip_hash_check,
             force_start,
+            rename,
+            parsed_trackers_override,
         )
         return {"success": True, **result}
     except Exception as exc:
@@ -98,6 +106,31 @@ async def add_file(
                 Path(tmp_path).unlink(missing_ok=True)
             except Exception:
                 pass
+
+
+@router.post("/add-local-file", response_model=AddTorrentResponse)
+async def add_local_file(payload: AddLocalTorrentRequest, request: Request):
+    source = Path(payload.path).expanduser()
+    if source.suffix.lower() != ".torrent":
+        raise HTTPException(status_code=400, detail="Only .torrent files are accepted")
+    if not source.is_file():
+        raise HTTPException(status_code=404, detail="Torrent file not found")
+    try:
+        result = _service(request).add_torrent_file(
+            str(source),
+            source.name,
+            payload.save_path,
+            payload.start_paused,
+            payload.sequential,
+            None,
+            False,
+            payload.force_start,
+            payload.rename,
+            None,
+        )
+        return {"success": True, **result}
+    except Exception as exc:
+        raise _handle_error(exc)
 
 
 @router.post("/preview-file")

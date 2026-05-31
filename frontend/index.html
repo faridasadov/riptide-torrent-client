@@ -64,6 +64,10 @@
             <button id="resume-all" class="icon" data-icon="repeat" title="Resume all" aria-label="Resume all"></button>
             <button id="pause-all-btn" class="icon" data-icon="pause" title="Pause all" aria-label="Pause all"></button>
             <input id="search" class="search" placeholder="Filter torrents..." autocomplete="off" />
+            <div class="rt-view-toggle" id="view-toggle" aria-label="View mode">
+              <button type="button" data-view-mode="cards" class="active" title="Cards"><span data-icon="layers"></span></button>
+              <button type="button" data-view-mode="table" title="Table"><span data-icon="list"></span></button>
+            </div>
             <select id="sort-select" class="rt-sort-select" title="Sort by" aria-label="Sort by">
               <option value="">Sort</option>
               <option value="name">Name</option>
@@ -219,6 +223,8 @@
             <input id="save-path" class="rt-modal-input" placeholder="/var/lib/torrent-client/downloads/name" autocomplete="off" />
             <label class="rt-modal-label">Category <span style="font-weight:400;opacity:.6">(optional)</span></label>
             <select id="magnet-label" class="rt-modal-input"><option value="">Auto-detect</option></select>
+            <label class="rt-modal-label" id="add-rename-title">Rename before add</label>
+            <input id="magnet-rename" class="rt-modal-input" placeholder="Custom torrent name" autocomplete="off" />
             <div class="rt-add-options">
               <label><input id="magnet-start-paused" type="checkbox" /> Start paused</label>
               <label><input id="magnet-sequential" type="checkbox" /> Sequential download</label>
@@ -238,6 +244,11 @@
             <input id="file-save-path" class="rt-modal-input" placeholder="/var/lib/torrent-client/downloads/name" autocomplete="off" />
             <label class="rt-modal-label">Category <span style="font-weight:400;opacity:.6">(optional)</span></label>
             <select id="file-label" class="rt-modal-input"><option value="">Auto-detect</option></select>
+            <label class="rt-modal-label" id="file-rename-title">Rename before add</label>
+            <input id="file-rename" class="rt-modal-input" placeholder="Custom torrent name" autocomplete="off" />
+            <label class="rt-modal-label" id="file-trackers-title">Tracker list</label>
+            <textarea id="file-trackers" class="rt-textarea" rows="4" placeholder="One tracker URL per line"></textarea>
+            <div class="rt-modal-hint" id="file-trackers-hint">One tracker URL per line. Leave empty to keep embedded trackers.</div>
             <div class="rt-add-options">
               <label><input id="file-start-paused" type="checkbox" /> Start paused</label>
               <label><input id="file-sequential" type="checkbox" /> Sequential download</label>

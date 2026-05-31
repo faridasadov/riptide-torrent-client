@@ -510,8 +510,34 @@ input:focus-visible {
 
 .toolbar {
   display: grid;
-  grid-template-columns: max-content 38px 38px 38px 38px minmax(160px, 1fr) max-content max-content 38px;
+  grid-template-columns: max-content 38px 38px 38px 38px minmax(160px, 1fr) max-content max-content 38px 38px;
   gap: 8px;
+}
+
+.rt-view-toggle {
+  display: inline-grid;
+  grid-template-columns: repeat(2, 38px);
+  gap: 0;
+  border: 1px solid var(--rt-border-strong);
+  border-radius: var(--rt-radius-md);
+  overflow: hidden;
+  background: var(--rt-bg-2);
+}
+
+.rt-view-toggle button {
+  width: 38px;
+  height: 32px;
+  border: 0;
+  background: transparent;
+  color: var(--rt-fg-3);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rt-view-toggle button.active {
+  background: var(--rt-bg-4);
+  color: var(--rt-fg-1);
 }
 .rt-sort-select {
   appearance: none;
@@ -798,6 +824,81 @@ input:focus-visible {
   display: grid;
   gap: 6px;
   align-content: start;
+}
+
+.torrent-list-table {
+  display: grid;
+  gap: 6px;
+}
+
+.rt-table-head,
+.rt-table-row {
+  display: grid;
+  grid-template-columns: 34px minmax(220px, 2fr) 88px minmax(160px, 1.2fr) 110px 110px 64px;
+  gap: 10px;
+  align-items: center;
+}
+
+.rt-table-head {
+  padding: 0 10px;
+  color: var(--rt-fg-4);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.rt-table-row {
+  border: 1px solid var(--rt-border);
+  border-radius: var(--rt-radius-md);
+  background: var(--rt-bg-2);
+  color: var(--rt-fg-2);
+  font-size: 12px;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: background var(--rt-dur) var(--rt-ease), border-color var(--rt-dur) var(--rt-ease);
+}
+
+.rt-table-row:hover {
+  background: var(--rt-bg-3);
+  border-color: var(--rt-border-strong);
+}
+
+.rt-table-row.active {
+  border-color: var(--rt-border-strong);
+  box-shadow: inset 2px 0 0 var(--rt-aqua);
+}
+
+.rt-table-row.multi-sel {
+  outline: 2px solid var(--rt-aqua);
+}
+
+.rt-table-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rt-table-name {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.rt-table-name-top {
+  color: var(--rt-fg-1);
+  font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rt-table-name-sub {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
 }
 
 .torrent-card {

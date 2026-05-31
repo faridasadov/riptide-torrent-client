@@ -27,6 +27,7 @@ const state = {
     incomplete_folder: true,
     encryption: "Prefer",
     compact: false,
+    torrentView: "cards",
   },
 };
 
@@ -168,7 +169,7 @@ const I18N = {
     createTorrentTitle: "Create torrent",
     commentLabel: "Comment (optional)", defaultComment: "Created by Riptide",
     saveLocTitle: "Save location", defaultSavePathLabel: "Default save path",
-    inspectArchive: "Inspect archive",
+    inspectArchive: "Inspect archive", renameBeforeAdd: "Rename before add", trackerList: "Tracker list", trackerListHint: "One tracker URL per line. Leave empty to keep embedded trackers.", regexRule: "Regex rule", regexHint: "Use re: prefix for regex rules",
     browse: "Browse", metadataLoading: "Loading metadata...",
     pieces: "Pieces", connected: "Connected", disconnected: "Disconnected",
     dhtOn: "DHT on", dhtOff: "DHT off", footerTorrents: "torrents",
@@ -220,7 +221,7 @@ const I18N = {
     actionMovePath: "Destination folder path", save: "Save", saved: "Saved", copied: "Copied",
     testRule: "Test", testRuleTitle: "Rule test results", noRuleMatches: "No matching items found.",
     copySavePath: "Copy save path", showQr: "QR code",
-    clipboardMagnet: "Magnet link detected", clickToAdd: "click to add",
+    clipboardMagnet: "Magnet link detected", clickToAdd: "click to add", magnetLoaded: "Magnet link loaded", torrentImported: ".torrent file imported",
     downloadComplete: "Download complete", allTime: "all time",
     received: "received", unknownClient: "Unknown", backToList: "Back to list",
   },
@@ -310,7 +311,7 @@ const I18N = {
     createTorrentTitle: "Torrent yarat",
     commentLabel: "Şərh (ixtiyari)", defaultComment: "Riptide tərəfindən yaradılıb",
     saveLocTitle: "Saxlama yeri", defaultSavePathLabel: "Standart saxlama yolu",
-    inspectArchive: "Arxivə bax",
+    inspectArchive: "Arxivə bax", renameBeforeAdd: "Əlavədən əvvəl adını dəyiş", trackerList: "Tracker siyahısı", trackerListHint: "Hər sətirdə bir tracker URL-i yaz. Boş saxlasan daxili tracker-lər qalacaq.", regexRule: "Regex qayda", regexHint: "Regex üçün re: prefiksi istifadə et",
     browse: "Gözdən keçir", metadataLoading: "Metadata yüklənir...",
     pieces: "Parçalar", connected: "Qoşulub", disconnected: "Qoşulmayıb",
     dhtOn: "DHT açıq", dhtOff: "DHT bağlı", footerTorrents: "torrent",
@@ -359,7 +360,7 @@ const I18N = {
     actionMovePath: "Təyinat qovluğu yolu", save: "Saxla", saved: "Saxlanıldı", copied: "Kopyalandı",
     testRule: "Sına", testRuleTitle: "Qayda test nəticələri", noRuleMatches: "Uyğun element tapılmadı.",
     copySavePath: "Yükləmə yolunu kopyala", showQr: "QR kod",
-    clipboardMagnet: "Magnet link aşkarlandı", clickToAdd: "əlavə etmək üçün klikləyin",
+    clipboardMagnet: "Magnet link aşkarlandı", clickToAdd: "əlavə etmək üçün klikləyin", magnetLoaded: "Magnet link yükləndi", torrentImported: ".torrent faylı idxal edildi",
     downloadComplete: "Yükləmə tamamlandı", allTime: "ümumi",
     received: "alındı", unknownClient: "Naməlum", backToList: "Siyahıya qayıt",
   },
@@ -452,7 +453,7 @@ const I18N = {
     createTorrentTitle: "Создать торрент",
     commentLabel: "Комментарий (необязательно)", defaultComment: "Создано в Riptide",
     saveLocTitle: "Место сохранения", defaultSavePathLabel: "Путь сохранения по умолчанию",
-    inspectArchive: "Просмотр архива",
+    inspectArchive: "Просмотр архива", renameBeforeAdd: "Переименовать до добавления", trackerList: "Список трекеров", trackerListHint: "По одному URL трекера на строку. Оставьте пустым, чтобы сохранить встроенные трекеры.", regexRule: "Regex правило", regexHint: "Для regex используйте префикс re:",
     browse: "Обзор", metadataLoading: "Загрузка метаданных...",
     pieces: "Части", connected: "Подключено", disconnected: "Отключено",
     dhtOn: "DHT вкл", dhtOff: "DHT выкл", footerTorrents: "торрентов",
@@ -501,7 +502,7 @@ const I18N = {
     actionMovePath: "Путь к папке назначения", save: "Сохранить", saved: "Сохранено", copied: "Скопировано",
     testRule: "Тест", testRuleTitle: "Результаты теста правила", noRuleMatches: "Совпадений не найдено.",
     copySavePath: "Копировать путь загрузки", showQr: "QR-код",
-    clipboardMagnet: "Обнаружена magnet-ссылка", clickToAdd: "нажмите для добавления",
+    clipboardMagnet: "Обнаружена magnet-ссылка", clickToAdd: "нажмите для добавления", magnetLoaded: "Magnet-ссылка загружена", torrentImported: ".torrent файл импортирован",
     downloadComplete: "Загрузка завершена", allTime: "за всё время",
     received: "получено", unknownClient: "Неизвестно", backToList: "К списку",
   },
@@ -585,6 +586,10 @@ function applyLanguage() {
     if (el.querySelector("#magnet-force-start,#file-force-start")) el.lastChild.textContent = " " + l("forceStart");
     if (el.querySelector("#file-skip-hash")) el.lastChild.textContent = " " + l("skipHashCheck");
   });
+  setText("#add-rename-title", l("renameBeforeAdd"));
+  setText("#file-rename-title", l("renameBeforeAdd"));
+  setText("#file-trackers-title", l("trackerList"));
+  setText("#file-trackers-hint", l("trackerListHint"));
 }
 
 function applyThemeOverride() {
@@ -862,6 +867,59 @@ function sortedTorrents(list) {
   return sorted;
 }
 
+function renderTableList(visible) {
+  const wrap = document.createElement("div");
+  wrap.className = "torrent-list-table";
+  wrap.innerHTML = `
+    <div class="rt-table-head">
+      <span></span>
+      <span>${l("sortName")}</span>
+      <span>${l("progress")}</span>
+      <span>${l("downloaded")}</span>
+      <span>${l("download")}</span>
+      <span>${l("upload")}</span>
+      <span>${l("seeds")}</span>
+    </div>
+  `;
+  visible.forEach((torrent) => {
+    const row = document.createElement("div");
+    const isMultiSel = state.selectedIds.has(torrent.torrent_id);
+    row.className = `rt-table-row${torrent.torrent_id === state.selectedId ? " active" : ""}${isMultiSel ? " multi-sel" : ""}`;
+    row.onclick = (e) => {
+      if (e.target.closest("[data-row-toggle]")) return;
+      if (e.ctrlKey || e.metaKey) {
+        if (state.selectedIds.has(torrent.torrent_id)) state.selectedIds.delete(torrent.torrent_id);
+        else state.selectedIds.add(torrent.torrent_id);
+        renderList();
+        renderBulkBar();
+        return;
+      }
+      state.selectedIds.clear();
+      selectTorrent(torrent.torrent_id);
+    };
+    row.oncontextmenu = (e) => {
+      e.preventDefault();
+      showCtxMenu(e.clientX, e.clientY, torrent.torrent_id);
+    };
+    row.innerHTML = `
+      <span class="rt-table-toggle">
+        <button class="rt-row-play" data-row-toggle="${torrent.torrent_id}" aria-label="${torrent.paused ? "Resume" : "Pause"}" title="${torrent.paused ? "Resume" : "Pause"}">${icon(torrent.paused ? "play" : "pause", 13)}</button>
+      </span>
+      <span class="rt-table-name">
+        <span class="rt-table-name-top">${esc(torrent.name || l("metadataLoading"))}</span>
+        <span class="rt-table-name-sub"><span class="${pillClass(torrent)}">${esc(statusText(torrent))}</span><span class="rt-label-badge rt-label-${labelOf(torrent)}">${labelOf(torrent)}</span></span>
+      </span>
+      <span>${torrent.progress.toFixed(1)}%</span>
+      <span>${bytes(torrent.downloaded)} / ${bytes(torrent.total_size)}</span>
+      <span>↓ ${bytes(torrent.download_speed)}/s</span>
+      <span>↑ ${bytes(torrent.upload_speed)}/s</span>
+      <span>${torrent.seeds}</span>
+    `;
+    wrap.appendChild(row);
+  });
+  list.replaceChildren(wrap);
+}
+
 function renderList() {
   renderCounts();
   const visible = sortedTorrents(state.torrents.filter(matchesFilter));
@@ -872,6 +930,10 @@ function renderList() {
         <div class="rt-empty-title">${state.torrents.length ? "No matches" : "No torrents yet."}</div>
         <div class="rt-empty-sub">${state.torrents.length ? "Try a different filter or search term." : "Drop a .torrent file or paste a magnet link to get going."}</div>
       </div>`;
+    return;
+  }
+  if (state.uiSettings.torrentView === "table") {
+    renderTableList(visible);
     return;
   }
   list.replaceChildren(...visible.map((torrent) => {
@@ -1469,7 +1531,10 @@ function renderRss() {
     qs("#rss-panel").innerHTML = `
       <div class="rt-rss-content-head">
         <div><div class="rt-rss-ch-title">Auto-download rules</div><div class="rt-rss-ch-sub">New items matching a rule download automatically</div></div>
-        <button id="rss-add-rule" class="rt-btn rt-btn-primary rt-btn-auto">${icon("plus", 14)} New rule</button>
+        <div class="rt-inline-actions">
+          <button id="rss-add-rule" class="rt-btn rt-btn-primary rt-btn-auto">${icon("plus", 14)} ${l("newRuleTitle")}</button>
+          <button id="rss-add-regex-rule" class="rt-btn rt-btn-secondary rt-btn-auto">${icon("rss", 14)} ${l("regexRule")}</button>
+        </div>
       </div>
       <div class="rt-rules">${state.rssRules.map((rule) => `
         <div class="rt-rule ${rule.enabled ? "" : "off"}">
@@ -1485,6 +1550,7 @@ function renderRss() {
       `).join("") || `<div class="rt-table-empty">No rules yet.</div>`}</div>
     `;
     qs("#rss-add-rule").onclick = addRssRule;
+    qs("#rss-add-regex-rule").onclick = () => addRssRuleWithMode(true);
     qs("#rss-panel").querySelectorAll(".rt-rule-test-btn").forEach(btn => {
       btn.onclick = async () => {
         btn.disabled = true;
@@ -1543,9 +1609,13 @@ async function addRssFeed() {
 }
 
 async function addRssRule() {
+  return addRssRuleWithMode(false);
+}
+
+async function addRssRuleWithMode(regexMode = false) {
   const label = await openInputModal(l("newRuleTitle"), l("ruleNameLabel"));
   if (!label) return;
-  const pattern = await openInputModal(l("newRuleTitle"), l("matchPatternLabel"), "*");
+  const pattern = await openInputModal(l("newRuleTitle"), l("matchPatternLabel"), regexMode ? "re:.*" : "*");
   if (!pattern) return;
   const destination = await openInputModal(l("newRuleTitle"), l("destFolderLabel"), state.storagePath || "/var/lib/torrent-client/downloads");
   if (!destination) return;
@@ -1865,6 +1935,7 @@ async function loadSettings() {
     applyTheme();
     applyLanguage();
     qs("#compact-toggle")?.classList.toggle("active", state.uiSettings.compact);
+    syncViewToggle();
     Object.entries(settings).forEach(([key, value]) => {
       const input = qs(`#${key}`);
       if (!input) return;
@@ -2194,6 +2265,7 @@ qs("#magnet-form").addEventListener("submit", async (event) => {
         start_paused: qs("#magnet-start-paused")?.checked || false,
         sequential: qs("#magnet-sequential")?.checked || false,
         force_start: qs("#magnet-force-start")?.checked || false,
+        rename: qs("#magnet-rename")?.value.trim() || null,
       }),
     });
     event.target.reset();
@@ -2221,6 +2293,12 @@ qs("#file-form").addEventListener("submit", async (event) => {
   form.append("sequential", qs("#file-sequential")?.checked ? "true" : "false");
   form.append("skip_hash_check", qs("#file-skip-hash")?.checked ? "true" : "false");
   form.append("force_start", qs("#file-force-start")?.checked ? "true" : "false");
+  form.append("rename", qs("#file-rename")?.value.trim());
+  const trackersOverride = (qs("#file-trackers")?.value || "")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+  if (trackersOverride.length) form.append("trackers_override", JSON.stringify(trackersOverride));
   const previewPriorities = state.addFilePreview?.files?.map((_, idx) =>
     Number(qs(`[data-preview-pri="${idx}"]`)?.value ?? 4)
   );
@@ -2263,6 +2341,8 @@ qs("#torrent-file").addEventListener("change", async () => {
     const preview = await api("/api/torrents/preview-file", { method: "POST", body: form });
     state.addFilePreview = preview;
     const shownFiles = preview.files.slice(0, 20).map((f, idx) => `<div><span>${esc(f.path)}</span><span>${bytes(f.size)}</span><select data-preview-pri="${idx}" class="rt-file-pri"><option value="0">Skip</option><option value="1">Low</option><option value="4" selected>Normal</option><option value="7">High</option></select></div>`).join("");
+    if (qs("#file-rename")) qs("#file-rename").value = preview.name || "";
+    if (qs("#file-trackers")) qs("#file-trackers").value = (preview.trackers || []).join("\n");
     box.innerHTML = `
       <div class="rt-preview-title">${icon("file", 13)} ${esc(preview.name)}</div>
       <div class="rt-preview-meta">${bytes(preview.total_size)} · ${preview.files.length} files · ${preview.trackers.length} trackers</div>
@@ -2519,6 +2599,12 @@ function openTextPreviewModal(title, text) {
   qs("#text-preview-title").textContent = title;
   qs("#text-preview-body").textContent = text;
   openModal("text-preview-modal");
+}
+
+function syncViewToggle() {
+  qs("#view-toggle")?.querySelectorAll("[data-view-mode]").forEach((item) => {
+    item.classList.toggle("active", item.dataset.viewMode === state.uiSettings.torrentView);
+  });
 }
 
 function showCtxMenu(x, y, torrentId) {
@@ -2807,6 +2893,17 @@ qs("#compact-toggle").onclick = () => {
   renderList();
 };
 
+qs("#view-toggle")?.addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-view-mode]");
+  if (!btn) return;
+  state.uiSettings.torrentView = btn.dataset.viewMode === "table" ? "table" : "cards";
+  qs("#view-toggle").querySelectorAll("[data-view-mode]").forEach((item) => {
+    item.classList.toggle("active", item.dataset.viewMode === state.uiSettings.torrentView);
+  });
+  localStorage.setItem("riptide_ui_settings", JSON.stringify(state.uiSettings));
+  renderList();
+});
+
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
     ["add-modal", "confirm-modal", "input-modal", "about-modal", "label-picker-modal", "text-preview-modal", "qr-modal"].forEach((id) => {
@@ -2881,6 +2978,35 @@ function maybeNotify(torrent) {
   new Notification(`${l("downloadComplete")}: ${torrent.name}`, { icon: "/static/assets/logo-mark.svg" });
 }
 
+async function handleDesktopIntents() {
+  const params = new URLSearchParams(window.location.search);
+  const magnet = params.get("add");
+  const torrentPath = params.get("addFile");
+  if (!magnet && !torrentPath) return;
+  params.delete("add");
+  params.delete("addFile");
+  const next = `${window.location.pathname}${params.toString() ? `?${params}` : ""}${window.location.hash || ""}`;
+  window.history.replaceState({}, "", next);
+  if (magnet) {
+    qs("#magnet").value = magnet;
+    openModal("add-modal");
+    showToast(l("magnetLoaded"), "info");
+  }
+  if (torrentPath) {
+    try {
+      await api("/api/torrents/add-local-file", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path: torrentPath }),
+      });
+      showToast(l("torrentImported"), "success");
+      await loadTorrents();
+    } catch (error) {
+      showToast(error.message, "error");
+    }
+  }
+}
+
 async function boot() {
   try {
     await api("/api/auth/me");
@@ -2898,6 +3024,7 @@ async function boot() {
       sessionStorage.setItem("about_shown", "1");
       showAbout();
     }
+    await handleDesktopIntents();
   } catch {
     showLogin();
   }

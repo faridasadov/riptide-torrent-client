@@ -1,6 +1,6 @@
 {
   "name": "riptide-desktop",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "private": true,
   "description": "Native desktop shell for the Riptide torrent client.",
   "main": "main.js",
@@ -21,17 +21,34 @@
       "preload.js",
       "package.json"
     ],
+    "fileAssociations": [
+      {
+        "ext": "torrent",
+        "name": "BitTorrent metadata",
+        "role": "Editor"
+      }
+    ],
     "linux": {
       "category": "Network",
       "target": [
         "AppImage",
         "deb"
+      ],
+      "mimeTypes": [
+        "application/x-bittorrent",
+        "x-scheme-handler/magnet"
       ]
     },
     "win": {
       "target": [
         "nsis",
         "portable"
+      ]
+    },
+    "protocols": {
+      "name": "Magnet URI",
+      "schemes": [
+        "magnet"
       ]
     }
   }

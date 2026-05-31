@@ -34,9 +34,9 @@ class TorrentRepository:
                 """
                 INSERT INTO torrents (
                     info_hash, name, magnet, torrent_file_path, save_path, paused,
-                    download_limit, upload_limit, label, force_start
+                    download_limit, upload_limit, label, force_start, custom_name
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(info_hash) DO UPDATE SET
                     name = excluded.name,
                     magnet = excluded.magnet,
@@ -46,7 +46,8 @@ class TorrentRepository:
                     download_limit = excluded.download_limit,
                     upload_limit = excluded.upload_limit,
                     label = COALESCE(excluded.label, torrents.label),
-                    force_start = excluded.force_start
+                    force_start = excluded.force_start,
+                    custom_name = COALESCE(excluded.custom_name, torrents.custom_name)
                 """,
                 (
                     item["info_hash"],
@@ -59,6 +60,7 @@ class TorrentRepository:
                     int(item.get("upload_limit", 0) or 0),
                     item.get("label"),
                     int(bool(item.get("force_start", False))),
+                    item.get("custom_name"),
                 ),
             )
 

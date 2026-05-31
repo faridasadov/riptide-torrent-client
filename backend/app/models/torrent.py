@@ -9,6 +9,16 @@ class AddMagnetRequest(BaseModel):
     start_paused: bool = False
     sequential: bool = False
     force_start: bool = False
+    rename: Optional[str] = Field(default=None, min_length=1, max_length=255)
+
+
+class AddLocalTorrentRequest(BaseModel):
+    path: str = Field(min_length=1, max_length=2000)
+    save_path: Optional[str] = None
+    start_paused: bool = False
+    sequential: bool = False
+    force_start: bool = False
+    rename: Optional[str] = Field(default=None, min_length=1, max_length=255)
 
 
 class AddTorrentResponse(BaseModel):

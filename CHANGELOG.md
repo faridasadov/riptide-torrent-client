@@ -2,6 +2,13 @@
 
 All user-visible changes bump the patch version by one step.
 
+## 0.1.9
+
+- Added cards/table torrent list toggle with a persistent UI preference.
+- Expanded add-torrent flow with rename-before-add and tracker override support.
+- Added an RSS regex rule shortcut and regex-aware rule testing.
+- Completed desktop magnet and `.torrent` handoff flow with local file import.
+
 ## 0.1.8
 
 - Fixed torrent file creation for directory-based fixtures and local content.

@@ -1,4 +1,10 @@
 const RIPTIDE_CHANGELOG = Object.freeze({
+  "0.1.9": [
+    "Added cards/table torrent list toggle with persistent UI preference",
+    "Expanded add-torrent flow with rename-before-add and tracker override support",
+    "Added RSS regex rule shortcut and regex-aware rule testing",
+    "Completed desktop magnet and .torrent handoff flow with local file import"
+  ],
   "0.1.8": [
     "Fixed torrent file creation for directory-based fixtures and local content",
     "Validated delete-with-files using a controlled fixture",
@@ -15,7 +21,7 @@ const RIPTIDE_CHANGELOG = Object.freeze({
 
 const RIPTIDE = Object.freeze({
   name: "Riptide",
-  version: "0.1.8",
+  version: "0.1.9",
   tagline: "Fast. Private. Yours.",
   brand: "faridasadov",
   author: "Farid Asadov",

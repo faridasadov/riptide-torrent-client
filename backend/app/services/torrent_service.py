@@ -31,6 +31,7 @@ class TorrentService:
         start_paused: bool = False,
         sequential: bool = False,
         force_start: bool = False,
+        rename: str = None,
     ) -> Dict[str, str]:
         candidate_hash = extract_info_hash_from_magnet(magnet)
         if not candidate_hash:
@@ -54,6 +55,7 @@ class TorrentService:
                 {
                     "info_hash": torrent_id,
                     "name": "",
+                    "custom_name": rename.strip() if rename else None,
                     "magnet": magnet,
                     "save_path": final_path,
                     "paused": start_paused,
@@ -78,6 +80,8 @@ class TorrentService:
         priorities: Optional[List[int]] = None,
         skip_hash_check: bool = False,
         force_start: bool = False,
+        rename: str = None,
+        trackers_override: Optional[List[str]] = None,
     ) -> Dict[str, str]:
         final_path = validate_save_path(save_path or self.settings_repo.get_all()["default_download_folder"])
         info = self.engine.get_torrent_file_info(source_file)
@@ -98,6 +102,8 @@ class TorrentService:
             self.engine.set_force_start(torrent_id, True)
         if priorities:
             self.engine.set_file_priorities(torrent_id, priorities)
+        if trackers_override:
+            self.engine.replace_trackers(torrent_id, trackers_override)
         if start_paused:
             self.engine.pause_torrent(torrent_id)
         try:
@@ -105,6 +111,7 @@ class TorrentService:
                 {
                     "info_hash": torrent_id,
                     "name": added.get("name") or info.get("name") or "",
+                    "custom_name": rename.strip() if rename else None,
                     "torrent_file_path": str(stored_path),
                     "save_path": final_path,
                     "paused": start_paused,
