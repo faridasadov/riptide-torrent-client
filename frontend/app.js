@@ -921,6 +921,33 @@ async function limitTorrent(torrentId, downloadLimit, uploadLimit) {
   });
 }
 
+async function openTorrentLocation(torrentId) {
+  const torrent = state.torrents.find((t) => t.torrent_id === torrentId);
+  if (!torrent?.save_path) return;
+  setScreen("torrents");
+  qs("#storage-panel").classList.remove("hidden");
+  await loadStorage(torrent.save_path);
+  showToast("Download folder opened", "success");
+}
+
+async function promptTorrentLimit(torrentId, direction) {
+  const torrent = state.torrents.find((t) => t.torrent_id === torrentId);
+  if (!torrent) return;
+  const current = direction === "download" ? torrent.download_limit : torrent.upload_limit;
+  const value = await openInputModal(
+    direction === "download" ? "Download limit" : "Upload limit",
+    "KB/s, 0 = unlimited",
+    String(fromBytes(current || 0, "kb"))
+  );
+  if (value === null) return;
+  const next = toBytes(value || 0, "kb");
+  const downloadLimit = direction === "download" ? next : torrent.download_limit || 0;
+  const uploadLimit = direction === "upload" ? next : torrent.upload_limit || 0;
+  await limitTorrent(torrentId, downloadLimit, uploadLimit);
+  showToast("Torrent speed limit saved", "success");
+  await loadTorrents();
+}
+
 async function deleteTorrent(torrentId) {
   const confirmed = await openConfirmModal(
     "Remove torrent",
@@ -1303,8 +1330,22 @@ function showCtxMenu(x, y, torrentId) {
     ${torrent.paused
       ? `<button class="rt-ctx-item" data-ctx="resume" role="menuitem"><span>${icon("play", 14)}</span><span>Resume</span></button>`
       : `<button class="rt-ctx-item" data-ctx="pause" role="menuitem"><span>${icon("pause", 14)}</span><span>Pause</span></button>`}
+    <button class="rt-ctx-item" data-ctx="open-folder" role="menuitem">
+      <span>${icon("folderOpen", 14)}</span><span>Open download folder</span>
+    </button>
+    <div class="rt-ctx-sep"></div>
+    <button class="rt-ctx-item" data-ctx="limit-down" role="menuitem">
+      <span>${icon("download", 14)}</span><span>Set download limit</span><span class="rt-ctx-key">${fromBytes(torrent.download_limit || 0, "kb") || 0}</span>
+    </button>
+    <button class="rt-ctx-item" data-ctx="limit-up" role="menuitem">
+      <span>${icon("upload", 14)}</span><span>Set upload limit</span><span class="rt-ctx-key">${fromBytes(torrent.upload_limit || 0, "kb") || 0}</span>
+    </button>
+    <button class="rt-ctx-item" data-ctx="limit-clear" role="menuitem">
+      <span>${icon("gauge", 14)}</span><span>Clear speed limits</span>
+    </button>
+    <div class="rt-ctx-sep"></div>
     <button class="rt-ctx-item" data-ctx="copy-magnet" role="menuitem">
-      <span>${icon("magnet", 14)}</span><span>Copy info hash</span><span class="rt-ctx-key">⌘C</span>
+      <span>${icon("magnet", 14)}</span><span>Copy info hash</span>
     </button>
     <button class="rt-ctx-item" data-ctx="set-label" role="menuitem">
       <span>${icon("tag", 14)}</span><span>Set label</span>
@@ -1315,8 +1356,8 @@ function showCtxMenu(x, y, torrentId) {
     </button>
   `;
   menu.dataset.torrentId = torrentId;
-  menu.style.left = `${Math.min(x, window.innerWidth - 174)}px`;
-  menu.style.top = `${Math.min(y, window.innerHeight - 130)}px`;
+  menu.style.left = `${Math.min(x, window.innerWidth - 250)}px`;
+  menu.style.top = `${Math.min(y, window.innerHeight - 350)}px`;
   menu.classList.remove("hidden");
 }
 
@@ -1332,6 +1373,14 @@ qs("#ctx-menu").onclick = async (e) => {
   if (btn.dataset.ctx === "select") await selectTorrent(id);
   if (btn.dataset.ctx === "resume") await act(`/api/torrents/${id}/resume`, "POST");
   if (btn.dataset.ctx === "pause") await act(`/api/torrents/${id}/pause`, "POST");
+  if (btn.dataset.ctx === "open-folder") await openTorrentLocation(id);
+  if (btn.dataset.ctx === "limit-down") await promptTorrentLimit(id, "download");
+  if (btn.dataset.ctx === "limit-up") await promptTorrentLimit(id, "upload");
+  if (btn.dataset.ctx === "limit-clear") {
+    await limitTorrent(id, 0, 0);
+    showToast("Torrent speed limits cleared", "success");
+    await loadTorrents();
+  }
   if (btn.dataset.ctx === "delete") await deleteTorrent(id);
   if (btn.dataset.ctx === "set-label") openLabelPickerModal(id);
   if (btn.dataset.ctx === "copy-magnet") {
