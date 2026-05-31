@@ -494,9 +494,52 @@ input:focus-visible {
 
 .toolbar {
   display: grid;
-  grid-template-columns: max-content 38px 38px minmax(160px, 1fr) max-content 38px;
+  grid-template-columns: max-content 38px 38px 38px 38px minmax(160px, 1fr) max-content max-content 38px;
   gap: 8px;
 }
+.rt-sort-select {
+  appearance: none;
+  background: var(--rt-bg-2);
+  border: 1px solid var(--rt-bd);
+  border-radius: 6px;
+  color: var(--rt-fg-2);
+  font: inherit;
+  font-size: 12px;
+  padding: 0 10px;
+  height: 32px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.rt-sort-select:focus { outline: 2px solid var(--rt-aqua); }
+
+.torrent-card.multi-sel {
+  outline: 2px solid var(--rt-aqua);
+  background: color-mix(in srgb, var(--rt-aqua) 10%, var(--rt-card));
+}
+
+.rt-bulk-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--rt-surface2);
+  border-radius: 8px;
+  margin-bottom: 8px;
+  border: 1px solid var(--rt-border);
+}
+.rt-bulk-bar span { font-size: 13px; color: var(--rt-text2); margin-right: auto; }
+.rt-bulk-bar button { font-size: 13px; padding: 4px 10px; }
+
+.rt-modal-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--rt-fg-2);
+  cursor: pointer;
+}
+.rt-modal-check input[type="checkbox"] { width: 15px; height: 15px; cursor: pointer; }
 
 .primary,
 .icon,

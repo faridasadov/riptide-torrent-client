@@ -74,6 +74,10 @@ class CreateTorrentRequest(BaseModel):
     comment: Optional[str] = None
 
 
+class RenameRequest(BaseModel):
+    name: str = Field(min_length=1, max_length=255)
+
+
 class LabelOut(BaseModel):
     name: str
     color: str

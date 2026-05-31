@@ -103,6 +103,13 @@ class TorrentRepository:
                 (label, info_hash),
             )
 
+    def update_custom_name(self, info_hash: str, name: Optional[str]) -> None:
+        with get_conn() as conn:
+            conn.execute(
+                "UPDATE torrents SET custom_name = ? WHERE info_hash = ?",
+                (name or None, info_hash),
+            )
+
     def delete(self, info_hash: str) -> None:
         with get_conn() as conn:
             conn.execute("DELETE FROM torrents WHERE info_hash = ?", (info_hash,))

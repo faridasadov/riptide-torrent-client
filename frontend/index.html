@@ -61,7 +61,16 @@
             <button id="add-toggle" class="primary" data-icon="plus">Add torrent</button>
             <button id="resume-selected" class="icon" data-icon="play" title="Resume selected" aria-label="Resume selected"></button>
             <button id="pause-selected" class="icon" data-icon="pause" title="Pause selected" aria-label="Pause selected"></button>
+            <button id="resume-all" class="icon" data-icon="repeat" title="Resume all" aria-label="Resume all"></button>
+            <button id="pause-all-btn" class="icon" data-icon="pause" title="Pause all" aria-label="Pause all"></button>
             <input id="search" class="search" placeholder="Filter torrents..." autocomplete="off" />
+            <select id="sort-select" class="rt-sort-select" title="Sort by" aria-label="Sort by">
+              <option value="">Sort</option>
+              <option value="name">Name</option>
+              <option value="size">Size</option>
+              <option value="progress">Progress</option>
+              <option value="speed">Speed</option>
+            </select>
             <button id="storage-toggle" class="icon" data-icon="folderOpen">Files</button>
             <button id="compact-toggle" class="icon" data-icon="list" title="Toggle compact view" aria-label="Toggle compact view"></button>
           </div>
@@ -248,6 +257,10 @@
         </div>
         <div class="rt-modal-body">
           <p id="confirm-modal-text" class="rt-modal-msg"></p>
+          <label id="confirm-delete-files-row" class="rt-modal-check hidden">
+            <input type="checkbox" id="confirm-delete-files" />
+            <span id="confirm-delete-files-label">Also delete downloaded files</span>
+          </label>
         </div>
         <div class="rt-modal-foot">
           <button type="button" class="rt-btn rt-btn-ghost" id="confirm-modal-cancel">Cancel</button>

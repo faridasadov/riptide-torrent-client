@@ -308,6 +308,38 @@ class TorrentSessionManager:
         except Exception:
             pass
 
+    def pause_all(self) -> None:
+        with self._lock:
+            handles = list(self.handles.values())
+        for handle in handles:
+            if handle and handle.is_valid():
+                try:
+                    handle.unset_flags(self.lt.torrent_flags.auto_managed)
+                except Exception:
+                    pass
+                handle.pause()
+
+    def resume_all(self) -> None:
+        with self._lock:
+            handles = list(self.handles.values())
+        for handle in handles:
+            if handle and handle.is_valid():
+                handle.resume()
+                try:
+                    handle.set_flags(self.lt.torrent_flags.auto_managed)
+                except Exception:
+                    pass
+
+    def get_magnet_uri(self, torrent_id: str) -> str:
+        handle = self.get_handle(torrent_id)
+        try:
+            uri = self.lt.make_magnet_uri(handle)
+            if not uri:
+                raise ValueError("Empty magnet URI returned")
+            return uri
+        except Exception as exc:
+            raise ValueError(f"Could not generate magnet URI: {exc}") from exc
+
     def remove_torrent(self, torrent_id: str, delete_files: bool = False) -> None:
         with self._lock:
             handle = self.handles.pop(torrent_id.lower(), None)
@@ -417,7 +449,8 @@ class TorrentSessionManager:
         download_rate = int(getattr(status, "download_rate", 0) or 0)
         remaining = max(total_size - int(getattr(status, "total_wanted_done", 0) or 0), 0)
         eta = int(remaining / download_rate) if download_rate > 0 else None
-        name = getattr(status, "name", "") or (db_row or {}).get("name", "") or "metadata loading"
+        custom_name = (db_row or {}).get("custom_name")
+        name = custom_name or getattr(status, "name", "") or (db_row or {}).get("name", "") or "metadata loading"
         state = int(getattr(status, "state", 0) or 0)
         status_text = "metadata loading" if not handle.has_metadata() else STATE_NAMES.get(state, "unknown")
         return {

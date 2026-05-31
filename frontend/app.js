@@ -1,8 +1,10 @@
 const state = {
   torrents: [],
   selectedId: null,
+  selectedIds: new Set(),
   filter: "all",
   label: null,
+  sort: "",
   tab: "general",
   speedHistory: [],
   authenticated: false,
@@ -197,6 +199,13 @@ const I18N = {
     authSettingDesc: "Session cookie frontend plus Basic Auth API compatibility",
     backupSection: "Backup", backupDesc: "Includes settings, labels, RSS feeds and RSS rules",
     exportBtn: "Export", importBtn: "Import",
+    pauseAll: "Pause all", resumeAll: "Resume all",
+    copyMagnet: "Copy magnet link", rename: "Rename",
+    renameTitle: "Rename torrent", renameLabel: "New name",
+    deleteWithFiles: "Also delete downloaded files",
+    sortName: "Name", sortSize: "Size", sortProgress: "Progress", sortSpeed: "Speed",
+    bulkPause: "Pause selected", bulkResume: "Resume selected", bulkDelete: "Delete selected",
+    selectedCount: "selected",
   },
   az: {
     logout: "Çıxış", all: "Hamısı", downloading: "Yüklənənlər", seeding: "Paylaşanlar",
@@ -314,6 +323,13 @@ const I18N = {
     authSettingDesc: "Session cookie + Basic Auth API uyumluluğu",
     backupSection: "Yedəkləmə", backupDesc: "Tənzimləmələr, etiketlər, RSS məlumatlarını ehtiva edir",
     exportBtn: "İxrac", importBtn: "İdxal",
+    pauseAll: "Hamısını dayandır", resumeAll: "Hamısını davam et",
+    copyMagnet: "Magnet linkini kopyala", rename: "Adını dəyiş",
+    renameTitle: "Torrentin adını dəyiş", renameLabel: "Yeni ad",
+    deleteWithFiles: "Yüklənmiş faylları da sil",
+    sortName: "Ad", sortSize: "Ölçü", sortProgress: "İrəliləyiş", sortSpeed: "Sürət",
+    bulkPause: "Seçilənləri dayandır", bulkResume: "Seçilənləri davam et", bulkDelete: "Seçilənləri sil",
+    selectedCount: "seçilib",
   },
   ru: {
     logout: "Выйти", all: "Все", downloading: "Загружаются", seeding: "Раздаются",
@@ -434,6 +450,13 @@ const I18N = {
     authSettingDesc: "Cookie сессии + совместимость Basic Auth API",
     backupSection: "Резервная копия", backupDesc: "Включает настройки, метки, RSS",
     exportBtn: "Экспорт", importBtn: "Импорт",
+    pauseAll: "Остановить все", resumeAll: "Возобновить все",
+    copyMagnet: "Копировать magnet-ссылку", rename: "Переименовать",
+    renameTitle: "Переименовать торрент", renameLabel: "Новое имя",
+    deleteWithFiles: "Также удалить загруженные файлы",
+    sortName: "Имя", sortSize: "Размер", sortProgress: "Прогресс", sortSpeed: "Скорость",
+    bulkPause: "Остановить выбранные", bulkResume: "Возобновить выбранные", bulkDelete: "Удалить выбранные",
+    selectedCount: "выбрано",
   },
 };
 
@@ -769,9 +792,19 @@ function openLabelPickerModal(torrentId) {
   qs("#label-picker-close").onclick = () => cleanup(false);
 }
 
+function sortedTorrents(list) {
+  if (!state.sort) return list;
+  const sorted = [...list];
+  if (state.sort === "name") sorted.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+  if (state.sort === "size") sorted.sort((a, b) => b.total_size - a.total_size);
+  if (state.sort === "progress") sorted.sort((a, b) => b.progress - a.progress);
+  if (state.sort === "speed") sorted.sort((a, b) => (b.download_speed + b.upload_speed) - (a.download_speed + a.upload_speed));
+  return sorted;
+}
+
 function renderList() {
   renderCounts();
-  const visible = state.torrents.filter(matchesFilter);
+  const visible = sortedTorrents(state.torrents.filter(matchesFilter));
   if (!visible.length) {
     list.innerHTML = `
       <div class="rt-empty">
@@ -783,8 +816,19 @@ function renderList() {
   }
   list.replaceChildren(...visible.map((torrent) => {
     const card = document.createElement("article");
-    card.className = `torrent-card${state.uiSettings.compact ? " compact" : ""}${torrent.torrent_id === state.selectedId ? " active" : ""}`;
-    card.onclick = () => selectTorrent(torrent.torrent_id);
+    const isMultiSel = state.selectedIds.has(torrent.torrent_id);
+    card.className = `torrent-card${state.uiSettings.compact ? " compact" : ""}${torrent.torrent_id === state.selectedId ? " active" : ""}${isMultiSel ? " multi-sel" : ""}`;
+    card.onclick = (e) => {
+      if (e.ctrlKey || e.metaKey) {
+        if (state.selectedIds.has(torrent.torrent_id)) state.selectedIds.delete(torrent.torrent_id);
+        else state.selectedIds.add(torrent.torrent_id);
+        renderList();
+        renderBulkBar();
+        return;
+      }
+      state.selectedIds.clear();
+      selectTorrent(torrent.torrent_id);
+    };
     card.oncontextmenu = (e) => { e.preventDefault(); showCtxMenu(e.clientX, e.clientY, torrent.torrent_id); };
     const playIcon = torrent.paused ? "play" : "pause";
     card.innerHTML = `
@@ -1641,9 +1685,16 @@ async function promptTorrentLimit(torrentId, direction) {
 }
 
 async function deleteTorrent(torrentId) {
+  const row = qs("#confirm-delete-files-row");
+  const chk = qs("#confirm-delete-files");
+  const lbl = qs("#confirm-delete-files-label");
+  if (row) { row.classList.remove("hidden"); chk.checked = false; }
+  if (lbl) lbl.textContent = l("deleteWithFiles");
   const confirmed = await openConfirmModal(l("removeTorrent"), l("removeTorrentMsg"), l("removeBtn"));
+  if (row) row.classList.add("hidden");
   if (!confirmed) return;
-  await act(`/api/torrents/${torrentId}?delete_files=false`, "DELETE");
+  const deleteFiles = chk?.checked ?? false;
+  await act(`/api/torrents/${torrentId}?delete_files=${deleteFiles}`, "DELETE");
 }
 
 qs("#add-toggle").onclick = () => openModal("add-modal");
@@ -1655,6 +1706,53 @@ qs("#storage-refresh").onclick = () => loadStorage(qs("#storage-path").value);
 qs("#pause-selected").onclick = () => state.selectedId && act(`/api/torrents/${state.selectedId}/pause`, "POST");
 qs("#resume-selected").onclick = () => state.selectedId && act(`/api/torrents/${state.selectedId}/resume`, "POST");
 qs("#delete-selected").onclick = () => state.selectedId && deleteTorrent(state.selectedId);
+qs("#pause-all-btn").onclick = () => act("/api/torrents/pause-all", "POST");
+qs("#resume-all").onclick = () => act("/api/torrents/resume-all", "POST");
+qs("#sort-select").onchange = (e) => { state.sort = e.target.value; renderList(); };
+
+function renderBulkBar() {
+  const count = state.selectedIds.size;
+  let bar = qs("#bulk-action-bar");
+  if (!bar) {
+    bar = document.createElement("div");
+    bar.id = "bulk-action-bar";
+    bar.className = "rt-bulk-bar hidden";
+    bar.innerHTML = `<span id="bulk-count"></span>
+      <button class="rt-btn rt-btn-secondary rt-btn-auto" id="bulk-resume">${icon("play",13)} <span>${l("bulkResume")}</span></button>
+      <button class="rt-btn rt-btn-secondary rt-btn-auto" id="bulk-pause">${icon("pause",13)} <span>${l("bulkPause")}</span></button>
+      <button class="rt-btn rt-btn-danger rt-btn-auto" id="bulk-delete">${icon("trash",13)} <span>${l("bulkDelete")}</span></button>
+      <button class="rt-btn rt-btn-ghost rt-btn-auto" id="bulk-clear">${icon("x",13)}</button>`;
+    qs("#torrent-screen").insertBefore(bar, qs("#torrent-list"));
+    qs("#bulk-resume").onclick = async () => {
+      for (const id of state.selectedIds) await act(`/api/torrents/${id}/resume`, "POST").catch(() => {});
+      state.selectedIds.clear(); renderBulkBar();
+    };
+    qs("#bulk-pause").onclick = async () => {
+      for (const id of state.selectedIds) await act(`/api/torrents/${id}/pause`, "POST").catch(() => {});
+      state.selectedIds.clear(); renderBulkBar();
+    };
+    qs("#bulk-delete").onclick = async () => {
+      const row = qs("#confirm-delete-files-row");
+      const chk = qs("#confirm-delete-files");
+      const lbl = qs("#confirm-delete-files-label");
+      if (row) { row.classList.remove("hidden"); chk.checked = false; }
+      if (lbl) lbl.textContent = l("deleteWithFiles");
+      const ok = await openConfirmModal(l("removeTorrent"), l("removeTorrentMsg"), l("removeBtn"));
+      if (row) row.classList.add("hidden");
+      if (!ok) return;
+      const deleteFiles = chk?.checked ?? false;
+      for (const id of [...state.selectedIds]) await act(`/api/torrents/${id}?delete_files=${deleteFiles}`, "DELETE").catch(() => {});
+      state.selectedIds.clear(); renderBulkBar();
+    };
+    qs("#bulk-clear").onclick = () => { state.selectedIds.clear(); renderList(); renderBulkBar(); };
+  }
+  if (count > 0) {
+    bar.classList.remove("hidden");
+    qs("#bulk-count").textContent = `${count} ${l("selectedCount")}`;
+  } else {
+    bar.classList.add("hidden");
+  }
+}
 qs("#torrent-limit-clear").onclick = async () => {
   if (!state.selectedId) return;
   try {
@@ -2173,8 +2271,14 @@ function showCtxMenu(x, y, torrentId) {
       <span>${icon("gauge", 14)}</span><span>${l("clearLimits")}</span>
     </button>
     <div class="rt-ctx-sep"></div>
-    <button class="rt-ctx-item" data-ctx="copy-magnet" role="menuitem">
+    <button class="rt-ctx-item" data-ctx="copy-hash" role="menuitem">
       <span>${icon("magnet", 14)}</span><span>${l("copyHash")}</span>
+    </button>
+    <button class="rt-ctx-item" data-ctx="copy-magnet" role="menuitem">
+      <span>${icon("magnet", 14)}</span><span>${l("copyMagnet")}</span>
+    </button>
+    <button class="rt-ctx-item" data-ctx="rename" role="menuitem">
+      <span>${icon("file", 14)}</span><span>${l("rename")}</span>
     </button>
     <button class="rt-ctx-item" data-ctx="sequential" role="menuitem">
       <span>${icon("arrow-right", 14)}</span><span>${torrent.sequential ? l("disableSequential") : l("sequential")}</span>
@@ -2320,12 +2424,33 @@ qs("#ctx-menu").onclick = async (e) => {
       await loadTorrents();
     } catch (e) { showToast(e.message, "error"); }
   }
-  if (btn.dataset.ctx === "copy-magnet") {
+  if (btn.dataset.ctx === "copy-hash") {
     const torrent = state.torrents.find((t) => t.torrent_id === id);
     if (torrent) {
       await navigator.clipboard.writeText(torrent.info_hash || id).catch(() => {});
       showToast("Info hash copied");
     }
+  }
+  if (btn.dataset.ctx === "copy-magnet") {
+    try {
+      const data = await api(`/api/torrents/${id}/magnet`);
+      await navigator.clipboard.writeText(data.magnet).catch(() => {});
+      showToast(l("copyMagnet"));
+    } catch (e) { showToast(e.message, "error"); }
+  }
+  if (btn.dataset.ctx === "rename") {
+    const torrent = state.torrents.find((t) => t.torrent_id === id);
+    const newName = await openInputModal(l("renameTitle"), l("renameLabel"), torrent?.name || "");
+    if (!newName) return;
+    try {
+      await api(`/api/torrents/${id}/rename`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newName }),
+      });
+      showToast(l("rename"));
+      await loadTorrents();
+    } catch (e) { showToast(e.message, "error"); }
   }
 };
 

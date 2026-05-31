@@ -9,7 +9,7 @@ from fastapi.responses import FileResponse
 from app.core.config import MAX_TORRENT_FILE_BYTES
 from app.core.storage import TorrentRepository
 from app.core.torrent_session import TorrentEngineUnavailable
-from app.models.torrent import AddMagnetRequest, AddTorrentResponse, CreateTorrentRequest, FilePriorityRequest, LimitRequest, SeedingLimitsRequest, SequentialRequest, SetLabelRequest, SuperSeedingRequest, TrackerListRequest
+from app.models.torrent import AddMagnetRequest, AddTorrentResponse, CreateTorrentRequest, FilePriorityRequest, LimitRequest, RenameRequest, SeedingLimitsRequest, SequentialRequest, SetLabelRequest, SuperSeedingRequest, TrackerListRequest
 
 router = APIRouter(prefix="/api/torrents", tags=["torrents"])
 _torrent_repo = TorrentRepository()
@@ -255,6 +255,42 @@ async def queue_action(torrent_id: str, action: str, request: Request):
 async def seeding_limits(torrent_id: str, payload: SeedingLimitsRequest, request: Request):
     try:
         _service(request).seeding_limits(torrent_id, payload.ratio_limit, payload.seeding_time_limit)
+        return {"success": True}
+    except Exception as exc:
+        raise _handle_error(exc)
+
+
+@router.post("/pause-all")
+async def pause_all(request: Request):
+    try:
+        _service(request).pause_all()
+        return {"success": True}
+    except Exception as exc:
+        raise _handle_error(exc)
+
+
+@router.post("/resume-all")
+async def resume_all(request: Request):
+    try:
+        _service(request).resume_all()
+        return {"success": True}
+    except Exception as exc:
+        raise _handle_error(exc)
+
+
+@router.get("/{torrent_id}/magnet")
+async def get_magnet(torrent_id: str, request: Request):
+    try:
+        uri = _service(request).get_magnet_uri(torrent_id)
+        return {"magnet": uri}
+    except Exception as exc:
+        raise _handle_error(exc)
+
+
+@router.patch("/{torrent_id}/rename")
+async def rename_torrent(torrent_id: str, payload: RenameRequest, request: Request):
+    try:
+        _service(request).rename(torrent_id, payload.name)
         return {"success": True}
     except Exception as exc:
         raise _handle_error(exc)

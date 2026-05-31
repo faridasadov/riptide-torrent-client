@@ -162,6 +162,24 @@ class TorrentService:
         ul = upload_limit if upload_limit is not None else int(row.get("upload_limit") or 0)
         self.torrent_repo.update_limits(torrent_id.lower(), dl, ul)
 
+    def pause_all(self) -> None:
+        self.engine.pause_all()
+        rows = self.torrent_repo.list()
+        for row in rows:
+            self.torrent_repo.update_paused(row["info_hash"], True)
+
+    def resume_all(self) -> None:
+        self.engine.resume_all()
+        rows = self.torrent_repo.list()
+        for row in rows:
+            self.torrent_repo.update_paused(row["info_hash"], False)
+
+    def get_magnet_uri(self, torrent_id: str) -> str:
+        return self.engine.get_magnet_uri(torrent_id)
+
+    def rename(self, torrent_id: str, name: str) -> None:
+        self.torrent_repo.update_custom_name(torrent_id.lower(), name.strip())
+
     def set_sequential(self, torrent_id: str, enabled: bool) -> None:
         self.engine.set_sequential_download(torrent_id, enabled)
 
