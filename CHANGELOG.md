@@ -2,6 +2,13 @@
 
 All user-visible changes bump the patch version by one step.
 
+## 0.1.10
+
+- Added clickable table headers, checkbox multi-select and better bulk actions in table view.
+- Improved add-torrent preview with a file tree and per-file priority controls.
+- Added preview-wide skip, normal and high priority actions.
+- Improved localized sort labels in the torrent toolbar.
+
 ## 0.1.9
 
 - Added cards/table torrent list toggle with a persistent UI preference.

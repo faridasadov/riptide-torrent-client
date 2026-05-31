@@ -5,6 +5,7 @@ const state = {
   filter: "all",
   label: null,
   sort: "",
+  sortDir: "desc",
   tab: "general",
   speedHistory: [],
   authenticated: false,
@@ -18,6 +19,7 @@ const state = {
   rssShowRules: false,
   labels: [],
   addFilePreview: null,
+  addFilePriorities: [],
   sessionStats: null,
   uiSettings: {
     autostart: true,
@@ -214,7 +216,7 @@ const I18N = {
     blockPeer: "Block peer IP", skipHashCheck: "Skip initial hash check",
     portStatus: "Port status", portListening: "Listening", portReachable: "Local reachability",
     deleteWithFiles: "Also delete downloaded files",
-    sortName: "Name", sortSize: "Size", sortProgress: "Progress", sortSpeed: "Speed",
+    sortBy: "Sort", sortName: "Name", sortSize: "Size", sortProgress: "Progress", sortSpeed: "Speed",
     bulkPause: "Pause selected", bulkResume: "Resume selected", bulkDelete: "Delete selected",
     selectedCount: "selected",
     completedAction: "When done", actionSeed: "Keep seeding", actionStop: "Stop", actionMove: "Move to folder",
@@ -353,7 +355,7 @@ const I18N = {
     blockPeer: "Peer IP-sini blokla", skipHashCheck: "İlkin hash yoxlamasını keç",
     portStatus: "Port statusu", portListening: "Dinləyir", portReachable: "Lokal əlçatanlıq",
     deleteWithFiles: "Yüklənmiş faylları da sil",
-    sortName: "Ad", sortSize: "Ölçü", sortProgress: "İrəliləyiş", sortSpeed: "Sürət",
+    sortBy: "Sırala", sortName: "Ad", sortSize: "Ölçü", sortProgress: "İrəliləyiş", sortSpeed: "Sürət",
     bulkPause: "Seçilənləri dayandır", bulkResume: "Seçilənləri davam et", bulkDelete: "Seçilənləri sil",
     selectedCount: "seçilib",
     completedAction: "Bitdikdə", actionSeed: "Paylaşmağa davam et", actionStop: "Dayandır", actionMove: "Qovluğa köçür",
@@ -495,7 +497,7 @@ const I18N = {
     blockPeer: "Заблокировать IP пира", skipHashCheck: "Пропустить начальную хеш-проверку",
     portStatus: "Статус порта", portListening: "Слушает", portReachable: "Локальная доступность",
     deleteWithFiles: "Также удалить загруженные файлы",
-    sortName: "Имя", sortSize: "Размер", sortProgress: "Прогресс", sortSpeed: "Скорость",
+    sortBy: "Сортировка", sortName: "Имя", sortSize: "Размер", sortProgress: "Прогресс", sortSpeed: "Скорость",
     bulkPause: "Остановить выбранные", bulkResume: "Возобновить выбранные", bulkDelete: "Удалить выбранные",
     selectedCount: "выбрано",
     completedAction: "По завершении", actionSeed: "Продолжать раздачу", actionStop: "Остановить", actionMove: "Переместить в папку",
@@ -563,6 +565,15 @@ function applyLanguage() {
     if (btn) btn.innerHTML = `${icon(btn.dataset.icon)}<span>${value}</span>`;
   });
   setText("#storage-refresh span", l("refresh"));
+  const sortSelect = qs("#sort-select");
+  if (sortSelect) {
+    const options = sortSelect.querySelectorAll("option");
+    if (options[0]) options[0].textContent = l("sortBy");
+    if (options[1]) options[1].textContent = l("sortName");
+    if (options[2]) options[2].textContent = l("sortSize");
+    if (options[3]) options[3].textContent = l("sortProgress");
+    if (options[4]) options[4].textContent = l("sortSpeed");
+  }
   // speed chart legend — use direct children only to avoid inner .rt-lg-dot spans
   const lgItems = document.querySelectorAll(".rt-graph-legend > span");
   lgItems.forEach((el, i) => {
@@ -860,22 +871,45 @@ function openLabelPickerModal(torrentId) {
 function sortedTorrents(list) {
   if (!state.sort) return list;
   const sorted = [...list];
-  if (state.sort === "name") sorted.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
-  if (state.sort === "size") sorted.sort((a, b) => b.total_size - a.total_size);
-  if (state.sort === "progress") sorted.sort((a, b) => b.progress - a.progress);
-  if (state.sort === "speed") sorted.sort((a, b) => (b.download_speed + b.upload_speed) - (a.download_speed + a.upload_speed));
+  const dir = state.sortDir === "asc" ? 1 : -1;
+  if (state.sort === "name") sorted.sort((a, b) => (a.name || "").localeCompare(b.name || "") * dir);
+  if (state.sort === "size") sorted.sort((a, b) => (a.total_size - b.total_size) * dir);
+  if (state.sort === "progress") sorted.sort((a, b) => (a.progress - b.progress) * dir);
+  if (state.sort === "speed") sorted.sort((a, b) => ((a.download_speed + a.upload_speed) - (b.download_speed + b.upload_speed)) * dir);
   return sorted;
 }
 
+function setSort(key, toggleDirection = false) {
+  if (!key) {
+    state.sort = "";
+    state.sortDir = "desc";
+  } else if (toggleDirection && state.sort === key) {
+    state.sortDir = state.sortDir === "asc" ? "desc" : "asc";
+  } else {
+    state.sort = key;
+    state.sortDir = key === "name" ? "asc" : "desc";
+  }
+  if (qs("#sort-select")) qs("#sort-select").value = state.sort;
+  renderList();
+}
+
+function renderSortLabel(label, key) {
+  const active = state.sort === key;
+  const direction = active ? (state.sortDir === "asc" ? "arrowUp" : "arrowDown") : null;
+  return `${esc(label)}${direction ? `<span class="rt-sort-ind">${icon(direction, 12)}</span>` : ""}`;
+}
+
 function renderTableList(visible) {
+  const allVisibleSelected = visible.length > 0 && visible.every((torrent) => state.selectedIds.has(torrent.torrent_id));
   const wrap = document.createElement("div");
   wrap.className = "torrent-list-table";
   wrap.innerHTML = `
     <div class="rt-table-head">
+      <label class="rt-table-check"><input type="checkbox" id="table-select-all" ${allVisibleSelected ? "checked" : ""} /></label>
       <span></span>
-      <span>${l("sortName")}</span>
-      <span>${l("progress")}</span>
-      <span>${l("downloaded")}</span>
+      <button type="button" class="rt-th-btn${state.sort === "name" ? " active" : ""}" data-sort-head="name">${renderSortLabel(l("sortName"), "name")}</button>
+      <button type="button" class="rt-th-btn${state.sort === "progress" ? " active" : ""}" data-sort-head="progress">${renderSortLabel(l("progress"), "progress")}</button>
+      <button type="button" class="rt-th-btn${state.sort === "size" ? " active" : ""}" data-sort-head="size">${renderSortLabel(l("sortSize"), "size")}</button>
       <span>${l("download")}</span>
       <span>${l("upload")}</span>
       <span>${l("seeds")}</span>
@@ -886,7 +920,7 @@ function renderTableList(visible) {
     const isMultiSel = state.selectedIds.has(torrent.torrent_id);
     row.className = `rt-table-row${torrent.torrent_id === state.selectedId ? " active" : ""}${isMultiSel ? " multi-sel" : ""}`;
     row.onclick = (e) => {
-      if (e.target.closest("[data-row-toggle]")) return;
+      if (e.target.closest("[data-row-toggle]") || e.target.closest("[data-row-check]") || e.target.closest(".rt-table-check")) return;
       if (e.ctrlKey || e.metaKey) {
         if (state.selectedIds.has(torrent.torrent_id)) state.selectedIds.delete(torrent.torrent_id);
         else state.selectedIds.add(torrent.torrent_id);
@@ -902,6 +936,9 @@ function renderTableList(visible) {
       showCtxMenu(e.clientX, e.clientY, torrent.torrent_id);
     };
     row.innerHTML = `
+      <label class="rt-table-check">
+        <input type="checkbox" data-row-check="${torrent.torrent_id}" ${isMultiSel ? "checked" : ""} />
+      </label>
       <span class="rt-table-toggle">
         <button class="rt-row-play" data-row-toggle="${torrent.torrent_id}" aria-label="${torrent.paused ? "Resume" : "Pause"}" title="${torrent.paused ? "Resume" : "Pause"}">${icon(torrent.paused ? "play" : "pause", 13)}</button>
       </span>
@@ -918,6 +955,24 @@ function renderTableList(visible) {
     wrap.appendChild(row);
   });
   list.replaceChildren(wrap);
+  qs("#table-select-all")?.addEventListener("change", (e) => {
+    if (e.target.checked) visible.forEach((torrent) => state.selectedIds.add(torrent.torrent_id));
+    else visible.forEach((torrent) => state.selectedIds.delete(torrent.torrent_id));
+    renderList();
+    renderBulkBar();
+  });
+  wrap.querySelectorAll("[data-row-check]").forEach((input) => {
+    input.addEventListener("change", (e) => {
+      const id = e.target.dataset.rowCheck;
+      if (e.target.checked) state.selectedIds.add(id);
+      else state.selectedIds.delete(id);
+      renderList();
+      renderBulkBar();
+    });
+  });
+  wrap.querySelectorAll("[data-sort-head]").forEach((btn) => {
+    btn.addEventListener("click", () => setSort(btn.dataset.sortHead, true));
+  });
 }
 
 function renderList() {
@@ -2047,7 +2102,7 @@ qs("#resume-selected").onclick = () => state.selectedId && act(`/api/torrents/${
 qs("#delete-selected").onclick = () => state.selectedId && deleteTorrent(state.selectedId);
 qs("#pause-all-btn").onclick = () => act("/api/torrents/pause-all", "POST");
 qs("#resume-all").onclick = () => act("/api/torrents/resume-all", "POST");
-qs("#sort-select").onchange = (e) => { state.sort = e.target.value; renderList(); };
+qs("#sort-select").onchange = (e) => setSort(e.target.value, false);
 
 function renderBulkBar() {
   const count = state.selectedIds.size;
@@ -2300,7 +2355,7 @@ qs("#file-form").addEventListener("submit", async (event) => {
     .filter(Boolean);
   if (trackersOverride.length) form.append("trackers_override", JSON.stringify(trackersOverride));
   const previewPriorities = state.addFilePreview?.files?.map((_, idx) =>
-    Number(qs(`[data-preview-pri="${idx}"]`)?.value ?? 4)
+    Number(state.addFilePriorities?.[idx] ?? 4)
   );
   if (previewPriorities?.length) form.append("priorities", JSON.stringify(previewPriorities));
   try {
@@ -2334,25 +2389,35 @@ qs("#torrent-file").addEventListener("change", async () => {
   box.classList.add("hidden");
   box.innerHTML = "";
   state.addFilePreview = null;
+  state.addFilePriorities = [];
   if (!file) return;
   const form = new FormData();
   form.append("file", file);
   try {
     const preview = await api("/api/torrents/preview-file", { method: "POST", body: form });
     state.addFilePreview = preview;
-    const shownFiles = preview.files.slice(0, 20).map((f, idx) => `<div><span>${esc(f.path)}</span><span>${bytes(f.size)}</span><select data-preview-pri="${idx}" class="rt-file-pri"><option value="0">Skip</option><option value="1">Low</option><option value="4" selected>Normal</option><option value="7">High</option></select></div>`).join("");
+    state.addFilePriorities = (preview.files || []).map(() => 4);
     if (qs("#file-rename")) qs("#file-rename").value = preview.name || "";
     if (qs("#file-trackers")) qs("#file-trackers").value = (preview.trackers || []).join("\n");
-    box.innerHTML = `
-      <div class="rt-preview-title">${icon("file", 13)} ${esc(preview.name)}</div>
-      <div class="rt-preview-meta">${bytes(preview.total_size)} · ${preview.files.length} files · ${preview.trackers.length} trackers</div>
-      <div class="rt-preview-files">${shownFiles}${preview.files.length > 6 ? `<div>+${preview.files.length - 6} more</div>` : ""}</div>
-    `;
-    box.classList.remove("hidden");
+    renderAddFilePreview(preview);
   } catch (e) {
     box.innerHTML = `<div class="rt-preview-error">${esc(e.message)}</div>`;
     box.classList.remove("hidden");
   }
+});
+
+qs("#torrent-file-preview").addEventListener("change", (event) => {
+  const select = event.target.closest("[data-preview-pri]");
+  if (!select) return;
+  setPreviewPriority(Number(select.dataset.previewPri), Number(select.value));
+});
+
+qs("#torrent-file-preview").addEventListener("click", (event) => {
+  const btn = event.target.closest("[data-preview-all]");
+  if (!btn) return;
+  const next = Number(btn.dataset.previewAll);
+  state.addFilePriorities = (state.addFilePreview?.files || []).map(() => next);
+  renderAddFilePreview(state.addFilePreview);
 });
 
 qs("#settings-screen-form").addEventListener("click", async (event) => {
@@ -2605,6 +2670,75 @@ function syncViewToggle() {
   qs("#view-toggle")?.querySelectorAll("[data-view-mode]").forEach((item) => {
     item.classList.toggle("active", item.dataset.viewMode === state.uiSettings.torrentView);
   });
+}
+
+function setPreviewPriority(index, value) {
+  if (!Array.isArray(state.addFilePriorities)) state.addFilePriorities = [];
+  state.addFilePriorities[index] = Number(value);
+}
+
+function buildPreviewTree(files) {
+  const root = {};
+  files.forEach((file, index) => {
+    const parts = String(file.path || "").split("/").filter(Boolean);
+    let cursor = root;
+    parts.forEach((part, partIndex) => {
+      const isLeaf = partIndex === parts.length - 1;
+      if (isLeaf) {
+        cursor[part] = { type: "file", index, size: file.size };
+        return;
+      }
+      cursor[part] ||= { type: "dir", children: {} };
+      cursor = cursor[part].children;
+    });
+  });
+  return root;
+}
+
+function renderPreviewTree(nodes, depth = 0) {
+  return Object.entries(nodes).map(([name, value]) => {
+    if (value.type === "file") {
+      return `
+        <div class="rt-tree-row file" style="--tree-depth:${depth}">
+          <span class="rt-tree-name">${icon("file", 12)} ${esc(name)}</span>
+          <span class="rt-tree-size">${bytes(value.size)}</span>
+          <select data-preview-pri="${value.index}" class="rt-file-pri">
+            <option value="0" ${state.addFilePriorities?.[value.index] === 0 ? "selected" : ""}>${l("priSkip")}</option>
+            <option value="1" ${state.addFilePriorities?.[value.index] === 1 ? "selected" : ""}>${l("priLow")}</option>
+            <option value="4" ${state.addFilePriorities?.[value.index] === 4 ? "selected" : ""}>${l("priNormal")}</option>
+            <option value="7" ${state.addFilePriorities?.[value.index] === 7 ? "selected" : ""}>${l("priHigh")}</option>
+          </select>
+        </div>
+      `;
+    }
+    return `
+      <details class="rt-tree-folder" open>
+        <summary class="rt-tree-row folder" style="--tree-depth:${depth}">
+          <span class="rt-tree-name">${icon("folder", 12)} ${esc(name)}</span>
+          <span class="rt-tree-size"></span>
+          <span class="rt-tree-dirtag">${l("folderType")}</span>
+        </summary>
+        <div class="rt-tree-children">${renderPreviewTree(value.children, depth + 1)}</div>
+      </details>
+    `;
+  }).join("");
+}
+
+function renderAddFilePreview(preview) {
+  const box = qs("#torrent-file-preview");
+  if (!box) return;
+  const tree = buildPreviewTree(preview.files || []);
+  box.innerHTML = `
+    <div class="rt-preview-title">${icon("file", 13)} ${esc(preview.name)}</div>
+    <div class="rt-preview-meta">${bytes(preview.total_size)} · ${preview.files.length} files · ${preview.trackers.length} trackers</div>
+    <div class="rt-preview-actions">
+      <button type="button" class="rt-btn rt-btn-ghost rt-btn-auto" data-preview-all="0">${l("skipAll")}</button>
+      <button type="button" class="rt-btn rt-btn-ghost rt-btn-auto" data-preview-all="4">${l("normalAll")}</button>
+      <button type="button" class="rt-btn rt-btn-ghost rt-btn-auto" data-preview-all="7">${l("highAll")}</button>
+    </div>
+    <div class="rt-preview-tree">${renderPreviewTree(tree)}</div>
+  `;
+  box.classList.remove("hidden");
 }
 
 function showCtxMenu(x, y, torrentId) {

@@ -1,4 +1,10 @@
 const RIPTIDE_CHANGELOG = Object.freeze({
+  "0.1.10": [
+    "Added clickable table headers, checkbox multi-select and better bulk actions in table view",
+    "Improved add-torrent preview with a file tree and per-file priority controls",
+    "Added preview-wide skip, normal and high priority actions",
+    "Improved localized sort labels in the torrent toolbar"
+  ],
   "0.1.9": [
     "Added cards/table torrent list toggle with persistent UI preference",
     "Expanded add-torrent flow with rename-before-add and tracker override support",
@@ -21,7 +27,7 @@ const RIPTIDE_CHANGELOG = Object.freeze({
 
 const RIPTIDE = Object.freeze({
   name: "Riptide",
-  version: "0.1.9",
+  version: "0.1.10",
   tagline: "Fast. Private. Yours.",
   brand: "faridasadov",
   author: "Farid Asadov",
