@@ -136,6 +136,7 @@ const I18N = {
     seedRatioLabel: "Ratio limit, 0 = unlimited", seedTimeLabel: "Seeding time in minutes, 0 = unlimited",
     seedLimitsSaved: "Seeding limits saved",
     apply: "Apply", save: "Save", orUploadFile: "or upload a file", autoDetect: "Auto-detect",
+    removeTorrent: "Remove torrent", removeTorrentMsg: "Remove this torrent from Riptide? Downloaded files will remain on disk.", removeBtn: "Remove",
     // status pills
     statusSeeding: "Seeding", statusDownloading: "Downloading", statusPaused: "Paused",
     statusChecking: "Checking", statusQueued: "Queued", statusMetadata: "Loading metadata",
@@ -218,7 +219,7 @@ const I18N = {
     openFolder: "Yükləmə qovluğunu aç", setDownloadLimit: "Yükləmə limiti qoy",
     setUploadLimit: "Paylaşma limiti qoy", clearLimits: "Limitləri sıfırla",
     copyHash: "İnfo hash-i kopyala", disableSequential: "Ardıcıllığı söndür",
-    superSeeding: "Super seeding", disableSuperSeeding: "Super seeding-i söndür",
+    superSeeding: "Super paylaşma", disableSuperSeeding: "Super paylaşmanı söndür",
     forceReannounce: "Məcburi elan et", forceRecheck: "Məcburi yoxla",
     editTrackers: "Tracker-ləri redaktə et", seedingLimits: "Paylaşma limitləri",
     queueTop: "Növbənin başına", queueUp: "Növbədə yuxarı", queueDown: "Növbədə aşağı",
@@ -258,6 +259,7 @@ const I18N = {
     seedTimeLabel: "Paylaşma vaxtı (dəqiqə), 0 = limitsiz",
     seedLimitsSaved: "Paylaşma limitləri saxlandı",
     apply: "Tətbiq et", save: "Saxla", orUploadFile: "və ya fayl yüklə", autoDetect: "Avtomatik tap",
+    removeTorrent: "Torrenti sil", removeTorrentMsg: "Bu torrent Riptide-dan silinsin? Yüklənmiş fayllar diskdə qalacaq.", removeBtn: "Sil",
     statusSeeding: "Paylaşılır", statusDownloading: "Yüklənir", statusPaused: "Dayandırılıb",
     statusChecking: "Yoxlanılır", statusQueued: "Növbədə", statusMetadata: "Metadata yüklənir",
     statusCompleted: "Tamamlandı", statusNotLoaded: "Yüklənməyib",
@@ -377,6 +379,7 @@ const I18N = {
     seedLimitsSaved: "Лимиты раздачи сохранены",
     apply: "Применить", save: "Сохранить", orUploadFile: "или загрузить файл",
     autoDetect: "Авто-определение",
+    removeTorrent: "Удалить торрент", removeTorrentMsg: "Удалить этот торрент из Riptide? Загруженные файлы останутся на диске.", removeBtn: "Удалить",
     statusSeeding: "Раздаётся", statusDownloading: "Загружается", statusPaused: "Остановлен",
     statusChecking: "Проверяется", statusQueued: "В очереди", statusMetadata: "Загрузка метаданных",
     statusCompleted: "Завершён", statusNotLoaded: "Не загружен",
@@ -1638,11 +1641,7 @@ async function promptTorrentLimit(torrentId, direction) {
 }
 
 async function deleteTorrent(torrentId) {
-  const confirmed = await openConfirmModal(
-    "Remove torrent",
-    "Remove this torrent from Riptide? Downloaded files will remain on disk.",
-    "Remove"
-  );
+  const confirmed = await openConfirmModal(l("removeTorrent"), l("removeTorrentMsg"), l("removeBtn"));
   if (!confirmed) return;
   await act(`/api/torrents/${torrentId}?delete_files=false`, "DELETE");
 }
@@ -2210,7 +2209,7 @@ function showCtxMenu(x, y, torrentId) {
     </button>
     <div class="rt-ctx-sep"></div>
     <button class="rt-ctx-item danger" data-ctx="delete" role="menuitem">
-      <span>${icon("trash", 14)}</span><span>Remove</span>
+      <span>${icon("trash", 14)}</span><span>${l("removeBtn")}</span>
     </button>
   `;
   menu.dataset.torrentId = torrentId;
