@@ -1,4 +1,5 @@
 import tempfile
+import logging
 from pathlib import Path
 
 from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
@@ -10,6 +11,7 @@ from app.models.torrent import AddMagnetRequest, AddTorrentResponse, FilePriorit
 
 router = APIRouter(prefix="/api/torrents", tags=["torrents"])
 _torrent_repo = TorrentRepository()
+logger = logging.getLogger(__name__)
 
 
 def _service(request: Request):
@@ -23,6 +25,7 @@ def _handle_error(exc: Exception) -> HTTPException:
         return HTTPException(status_code=404, detail=str(exc))
     if isinstance(exc, ValueError):
         return HTTPException(status_code=400, detail=str(exc))
+    logger.exception("Unhandled torrent API error: %s", exc)
     return HTTPException(status_code=500, detail=str(exc))
 
 

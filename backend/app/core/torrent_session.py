@@ -197,7 +197,10 @@ class TorrentSessionManager:
         params: Dict[str, Any] = {"ti": info, "save_path": validate_save_path(save_path)}
         if resume_data:
             params["resume_data"] = resume_data
-        handle = self.session.add_torrent(params)
+        try:
+            handle = self.session.add_torrent(params)
+        except RuntimeError as exc:
+            raise ValueError(f"Could not add .torrent file: {exc}") from exc
         torrent_id = str(info.info_hash()).lower()
         with self._lock:
             self.handles[torrent_id] = handle

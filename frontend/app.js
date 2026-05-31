@@ -952,10 +952,13 @@ async function act(path, method) {
 }
 
 async function limitTorrent(torrentId, downloadLimit, uploadLimit) {
+  const payload = {};
+  if (downloadLimit !== undefined && downloadLimit !== null) payload.download_limit = downloadLimit;
+  if (uploadLimit !== undefined && uploadLimit !== null) payload.upload_limit = uploadLimit;
   await api(`/api/torrents/${torrentId}/limit`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ download_limit: downloadLimit, upload_limit: uploadLimit }),
+    body: JSON.stringify(payload),
   });
 }
 
@@ -1469,7 +1472,7 @@ qs("#ctx-menu").onclick = async (e) => {
 qs("#add-modal-close").onclick = () => closeModal("add-modal");
 qs("#add-modal-cancel").onclick = () => closeModal("add-modal");
 
-qs("#about-toggle").onclick = () => {
+function showAbout() {
   if (typeof RIPTIDE === "undefined") { showToast("About info unavailable", "error"); return; }
   qs("#about-version").textContent = `v${RIPTIDE.version}`;
   qs("#about-tagline").textContent = RIPTIDE.tagline;
@@ -1478,7 +1481,10 @@ qs("#about-toggle").onclick = () => {
   qs("#about-stack").textContent = RIPTIDE.stack.join(", ");
   qs("#about-copy").textContent = RIPTIDE.copyright;
   openModal("about-modal");
-};
+}
+
+qs("#about-toggle").onclick = showAbout;
+qs(".brand").onclick = showAbout;
 qs("#about-modal-close").onclick = () => closeModal("about-modal");
 
 qs("#compact-toggle").onclick = () => {
@@ -1522,14 +1528,8 @@ async function boot() {
     await loadLabels();
     await loadTorrents();
     if (typeof RIPTIDE !== "undefined" && !sessionStorage.getItem("about_shown")) {
-      qs("#about-version").textContent = `v${RIPTIDE.version}`;
-      qs("#about-tagline").textContent = RIPTIDE.tagline;
-      qs("#about-brand").textContent = RIPTIDE.brand;
-      qs("#about-engine").textContent = RIPTIDE.engine;
-      qs("#about-stack").textContent = RIPTIDE.stack.join(", ");
-      qs("#about-copy").textContent = RIPTIDE.copyright;
       sessionStorage.setItem("about_shown", "1");
-      openModal("about-modal");
+      showAbout();
     }
   } catch {
     showLogin();
