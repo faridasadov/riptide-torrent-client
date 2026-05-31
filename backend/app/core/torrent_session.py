@@ -222,10 +222,12 @@ class TorrentSessionManager:
                 flags = getattr(self.lt.options_t, "delete_files", 1)
             self.session.remove_torrent(handle, flags)
 
-    def set_torrent_limits(self, torrent_id: str, download_limit: int, upload_limit: int) -> None:
+    def set_torrent_limits(self, torrent_id: str, download_limit=None, upload_limit=None) -> None:
         handle = self.get_handle(torrent_id)
-        handle.set_download_limit(download_limit if download_limit > 0 else -1)
-        handle.set_upload_limit(upload_limit if upload_limit > 0 else -1)
+        if download_limit is not None:
+            handle.set_download_limit(download_limit if download_limit > 0 else -1)
+        if upload_limit is not None:
+            handle.set_upload_limit(upload_limit if upload_limit > 0 else -1)
 
     def set_sequential_download(self, torrent_id: str, enabled: bool) -> None:
         handle = self.get_handle(torrent_id)

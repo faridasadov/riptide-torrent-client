@@ -15,8 +15,8 @@ class AddTorrentResponse(BaseModel):
 
 
 class LimitRequest(BaseModel):
-    download_limit: int = Field(default=0, ge=0)
-    upload_limit: int = Field(default=0, ge=0)
+    download_limit: Optional[int] = Field(default=None, ge=0)
+    upload_limit: Optional[int] = Field(default=None, ge=0)
 
 
 class TorrentStatus(BaseModel):

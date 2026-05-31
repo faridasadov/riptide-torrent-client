@@ -979,9 +979,14 @@ async function promptTorrentLimit(torrentId, direction) {
   );
   if (value === null) return;
   const next = toBytes(value || 0, "kb");
-  const downloadLimit = direction === "download" ? next : torrent.download_limit || 0;
-  const uploadLimit = direction === "upload" ? next : torrent.upload_limit || 0;
-  await limitTorrent(torrentId, downloadLimit, uploadLimit);
+  const payload = direction === "download"
+    ? { download_limit: next }
+    : { upload_limit: next };
+  await api(`/api/torrents/${torrentId}/limit`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
   showToast("Torrent speed limit saved", "success");
   await loadTorrents();
 }

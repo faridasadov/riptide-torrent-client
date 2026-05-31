@@ -126,9 +126,12 @@ class TorrentService:
                 torrent_file.unlink()
         self.torrent_repo.delete(torrent_id.lower())
 
-    def limit(self, torrent_id: str, download_limit: int, upload_limit: int) -> None:
+    def limit(self, torrent_id: str, download_limit=None, upload_limit=None) -> None:
         self.engine.set_torrent_limits(torrent_id.lower(), download_limit, upload_limit)
-        self.torrent_repo.update_limits(torrent_id.lower(), download_limit, upload_limit)
+        row = self.torrent_repo.get(torrent_id.lower()) or {}
+        dl = download_limit if download_limit is not None else int(row.get("download_limit") or 0)
+        ul = upload_limit if upload_limit is not None else int(row.get("upload_limit") or 0)
+        self.torrent_repo.update_limits(torrent_id.lower(), dl, ul)
 
     def set_sequential(self, torrent_id: str, enabled: bool) -> None:
         self.engine.set_sequential_download(torrent_id, enabled)
