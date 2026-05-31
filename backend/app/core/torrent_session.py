@@ -120,13 +120,16 @@ class TorrentSessionManager:
     def _apply_choking_settings(self) -> None:
         try:
             pack = self.session.get_settings()
-            # rate_based_choker: dynamically adjusts unchoke slots based on upload
-            # capacity — keeps more download connections open even when upload is limited
-            pack["choking_algorithm"] = 2
-            # fastest_upload seed choker: prefer peers who download quickly from us
-            pack["seed_choking_algorithm"] = 1
-            # More unchoke slots so download connections aren't starved
-            pack["unchoke_slots_limit"] = 16
+            pack["choking_algorithm"] = 0           # fixed_slots: always unchoke N peers
+            pack["seed_choking_algorithm"] = 1      # fastest_upload
+            pack["unchoke_slots_limit"] = 100       # unchoke 100 peers regardless of ul rate
+            pack["num_want"] = 400
+            pack["connection_speed"] = 20
+            pack["peer_turnover"] = 4
+            pack["peer_turnover_cutoff"] = 90
+            pack["peer_turnover_interval"] = 300
+            pack["send_buffer_watermark"] = 512 * 1024
+            pack["send_buffer_low_watermark"] = 10 * 1024
             self.session.apply_settings(pack)
         except Exception as e:
             logger.warning("Failed to apply choking settings: %s", e)
@@ -462,8 +465,18 @@ class TorrentSessionManager:
             return
         if row.get("paused"):
             self.pause_torrent(torrent_id)
-        self.set_torrent_limits(
-            torrent_id,
-            int(row.get("download_limit", 0) or 0),
-            int(row.get("upload_limit", 0) or 0),
-        )
+        dl = int(row.get("download_limit", 0) or 0)
+        ul = int(row.get("upload_limit", 0) or 0)
+        if dl > 0:
+            self.set_torrent_limits(torrent_id, download_limit=dl)
+        if ul > 0:
+            # Delay upload limit 30s so peer connections build up first
+            def _apply_ul(tid=torrent_id, limit=ul):
+                import time as _t; _t.sleep(30)
+                try:
+                    self.set_torrent_limits(tid, upload_limit=limit)
+                except Exception:
+                    pass
+            threading.Thread(target=_apply_ul, daemon=True).start()
+        else:
+            self.set_torrent_limits(torrent_id, upload_limit=0)
