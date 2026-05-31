@@ -398,8 +398,13 @@ input:focus-visible {
 .top-action > span,
 .drawer button > span,
 .close > span,
-.tab > span {
+.tab > span,
+.tool-nav > span,
+.settings-section > span {
   min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .nav:hover,
@@ -489,8 +494,8 @@ input:focus-visible {
 
 .toolbar {
   display: grid;
-  grid-template-columns: 130px 38px 38px minmax(180px, 1fr) 64px 88px;
-  gap: 10px;
+  grid-template-columns: max-content 38px 38px minmax(160px, 1fr) max-content 38px;
+  gap: 8px;
 }
 
 .primary,
@@ -502,17 +507,20 @@ input:focus-visible {
   justify-content: center;
   gap: 8px;
   min-height: 34px;
+  padding: 0 12px;
   border: 1px solid var(--rt-border-strong);
   border-radius: var(--rt-radius-md);
   color: var(--rt-fg-1);
   background: var(--rt-bg-3);
   font-weight: 600;
+  white-space: nowrap;
   transition: background var(--rt-dur) var(--rt-ease), box-shadow var(--rt-dur) var(--rt-ease);
 }
 
 .icon:empty,
 .icon .rt-ico:only-child {
   gap: 0;
+  padding: 0;
 }
 
 .primary {
@@ -1095,7 +1103,7 @@ input:focus-visible {
     grid-template-columns: 1fr;
   }
 
-.main-pane {
+  .main-pane {
     overflow: visible;
   }
 }
@@ -2567,15 +2575,24 @@ select.rt-modal-input {
   flex-shrink: 0;
 }
 .rt-file-pri {
+  appearance: none;
+  font: inherit;
   background: var(--rt-bg-3);
   border: 1px solid var(--rt-border);
   color: var(--rt-fg-2);
   border-radius: 4px;
-  padding: 2px 4px;
+  padding: 2px 8px 2px 4px;
   font-size: 11px;
   flex-shrink: 0;
   cursor: pointer;
 }
+.storage-action-row {
+  background: var(--rt-bg-1);
+  color: var(--rt-fg-3);
+  font-size: 12px;
+  border-style: dashed;
+}
+
 .rt-day-row { display: flex; gap: 4px; flex-wrap: wrap; }
 .rt-day-btn {
   background: var(--rt-bg-3);

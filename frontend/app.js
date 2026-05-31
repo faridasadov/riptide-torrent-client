@@ -84,148 +84,353 @@ function applyTheme() {
 
 const I18N = {
   en: {
-    logout: "Logout",
-    all: "All torrents",
-    downloading: "Downloading",
-    seeding: "Seeding",
-    completed: "Completed",
-    paused: "Paused",
-    labels: "Labels",
-    tools: "Tools",
-    search: "Search",
-    rss: "RSS feeds",
-    settings: "Settings",
-    about: "About",
-    freeSpace: "Free space",
-    addTorrent: "Add torrent",
-    files: "Files",
-    filterTorrents: "Filter torrents...",
-    searchTitle: "Search torrents",
-    searchPlaceholder: "Search local torrents and downloaded files...",
-    rssTitle: "RSS feeds",
-    rules: "Auto-download rules",
-    addFeed: "Add feed",
-    selectTorrent: "Select a torrent",
-    delete: "Delete",
-    general: "General",
-    peers: "Peers",
-    trackers: "Trackers",
-    progress: "Progress",
-    downloaded: "Downloaded",
-    ratio: "Ratio",
-    eta: "ETA",
-    seeds: "Seeds",
-    speedLimits: "Speed limits",
-    unlimited: "Unlimited",
-    download: "Download",
-    upload: "Upload",
-    saveLimits: "Save limits",
-    magnetLink: "Magnet link",
-    savePath: "Save path",
-    category: "Category",
-    cancel: "Cancel",
-    addMagnet: "Add magnet",
-    uploadFile: "Upload file",
-    torrentFile: "Torrent file",
-    startPaused: "Start paused",
-    sequential: "Sequential download",
-    language: "Language",
+    logout: "Logout", all: "All torrents", downloading: "Downloading", seeding: "Seeding",
+    completed: "Completed", paused: "Paused", labels: "Labels", tools: "Tools", search: "Search",
+    rss: "RSS feeds", settings: "Settings", about: "About", freeSpace: "Free space",
+    addTorrent: "Add torrent", files: "Files", filterTorrents: "Filter torrents...",
+    searchTitle: "Search torrents", searchPlaceholder: "Search local torrents and downloaded files...",
+    rssTitle: "RSS feeds", rules: "Auto-download rules", addFeed: "Add feed",
+    selectTorrent: "Select a torrent", delete: "Delete", general: "General", peers: "Peers",
+    trackers: "Trackers", progress: "Progress", downloaded: "Downloaded", ratio: "Ratio",
+    eta: "ETA", seeds: "Seeds", speedLimits: "Speed limits", unlimited: "Unlimited",
+    download: "Download", upload: "Upload", saveLimits: "Save limits", magnetLink: "Magnet link",
+    savePath: "Save path", category: "Category", cancel: "Cancel", addMagnet: "Add magnet",
+    uploadFile: "Upload file", torrentFile: "Torrent file", startPaused: "Start paused",
+    sequential: "Sequential download", language: "Language",
+    downloads: "Downloads", bandwidth: "Bandwidth", connection: "Connection", privacy: "Privacy",
+    inspect: "Inspect", resume: "Resume", pause: "Pause", openFolder: "Open download folder",
+    setDownloadLimit: "Set download limit", setUploadLimit: "Set upload limit",
+    clearLimits: "Clear speed limits", copyHash: "Copy info hash",
+    disableSequential: "Disable sequential", superSeeding: "Super seeding",
+    disableSuperSeeding: "Disable super seeding", forceReannounce: "Force reannounce",
+    forceRecheck: "Force recheck", editTrackers: "Edit trackers", seedingLimits: "Seeding limits",
+    queueTop: "Queue top", queueUp: "Queue up", queueDown: "Queue down", setLabel: "Set label",
+    setGeneral: "General", setDownloads: "Downloads", setBandwidth: "Bandwidth limits",
+    setAltSpeed: "Alternate speed schedule", setConnection: "Connection",
+    setPrivacy: "Privacy", setLabels: "Labels",
+    startup: "Launch Riptide on system startup",
+    startupDesc: "Stored as a local UI preference; systemd service stays enabled separately",
+    desktopNotify: "Desktop notifications",
+    desktopNotifyDesc: "Notify when a download completes in this browser",
+    theme: "Theme", defaultSaveLoc: "Default save location",
+    watchFolder: "Watch folder", watchFolderDesc: "Auto-import .torrent files from this directory",
+    enableWatchFolder: "Enable watch folder",
+    keepIncomplete: "Keep incomplete files in download root",
+    keepIncompleteDesc: "Stored as a local UI preference until incomplete-folder backend support is added",
+    maxActiveDownloads: "Maximum active downloads",
+    maxDlRate: "Maximum download rate", maxUlRate: "Maximum upload rate", zeroUnlimited: "0 = unlimited",
+    enableAltSpeed: "Enable alt speed", enableAltSpeedDesc: "Apply lower limits on a schedule",
+    altDlRate: "Alt download rate", altUlRate: "Alt upload rate",
+    schedule: "Schedule", scheduleDesc: "Active hours", days: "Days",
+    incomingPort: "Incoming port", listenPort: "Listen port", randomPort: "Random port on startup",
+    upnp: "Map port with UPnP / NAT-PMP", dht: "Distributed Hash Table (DHT)",
+    dhtDesc: "Find peers without a tracker", pex: "Peer Exchange (PEX)",
+    pexDesc: "Exchange peer lists with connected peers", lsd: "Local Peer Discovery",
+    globalConns: "Global connections", connsPerTorrent: "Connections per torrent",
+    globalSlots: "Global upload slots", slotsPerTorrent: "Upload slots per torrent",
+    connSpeed: "Connection speed", connSpeedDesc: "New outgoing connections per second",
+    queueing: "Queueing", queueingDesc: "qBittorrent-style active torrent limits",
+    maxActive: "Max active torrents", maxActiveUl: "Max active uploads",
+    recheckTitle: "Force recheck", recheckMsg: "Recheck downloaded pieces for this torrent?",
+    recheckBtn: "Recheck", seedLimitsTitle: "Seeding limits",
+    seedRatioLabel: "Ratio limit, 0 = unlimited", seedTimeLabel: "Seeding time in minutes, 0 = unlimited",
+    seedLimitsSaved: "Seeding limits saved",
+    apply: "Apply", save: "Save", orUploadFile: "or upload a file", autoDetect: "Auto-detect",
+    // status pills
+    statusSeeding: "Seeding", statusDownloading: "Downloading", statusPaused: "Paused",
+    statusChecking: "Checking", statusQueued: "Queued", statusMetadata: "Loading metadata",
+    statusCompleted: "Completed", statusNotLoaded: "Not loaded",
+    // storage panel
+    refresh: "Refresh", open: "Open", move: "Move", actions: "Actions",
+    folderType: "folder", emptyFolder: "Download folder is empty",
+    createTorrentFrom: "Create torrent from this folder", createBtn: "Create",
+    // labels
+    noCustomSavePath: "No custom save path", editPath: "Edit path", addCustomLabel: "Add custom label",
+    // modals
+    editTrackersTitle: "Edit trackers", trackerUrlsLabel: "Tracker URLs, comma separated",
+    addRssTitle: "Add RSS feed", feedUrlLabel: "Feed URL", feedTitleLabel: "Feed title",
+    newRuleTitle: "New rule", ruleNameLabel: "Rule name",
+    matchPatternLabel: "Match pattern (use * as wildcard)",
+    destFolderLabel: "Destination folder",
+    addLabelTitle: "Add label", labelNameLabel: "Label name",
+    labelColorLabel: "Color (CSS value, e.g. #ff7a66)",
+    labelPathLabel: "Default save path (optional)",
+    editSavePathTitle: "Edit save path",
+    deleteLabelTitle: "Delete label", deleteLabelMsg: "Delete label",
+    deleteFileTitle: "Delete file", deleteFileMsg: "Permanently delete",
+    extractTitle: "Extract archive", destPathLabel: "Destination path",
+    moveFileTitle: "Move file",
+    createTorrentTitle: "Create torrent",
+    commentLabel: "Comment (optional)", defaultComment: "Created by Riptide",
+    saveLocTitle: "Save location", defaultSavePathLabel: "Default save path",
+    inspectArchive: "Inspect archive",
+    browse: "Browse", metadataLoading: "Loading metadata...",
+    pieces: "Pieces", connected: "Connected", disconnected: "Disconnected",
+    dhtOn: "DHT on", dhtOff: "DHT off", footerTorrents: "torrents",
+    limitDownDir: "Download limit", limitUpDir: "Upload limit",
+    // detail tabs
+    noFileMeta: "No file metadata yet.", noConnectedPeers: "No connected peers.",
+    noTrackerMeta: "No tracker metadata yet.",
+    skipAll: "Skip all", normalAll: "Normal all", highAll: "High all",
+    priSkip: "Skip", priLow: "Low", priNormal: "Normal", priHigh: "High",
+    filePriUpdated: "File priorities updated",
+    reannounce: "Reannounce", trackerReannounced: "Tracker reannounce sent",
+    unknownClient: "unknown client",
+    tierLabel: "Tier", seedsLabel: "seeds", leechersLabel: "leechers",
+    // props grid
+    propHash: "Hash", propSavePath: "Save path", propPieceSize: "Piece size",
+    propPieces: "Pieces", propFiles: "Files", propCreatedBy: "Created by",
+    propCreated: "Created", propPrivate: "Private", propMaxConn: "Max connections",
+    propMaxUploads: "Max uploads", propComment: "Comment",
+    propPrivateYes: "yes", propPrivateNo: "no",
+    // privacy settings
+    encryption: "Protocol encryption", preferTcp: "Prefer TCP over uTP",
+    preferTcpDesc: "Matches qBittorrent mixed mode", limitTcpOverhead: "Limit TCP overhead",
+    limitTcpDesc: "qBittorrent default is off", limitUtpRate: "Limit uTP rate",
+    limitUtpDesc: "qBittorrent default is on",
+    multiConnSameIp: "Allow multiple connections from same IP",
+    anonymousMode: "Anonymous mode", ipFilter: "IP filter",
+    vpnRoute: "Route traffic through VPN interface",
+    vpnRouteDesc: "nftables kill-switch restricts torrentclient to tun0 and loopback",
+    authSetting: "Authentication",
+    authSettingDesc: "Session cookie frontend plus Basic Auth API compatibility",
+    backupSection: "Backup", backupDesc: "Includes settings, labels, RSS feeds and RSS rules",
+    exportBtn: "Export", importBtn: "Import",
   },
   az: {
-    logout: "Çıxış",
-    all: "Hamısı",
-    downloading: "Yüklənənlər",
-    seeding: "Paylaşanlar",
-    completed: "Tamamlananlar",
-    paused: "Dayandırılanlar",
-    labels: "Etiketlər",
-    tools: "Alətlər",
-    search: "Axtarış",
-    rss: "RSS lentlər",
-    settings: "Tənzimləmələr",
-    about: "Haqqında",
-    freeSpace: "Boş yer",
-    addTorrent: "Torrent əlavə et",
-    files: "Fayllar",
-    filterTorrents: "Torrentləri süz...",
-    searchTitle: "Torrent axtar",
+    logout: "Çıxış", all: "Hamısı", downloading: "Yüklənənlər", seeding: "Paylaşanlar",
+    completed: "Tamamlananlar", paused: "Dayandırılanlar", labels: "Etiketlər", tools: "Alətlər",
+    search: "Axtarış", rss: "RSS lentlər", settings: "Tənzimləmələr", about: "Haqqında",
+    freeSpace: "Boş yer", addTorrent: "Torrent əlavə et", files: "Fayllar",
+    filterTorrents: "Torrentləri süz...", searchTitle: "Torrent axtar",
     searchPlaceholder: "Lokal torrent və yüklənmiş fayllarda axtar...",
-    rssTitle: "RSS lentlər",
-    rules: "Avto-yükləmə qaydaları",
-    addFeed: "Lent əlavə et",
-    selectTorrent: "Torrent seç",
-    delete: "Sil",
-    general: "Ümumi",
-    peers: "Peer-lər",
-    trackers: "Tracker-lər",
-    progress: "İrəliləyiş",
-    downloaded: "Yüklənib",
-    ratio: "Reytinq",
-    eta: "Qalan vaxt",
-    seeds: "Seed-lər",
-    speedLimits: "Sürət limitləri",
-    unlimited: "Limitsiz",
-    download: "Download",
-    upload: "Upload",
-    saveLimits: "Limitləri saxla",
-    magnetLink: "Magnet link",
-    savePath: "Saxlama yeri",
-    category: "Kateqoriya",
-    cancel: "Ləğv et",
-    addMagnet: "Magnet əlavə et",
-    uploadFile: "Fayl yüklə",
-    torrentFile: "Torrent faylı",
-    startPaused: "Dayandırılmış başlat",
-    sequential: "Ardıcıl yükləmə",
-    language: "Dil",
+    rssTitle: "RSS lentlər", rules: "Avto-yükləmə qaydaları", addFeed: "Lent əlavə et",
+    selectTorrent: "Torrent seç", delete: "Sil", general: "Ümumi", peers: "Peer-lər",
+    trackers: "Tracker-lər", progress: "İrəliləyiş", downloaded: "Yüklənib",
+    ratio: "Reytinq", eta: "Qalan vaxt", seeds: "Seed-lər", speedLimits: "Sürət limitləri",
+    unlimited: "Limitsiz", download: "Yükləmə", upload: "Paylaşma", saveLimits: "Limitləri saxla",
+    magnetLink: "Magnet link", savePath: "Saxlama yeri", category: "Kateqoriya",
+    cancel: "Ləğv et", addMagnet: "Magnet əlavə et", uploadFile: "Fayl yüklə",
+    torrentFile: "Torrent faylı", startPaused: "Dayandırılmış başlat",
+    sequential: "Ardıcıl yükləmə", language: "Dil",
+    downloads: "Yükləmələr", bandwidth: "Bant genişliyi", connection: "Bağlantı", privacy: "Məxfilik",
+    inspect: "Yoxla", resume: "Davam et", pause: "Dayandır",
+    openFolder: "Yükləmə qovluğunu aç", setDownloadLimit: "Yükləmə limiti qoy",
+    setUploadLimit: "Paylaşma limiti qoy", clearLimits: "Limitləri sıfırla",
+    copyHash: "İnfo hash-i kopyala", disableSequential: "Ardıcıllığı söndür",
+    superSeeding: "Super seeding", disableSuperSeeding: "Super seeding-i söndür",
+    forceReannounce: "Məcburi elan et", forceRecheck: "Məcburi yoxla",
+    editTrackers: "Tracker-ləri redaktə et", seedingLimits: "Paylaşma limitləri",
+    queueTop: "Növbənin başına", queueUp: "Növbədə yuxarı", queueDown: "Növbədə aşağı",
+    setLabel: "Etiket qoy",
+    setGeneral: "Ümumi", setDownloads: "Yükləmələr", setBandwidth: "Bant genişliyi limitləri",
+    setAltSpeed: "Alternativ sürət cədvəli", setConnection: "Bağlantı",
+    setPrivacy: "Məxfilik", setLabels: "Etiketlər",
+    startup: "Sistem açılışında Riptide-i başlat",
+    startupDesc: "Lokal UI tənzimləməsidir; systemd xidməti ayrıca aktiv qalır",
+    desktopNotify: "Masaüstü bildirişlər",
+    desktopNotifyDesc: "Bu brauzerdə yükləmə tamamlananda xəbər ver",
+    theme: "Tema", defaultSaveLoc: "Standart saxlama yeri",
+    watchFolder: "İzlənilən qovluq",
+    watchFolderDesc: ".torrent fayllarını bu qovluqdan avtomatik idxal et",
+    enableWatchFolder: "İzlənilən qovluğu aktiv et",
+    keepIncomplete: "Tamamlanmamış faylları kök qovluqda saxla",
+    keepIncompleteDesc: "Backend dəstəyi əlavə olunana qədər lokal UI tənzimləməsidir",
+    maxActiveDownloads: "Maksimal aktiv yükləmə",
+    maxDlRate: "Maksimal yükləmə sürəti", maxUlRate: "Maksimal paylaşma sürəti",
+    zeroUnlimited: "0 = limitsiz", enableAltSpeed: "Alternativ sürəti aktiv et",
+    enableAltSpeedDesc: "Cədvəl əsasında aşağı limitlər tətbiq et",
+    altDlRate: "Alt yükləmə sürəti", altUlRate: "Alt paylaşma sürəti",
+    schedule: "Cədvəl", scheduleDesc: "Aktiv saatlar", days: "Günlər",
+    incomingPort: "Giriş portu", listenPort: "Dinləmə portu",
+    randomPort: "Başlanğıcda təsadüfi port", upnp: "UPnP / NAT-PMP ilə port açıqlığı",
+    dht: "Paylanmış Hash Cədvəli (DHT)", dhtDesc: "Tracker olmadan peer tap",
+    pex: "Peer Mübadiləsi (PEX)", pexDesc: "Qoşulmuş peer-lərlə peer siyahısı mübadiləsi",
+    lsd: "Lokal Peer Tapma", globalConns: "Qlobal bağlantılar",
+    connsPerTorrent: "Torrent başına bağlantı", globalSlots: "Qlobal upload slotları",
+    slotsPerTorrent: "Torrent başına slot", connSpeed: "Bağlantı sürəti",
+    connSpeedDesc: "Saniyədə yeni çıxış bağlantıları", queueing: "Növbəlik",
+    queueingDesc: "qBittorrent-stilindəki aktiv torrent limitləri",
+    maxActive: "Maks aktiv torrent", maxActiveUl: "Maks aktiv paylaşma",
+    recheckTitle: "Məcburi yoxlama", recheckMsg: "Bu torrentin yüklənmiş parçaları yenidən yoxlansın?",
+    recheckBtn: "Yoxla", seedLimitsTitle: "Paylaşma limitləri",
+    seedRatioLabel: "Ratio limiti, 0 = limitsiz",
+    seedTimeLabel: "Paylaşma vaxtı (dəqiqə), 0 = limitsiz",
+    seedLimitsSaved: "Paylaşma limitləri saxlandı",
+    apply: "Tətbiq et", save: "Saxla", orUploadFile: "və ya fayl yüklə", autoDetect: "Avtomatik tap",
+    statusSeeding: "Paylaşılır", statusDownloading: "Yüklənir", statusPaused: "Dayandırılıb",
+    statusChecking: "Yoxlanılır", statusQueued: "Növbədə", statusMetadata: "Metadata yüklənir",
+    statusCompleted: "Tamamlandı", statusNotLoaded: "Yüklənməyib",
+    refresh: "Yenilə", open: "Aç", move: "Köçür", actions: "Əməliyyatlar",
+    folderType: "qovluq", emptyFolder: "Yükləmə qovluğu boşdur",
+    createTorrentFrom: "Bu qovluqdan torrent yarat", createBtn: "Yarat",
+    noCustomSavePath: "Xüsusi saxlama yolu yoxdur", editPath: "Yolu redaktə et",
+    addCustomLabel: "Xüsusi etiket əlavə et",
+    editTrackersTitle: "Tracker-ləri redaktə et", trackerUrlsLabel: "Tracker URL-ləri, vergüllə",
+    addRssTitle: "RSS lent əlavə et", feedUrlLabel: "Lent URL-i", feedTitleLabel: "Lent başlığı",
+    newRuleTitle: "Yeni qayda", ruleNameLabel: "Qayda adı",
+    matchPatternLabel: "Uyğunluq şablonu (* joker simvol)",
+    destFolderLabel: "Hədəf qovluq",
+    addLabelTitle: "Etiket əlavə et", labelNameLabel: "Etiket adı",
+    labelColorLabel: "Rəng (CSS dəyəri, məs. #ff7a66)",
+    labelPathLabel: "Standart saxlama yolu (ixtiyari)",
+    editSavePathTitle: "Saxlama yolunu redaktə et",
+    deleteLabelTitle: "Etiketi sil", deleteLabelMsg: "Etiketi sil",
+    deleteFileTitle: "Faylı sil", deleteFileMsg: "Həmişəlik sil",
+    extractTitle: "Arxivi çıxart", destPathLabel: "Hədəf yol",
+    moveFileTitle: "Faylı köçür",
+    createTorrentTitle: "Torrent yarat",
+    commentLabel: "Şərh (ixtiyari)", defaultComment: "Riptide tərəfindən yaradılıb",
+    saveLocTitle: "Saxlama yeri", defaultSavePathLabel: "Standart saxlama yolu",
+    inspectArchive: "Arxivə bax",
+    browse: "Gözdən keçir", metadataLoading: "Metadata yüklənir...",
+    pieces: "Parçalar", connected: "Qoşulub", disconnected: "Qoşulmayıb",
+    dhtOn: "DHT açıq", dhtOff: "DHT bağlı", footerTorrents: "torrent",
+    limitDownDir: "Yükləmə limiti", limitUpDir: "Paylaşma limiti",
+    noFileMeta: "Fayl metadata yoxdur.", noConnectedPeers: "Qoşulmuş peer yoxdur.",
+    noTrackerMeta: "Tracker metadata yoxdur.",
+    skipAll: "Hamısını atla", normalAll: "Hamısı normal", highAll: "Hamısı yüksək",
+    priSkip: "Atla", priLow: "Aşağı", priNormal: "Normal", priHigh: "Yüksək",
+    filePriUpdated: "Fayl prioritetləri yeniləndi",
+    reannounce: "Yenidən elan et", trackerReannounced: "Tracker elanı göndərildi",
+    unknownClient: "naməlum client",
+    tierLabel: "Dərəcə", seedsLabel: "seed", leechersLabel: "leech",
+    propHash: "Hash", propSavePath: "Saxlama yolu", propPieceSize: "Parça ölçüsü",
+    propPieces: "Parçalar", propFiles: "Fayllar", propCreatedBy: "Yaradan",
+    propCreated: "Yaradılıb", propPrivate: "Şəxsi", propMaxConn: "Maks bağlantı",
+    propMaxUploads: "Maks yükləmə", propComment: "Şərh",
+    propPrivateYes: "bəli", propPrivateNo: "xeyr",
+    encryption: "Protokol şifrələməsi", preferTcp: "TCP-ni uTP-dən üstün tut",
+    preferTcpDesc: "qBittorrent mixed rejimi", limitTcpOverhead: "TCP əlavə yükünü məhdudlaşdır",
+    limitTcpDesc: "qBittorrent standartı: söndürülü", limitUtpRate: "uTP sürətini məhdudlaşdır",
+    limitUtpDesc: "qBittorrent standartı: açıq",
+    multiConnSameIp: "Eyni IP-dən çoxlu bağlantıya icazə ver",
+    anonymousMode: "Anonim rejim", ipFilter: "IP filter",
+    vpnRoute: "Trafiki VPN interfeysinə yönləndir",
+    vpnRouteDesc: "nftables kill-switch tun0 və loopback-ə məhdudlaşdırır",
+    authSetting: "Autentifikasiya",
+    authSettingDesc: "Session cookie + Basic Auth API uyumluluğu",
+    backupSection: "Yedəkləmə", backupDesc: "Tənzimləmələr, etiketlər, RSS məlumatlarını ehtiva edir",
+    exportBtn: "İxrac", importBtn: "İdxal",
   },
   ru: {
-    logout: "Выйти",
-    all: "Все",
-    downloading: "Загружаются",
-    seeding: "Раздаются",
-    completed: "Завершены",
-    paused: "Остановлены",
-    labels: "Метки",
-    tools: "Инструменты",
-    search: "Поиск",
-    rss: "RSS",
-    settings: "Настройки",
-    about: "О программе",
-    freeSpace: "Свободно",
-    addTorrent: "Добавить торрент",
-    files: "Файлы",
-    filterTorrents: "Фильтр торрентов...",
-    searchTitle: "Поиск торрентов",
+    logout: "Выйти", all: "Все", downloading: "Загружаются", seeding: "Раздаются",
+    completed: "Завершены", paused: "Остановлены", labels: "Метки", tools: "Инструменты",
+    search: "Поиск", rss: "RSS", settings: "Настройки", about: "О программе",
+    freeSpace: "Свободно", addTorrent: "Добавить торрент", files: "Файлы",
+    filterTorrents: "Фильтр торрентов...", searchTitle: "Поиск торрентов",
     searchPlaceholder: "Поиск локальных торрентов и загруженных файлов...",
-    rssTitle: "RSS-ленты",
-    rules: "Правила автозагрузки",
-    addFeed: "Добавить ленту",
-    selectTorrent: "Выберите торрент",
-    delete: "Удалить",
-    general: "Общее",
-    peers: "Пиры",
-    trackers: "Трекеры",
-    progress: "Прогресс",
-    downloaded: "Загружено",
-    ratio: "Рейтинг",
-    eta: "Осталось",
-    seeds: "Сиды",
-    speedLimits: "Ограничения скорости",
-    unlimited: "Без лимита",
-    download: "Загрузка",
-    upload: "Отдача",
-    saveLimits: "Сохранить лимиты",
-    magnetLink: "Magnet-ссылка",
-    savePath: "Путь сохранения",
-    category: "Категория",
-    cancel: "Отмена",
-    addMagnet: "Добавить magnet",
-    uploadFile: "Загрузить файл",
-    torrentFile: "Torrent-файл",
-    startPaused: "Запустить остановленным",
-    sequential: "Последовательная загрузка",
-    language: "Язык",
+    rssTitle: "RSS-ленты", rules: "Правила автозагрузки", addFeed: "Добавить ленту",
+    selectTorrent: "Выберите торрент", delete: "Удалить", general: "Общее", peers: "Пиры",
+    trackers: "Трекеры", progress: "Прогресс", downloaded: "Загружено", ratio: "Рейтинг",
+    eta: "Осталось", seeds: "Сиды", speedLimits: "Ограничения скорости", unlimited: "Без лимита",
+    download: "Загрузка", upload: "Отдача", saveLimits: "Сохранить лимиты",
+    magnetLink: "Magnet-ссылка", savePath: "Путь сохранения", category: "Категория",
+    cancel: "Отмена", addMagnet: "Добавить magnet", uploadFile: "Загрузить файл",
+    torrentFile: "Torrent-файл", startPaused: "Запустить остановленным",
+    sequential: "Последовательная загрузка", language: "Язык",
+    downloads: "Загрузки", bandwidth: "Полоса пропускания",
+    connection: "Подключение", privacy: "Конфиденциальность",
+    inspect: "Просмотр", resume: "Возобновить", pause: "Остановить",
+    openFolder: "Открыть папку загрузки", setDownloadLimit: "Лимит загрузки",
+    setUploadLimit: "Лимит отдачи", clearLimits: "Сбросить лимиты скорости",
+    copyHash: "Копировать info hash", disableSequential: "Отключить последовательную",
+    superSeeding: "Суперраздача", disableSuperSeeding: "Отключить суперраздачу",
+    forceReannounce: "Принудительный анонс", forceRecheck: "Принудительная проверка",
+    editTrackers: "Редактировать трекеры", seedingLimits: "Лимиты раздачи",
+    queueTop: "В начало очереди", queueUp: "Вверх в очереди", queueDown: "Вниз в очереди",
+    setLabel: "Установить метку",
+    setGeneral: "Общее", setDownloads: "Загрузки", setBandwidth: "Лимиты полосы пропускания",
+    setAltSpeed: "Расписание альтернативной скорости", setConnection: "Подключение",
+    setPrivacy: "Конфиденциальность", setLabels: "Метки",
+    startup: "Запускать Riptide при старте системы",
+    startupDesc: "Локальная настройка UI; служба systemd остаётся активной отдельно",
+    desktopNotify: "Уведомления рабочего стола",
+    desktopNotifyDesc: "Уведомлять в браузере о завершении загрузки",
+    theme: "Тема", defaultSaveLoc: "Папка загрузки по умолчанию",
+    watchFolder: "Отслеживаемая папка",
+    watchFolderDesc: "Автоматически импортировать .torrent файлы из этой папки",
+    enableWatchFolder: "Включить отслеживаемую папку",
+    keepIncomplete: "Хранить незавершённые файлы в корне загрузок",
+    keepIncompleteDesc: "Локальная настройка UI до добавления поддержки в backend",
+    maxActiveDownloads: "Максимум активных загрузок",
+    maxDlRate: "Максимальная скорость загрузки", maxUlRate: "Максимальная скорость отдачи",
+    zeroUnlimited: "0 = без лимита", enableAltSpeed: "Включить альт. скорость",
+    enableAltSpeedDesc: "Применять меньшие лимиты по расписанию",
+    altDlRate: "Альт. скорость загрузки", altUlRate: "Альт. скорость отдачи",
+    schedule: "Расписание", scheduleDesc: "Активные часы", days: "Дни",
+    incomingPort: "Входящий порт", listenPort: "Порт прослушивания",
+    randomPort: "Случайный порт при запуске", upnp: "Пробросить порт через UPnP / NAT-PMP",
+    dht: "Распределённая хеш-таблица (DHT)", dhtDesc: "Поиск пиров без трекера",
+    pex: "Обмен пирами (PEX)", pexDesc: "Обмен списками пиров с подключёнными пирами",
+    lsd: "Локальный поиск пиров", globalConns: "Глобальные подключения",
+    connsPerTorrent: "Подключений на торрент", globalSlots: "Глобальные слоты отдачи",
+    slotsPerTorrent: "Слотов на торрент", connSpeed: "Скорость подключения",
+    connSpeedDesc: "Новых исходящих подключений в секунду",
+    queueing: "Очередь", queueingDesc: "Лимиты активных торрентов в стиле qBittorrent",
+    maxActive: "Макс. активных торрентов", maxActiveUl: "Макс. активных раздач",
+    recheckTitle: "Принудительная проверка",
+    recheckMsg: "Перепроверить загруженные части этого торрента?",
+    recheckBtn: "Проверить", seedLimitsTitle: "Лимиты раздачи",
+    seedRatioLabel: "Лимит рейтинга, 0 = без лимита",
+    seedTimeLabel: "Время раздачи в минутах, 0 = без лимита",
+    seedLimitsSaved: "Лимиты раздачи сохранены",
+    apply: "Применить", save: "Сохранить", orUploadFile: "или загрузить файл",
+    autoDetect: "Авто-определение",
+    statusSeeding: "Раздаётся", statusDownloading: "Загружается", statusPaused: "Остановлен",
+    statusChecking: "Проверяется", statusQueued: "В очереди", statusMetadata: "Загрузка метаданных",
+    statusCompleted: "Завершён", statusNotLoaded: "Не загружен",
+    refresh: "Обновить", open: "Открыть", move: "Переместить", actions: "Действия",
+    folderType: "папка", emptyFolder: "Папка загрузок пуста",
+    createTorrentFrom: "Создать торрент из этой папки", createBtn: "Создать",
+    noCustomSavePath: "Путь не задан", editPath: "Изменить путь",
+    addCustomLabel: "Добавить метку",
+    editTrackersTitle: "Редактировать трекеры", trackerUrlsLabel: "URL трекеров, через запятую",
+    addRssTitle: "Добавить RSS-ленту", feedUrlLabel: "URL ленты", feedTitleLabel: "Название ленты",
+    newRuleTitle: "Новое правило", ruleNameLabel: "Название правила",
+    matchPatternLabel: "Шаблон совпадения (* — джокер)",
+    destFolderLabel: "Папка назначения",
+    addLabelTitle: "Добавить метку", labelNameLabel: "Название метки",
+    labelColorLabel: "Цвет (CSS значение, напр. #ff7a66)",
+    labelPathLabel: "Путь сохранения по умолчанию (необязательно)",
+    editSavePathTitle: "Изменить путь сохранения",
+    deleteLabelTitle: "Удалить метку", deleteLabelMsg: "Удалить метку",
+    deleteFileTitle: "Удалить файл", deleteFileMsg: "Удалить навсегда",
+    extractTitle: "Распаковать архив", destPathLabel: "Путь назначения",
+    moveFileTitle: "Переместить файл",
+    createTorrentTitle: "Создать торрент",
+    commentLabel: "Комментарий (необязательно)", defaultComment: "Создано в Riptide",
+    saveLocTitle: "Место сохранения", defaultSavePathLabel: "Путь сохранения по умолчанию",
+    inspectArchive: "Просмотр архива",
+    browse: "Обзор", metadataLoading: "Загрузка метаданных...",
+    pieces: "Части", connected: "Подключено", disconnected: "Отключено",
+    dhtOn: "DHT вкл", dhtOff: "DHT выкл", footerTorrents: "торрентов",
+    limitDownDir: "Лимит загрузки", limitUpDir: "Лимит отдачи",
+    noFileMeta: "Метаданные файлов недоступны.", noConnectedPeers: "Нет подключённых пиров.",
+    noTrackerMeta: "Метаданные трекера недоступны.",
+    skipAll: "Пропустить все", normalAll: "Нормально все", highAll: "Высокий все",
+    priSkip: "Пропустить", priLow: "Низкий", priNormal: "Нормальный", priHigh: "Высокий",
+    filePriUpdated: "Приоритеты файлов обновлены",
+    reannounce: "Переанонсировать", trackerReannounced: "Анонс трекера отправлен",
+    unknownClient: "неизвестный клиент",
+    tierLabel: "Уровень", seedsLabel: "сиды", leechersLabel: "личеры",
+    propHash: "Хеш", propSavePath: "Путь сохранения", propPieceSize: "Размер части",
+    propPieces: "Части", propFiles: "Файлы", propCreatedBy: "Создан",
+    propCreated: "Дата создания", propPrivate: "Приватный", propMaxConn: "Макс. подключений",
+    propMaxUploads: "Макс. отдач", propComment: "Комментарий",
+    propPrivateYes: "да", propPrivateNo: "нет",
+    encryption: "Шифрование протокола", preferTcp: "Предпочитать TCP перед uTP",
+    preferTcpDesc: "Смешанный режим qBittorrent", limitTcpOverhead: "Ограничить TCP накладные расходы",
+    limitTcpDesc: "По умолчанию в qBittorrent: выкл", limitUtpRate: "Ограничить скорость uTP",
+    limitUtpDesc: "По умолчанию в qBittorrent: вкл",
+    multiConnSameIp: "Разрешить несколько подключений с одного IP",
+    anonymousMode: "Анонимный режим", ipFilter: "IP-фильтр",
+    vpnRoute: "Маршрутизировать трафик через VPN",
+    vpnRouteDesc: "nftables kill-switch ограничивает клиент до tun0 и loopback",
+    authSetting: "Аутентификация",
+    authSettingDesc: "Cookie сессии + совместимость Basic Auth API",
+    backupSection: "Резервная копия", backupDesc: "Включает настройки, метки, RSS",
+    exportBtn: "Экспорт", importBtn: "Импорт",
   },
 };
 
@@ -278,6 +483,20 @@ function applyLanguage() {
   setText("#torrent-limit-clear", l("unlimited"));
   document.querySelectorAll(".limit-grid label > span").forEach((el, idx) => { el.textContent = idx === 0 ? l("download") : l("upload"); });
   setText("#torrent-limit-form button[type='submit']", l("saveLimits"));
+  const settingsNavMap = { general: l("setGeneral"), downloads: l("setDownloads"), bandwidth: l("bandwidth"), connection: l("connection"), privacy: l("privacy"), labels: l("labels") };
+  Object.entries(settingsNavMap).forEach(([key, value]) => {
+    const btn = qs(`.settings-section[data-section="${key}"]`);
+    if (btn) btn.innerHTML = `${icon(btn.dataset.icon)}<span>${value}</span>`;
+  });
+  setText("#storage-refresh span", l("refresh"));
+  // speed chart legend — use direct children only to avoid inner .rt-lg-dot spans
+  const lgItems = document.querySelectorAll(".rt-graph-legend > span");
+  lgItems.forEach((el, i) => {
+    const tn = Array.from(el.childNodes).find((n) => n.nodeType === Node.TEXT_NODE);
+    if (tn) tn.textContent = i === 0 ? l("download") : l("upload");
+  });
+  // piece map header
+  setText(".rt-insp-sechead span:first-child", l("pieces"));
   setText("#add-modal-title", l("addTorrent"));
   const modalLabels = document.querySelectorAll("#add-modal .rt-modal-label");
   [l("magnetLink"), l("savePath"), l("category"), l("torrentFile"), l("savePath"), l("category")].forEach((text, idx) => {
@@ -441,6 +660,19 @@ function pillClass(torrent) {
   return "pill";
 }
 
+function statusText(torrent) {
+  if (torrent.paused) return l("statusPaused");
+  const s = torrent.status.toLowerCase();
+  if (s.includes("seeding")) return l("statusSeeding");
+  if (s.includes("downloading")) return l("statusDownloading");
+  if (s === "metadata loading") return l("statusMetadata");
+  if (s === "queued") return l("statusQueued");
+  if (s === "checking" || s === "checking resume data") return l("statusChecking");
+  if (s === "not loaded") return l("statusNotLoaded");
+  if (torrent.progress >= 100) return l("statusCompleted");
+  return torrent.status;
+}
+
 function renderCounts() {
   const counts = {
     all: state.torrents.length,
@@ -460,7 +692,7 @@ function renderCounts() {
     if (el) el.textContent = count;
   });
   const footerCount = qs("#footer-count");
-  if (footerCount) footerCount.textContent = `${counts.all} torrents`;
+  if (footerCount) footerCount.textContent = `${counts.all} ${l("footerTorrents")}`;
 }
 
 async function loadLabels() {
@@ -555,8 +787,8 @@ function renderList() {
     card.innerHTML = `
       <button class="rt-row-play" data-row-toggle="${torrent.torrent_id}" aria-label="${torrent.paused ? "Resume" : "Pause"}" title="${torrent.paused ? "Resume" : "Pause"}">${icon(playIcon, 13)}</button>
       <div>
-        <div class="torrent-name">${esc(torrent.name || "metadata loading")}</div>
-        <div class="row-meta"><span class="${pillClass(torrent)}">${esc(torrent.status)}</span> <span class="rt-label-badge rt-label-${labelOf(torrent)}">${labelOf(torrent)}</span> ${torrent.progress.toFixed(1)}% · ${bytes(torrent.downloaded)} / ${bytes(torrent.total_size)}</div>
+        <div class="torrent-name">${esc(torrent.name || l("metadataLoading"))}</div>
+        <div class="row-meta"><span class="${pillClass(torrent)}">${esc(statusText(torrent))}</span> <span class="rt-label-badge rt-label-${labelOf(torrent)}">${labelOf(torrent)}</span> ${torrent.progress.toFixed(1)}% · ${bytes(torrent.downloaded)} / ${bytes(torrent.total_size)}</div>
         <div class="bar"><span style="width:${Math.min(torrent.progress, 100)}%"></span></div>
       </div>
       <div class="speeds">
@@ -586,7 +818,7 @@ function renderTotals() {
   const active = state.torrents.filter((t) => t.download_speed || t.upload_speed || t.status.toLowerCase().includes("downloading")).length;
   qs("#global-down").textContent = `↓ ${bytes(down)}/s`;
   qs("#global-up").textContent = `↑ ${bytes(up)}/s`;
-  qs("#connection-state").textContent = `Connected (${active} active)`;
+  qs("#connection-state").textContent = `${l("connected")} (${active} active)`;
   qs("#footer-ratio").textContent = `Ratio ${downloaded ? (uploaded / downloaded).toFixed(2) : "0.00"}`;
 }
 
@@ -654,8 +886,8 @@ async function selectTorrent(torrentId) {
   const torrent = details.status;
   qs("#detail-empty").classList.add("hidden");
   qs("#detail-content").classList.remove("hidden");
-  qs("#detail-name").textContent = torrent.name || "metadata loading";
-  qs("#detail-status").textContent = torrent.status;
+  qs("#detail-name").textContent = torrent.name || l("metadataLoading");
+  qs("#detail-status").textContent = statusText(torrent);
   qs("#detail-status").className = pillClass(torrent);
   qs("#stat-progress").textContent = `${torrent.progress.toFixed(1)}%`;
   qs("#stat-downloaded").textContent = bytes(torrent.downloaded);
@@ -693,30 +925,30 @@ async function selectTorrent(torrentId) {
   const created = props.creation_date ? new Date(props.creation_date * 1000).toLocaleString() : "-";
   general.insertAdjacentHTML("beforeend", `
     <div class="rt-props-grid">
-      <div><span>Hash</span><b>${esc(torrent.info_hash)}</b></div>
-      <div><span>Save path</span><b>${esc(torrent.save_path || "-")}</b></div>
-      <div><span>Piece size</span><b>${props.piece_size ? bytes(props.piece_size) : "-"}</b></div>
-      <div><span>Pieces</span><b>${esc(props.pieces ?? "-")}</b></div>
-      <div><span>Files</span><b>${esc(props.num_files ?? "-")}</b></div>
-      <div><span>Created by</span><b>${esc(props.created_by || "-")}</b></div>
-      <div><span>Created</span><b>${esc(created)}</b></div>
-      <div><span>Private</span><b>${props.private ? "yes" : "no"}</b></div>
-      <div><span>Max connections</span><b>${esc(props.max_connections ?? "-")}</b></div>
-      <div><span>Max uploads</span><b>${esc(props.max_uploads ?? "-")}</b></div>
-      ${props.comment ? `<div class="wide"><span>Comment</span><b>${esc(props.comment)}</b></div>` : ""}
+      <div><span>${l("propHash")}</span><b>${esc(torrent.info_hash)}</b></div>
+      <div><span>${l("propSavePath")}</span><b>${esc(torrent.save_path || "-")}</b></div>
+      <div><span>${l("propPieceSize")}</span><b>${props.piece_size ? bytes(props.piece_size) : "-"}</b></div>
+      <div><span>${l("propPieces")}</span><b>${esc(props.pieces ?? "-")}</b></div>
+      <div><span>${l("propFiles")}</span><b>${esc(props.num_files ?? "-")}</b></div>
+      <div><span>${l("propCreatedBy")}</span><b>${esc(props.created_by || "-")}</b></div>
+      <div><span>${l("propCreated")}</span><b>${esc(created)}</b></div>
+      <div><span>${l("propPrivate")}</span><b>${props.private ? l("propPrivateYes") : l("propPrivateNo")}</b></div>
+      <div><span>${l("propMaxConn")}</span><b>${esc(props.max_connections ?? "-")}</b></div>
+      <div><span>${l("propMaxUploads")}</span><b>${esc(props.max_uploads ?? "-")}</b></div>
+      ${props.comment ? `<div class="wide"><span>${l("propComment")}</span><b>${esc(props.comment)}</b></div>` : ""}
     </div>
   `);
 
   const filesEl = qs("#tab-files");
   if (!details.files.length) {
-    filesEl.innerHTML = `<div class="muted">No file metadata yet.</div>`;
+    filesEl.innerHTML = `<div class="muted">${l("noFileMeta")}</div>`;
   } else {
-    const PRI_LABELS = { 0: "Skip", 1: "Low", 4: "Normal", 7: "High" };
+    const PRI_LABELS = { 0: l("priSkip"), 1: l("priLow"), 4: l("priNormal"), 7: l("priHigh") };
     filesEl.innerHTML = `
       <div class="rt-file-toolbar">
-        <button type="button" class="rt-btn rt-btn-secondary rt-btn-auto" data-files-pri="0">${icon("x", 13)} Skip all</button>
-        <button type="button" class="rt-btn rt-btn-secondary rt-btn-auto" data-files-pri="4">${icon("check", 13)} Normal all</button>
-        <button type="button" class="rt-btn rt-btn-secondary rt-btn-auto" data-files-pri="7">${icon("arrowUp", 13)} High all</button>
+        <button type="button" class="rt-btn rt-btn-secondary rt-btn-auto" data-files-pri="0">${icon("x", 13)} ${l("skipAll")}</button>
+        <button type="button" class="rt-btn rt-btn-secondary rt-btn-auto" data-files-pri="4">${icon("check", 13)} ${l("normalAll")}</button>
+        <button type="button" class="rt-btn rt-btn-secondary rt-btn-auto" data-files-pri="7">${icon("arrowUp", 13)} ${l("highAll")}</button>
       </div>
       ${details.files.map((f, idx) => {
       const pct = f.size ? Math.min((f.downloaded / f.size) * 100, 100) : 0;
@@ -743,7 +975,7 @@ async function selectTorrent(torrentId) {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ priorities }),
           });
-          showToast("File priorities updated", "success");
+          showToast(l("filePriUpdated"), "success");
         } catch (e) { showToast(e.message, "error"); }
       };
     });
@@ -763,7 +995,7 @@ async function selectTorrent(torrentId) {
 
   const peersEl = qs("#tab-peers");
   if (!details.peers.length) {
-    peersEl.innerHTML = `<div class="muted">No connected peers.</div>`;
+    peersEl.innerHTML = `<div class="muted">${l("noConnectedPeers")}</div>`;
   } else {
     peersEl.innerHTML = details.peers.map((p) => {
       const active = p.download_speed > 0 || p.upload_speed > 0;
@@ -771,7 +1003,7 @@ async function selectTorrent(torrentId) {
         <div class="rt-bdot" style="background:${active ? "var(--rt-aqua)" : "var(--rt-fg-4)"}"></div>
         <div class="rt-tracker-main">
           <div class="rt-tracker-url">${esc(p.ip)}</div>
-          <div class="rt-tracker-meta">${esc(p.client || "unknown client")} · ${esc(p.connection_type || "BT")} · ↓ ${bytes(p.download_speed)}/s ↑ ${bytes(p.upload_speed || 0)}/s · got ${bytes(p.downloaded || 0)} sent ${bytes(p.uploaded || 0)}</div>
+          <div class="rt-tracker-meta">${esc(p.client || l("unknownClient"))} · ${esc(p.connection_type || "BT")} · ↓ ${bytes(p.download_speed)}/s ↑ ${bytes(p.upload_speed || 0)}/s · got ${bytes(p.downloaded || 0)} sent ${bytes(p.uploaded || 0)}</div>
         </div>
         <div class="rt-file-size">${p.progress != null ? p.progress.toFixed(0) + "%" : ""}</div>
       </div>`;
@@ -781,11 +1013,11 @@ async function selectTorrent(torrentId) {
   const trackersEl = qs("#tab-trackers");
   const trackerControls = `
     <div class="rt-file-toolbar">
-      <button type="button" class="rt-btn rt-btn-secondary rt-btn-auto" data-reannounce>${icon("refresh", 13)} Reannounce</button>
-      <button type="button" class="rt-btn rt-btn-secondary rt-btn-auto" data-edit-trackers>${icon("server", 13)} Edit trackers</button>
+      <button type="button" class="rt-btn rt-btn-secondary rt-btn-auto" data-reannounce>${icon("refresh", 13)} ${l("reannounce")}</button>
+      <button type="button" class="rt-btn rt-btn-secondary rt-btn-auto" data-edit-trackers>${icon("server", 13)} ${l("editTrackers")}</button>
     </div>`;
   if (!details.trackers.length) {
-    trackersEl.innerHTML = `${trackerControls}<div class="muted">No tracker metadata yet.</div>`;
+    trackersEl.innerHTML = `${trackerControls}<div class="muted">${l("noTrackerMeta")}</div>`;
   } else {
     trackersEl.innerHTML = trackerControls + details.trackers.map((t) => {
       const ok = !t.message || !t.message.toLowerCase().includes("error");
@@ -793,7 +1025,7 @@ async function selectTorrent(torrentId) {
         <div class="rt-bdot" style="background:${ok ? "var(--rt-success)" : "var(--rt-fg-4)"}"></div>
         <div class="rt-tracker-main">
           <div class="rt-tracker-url">${esc(t.url)}</div>
-          <div class="rt-tracker-meta">Tier ${esc(String(t.tier ?? ""))} · seeds ${esc(t.scrape_complete ?? "-")} · leechers ${esc(t.scrape_incomplete ?? "-")}${t.message ? " · " + esc(t.message) : ""}</div>
+          <div class="rt-tracker-meta">${l("tierLabel")} ${esc(String(t.tier ?? ""))} · ${l("seedsLabel")} ${esc(t.scrape_complete ?? "-")} · ${l("leechersLabel")} ${esc(t.scrape_incomplete ?? "-")}${t.message ? " · " + esc(t.message) : ""}</div>
         </div>
       </div>`;
     }).join("");
@@ -801,13 +1033,13 @@ async function selectTorrent(torrentId) {
   trackersEl.querySelector("[data-reannounce]")?.addEventListener("click", async () => {
     try {
       await api(`/api/torrents/${torrentId}/reannounce`, { method: "POST" });
-      showToast("Tracker reannounce sent", "success");
+      showToast(l("trackerReannounced"), "success");
       await selectTorrent(torrentId);
     } catch (e) { showToast(e.message, "error"); }
   });
   trackersEl.querySelector("[data-edit-trackers]")?.addEventListener("click", async () => {
     const current = details.trackers.map((t) => t.url).join("\n");
-    const value = await openInputModal("Edit trackers", "Tracker URLs, comma separated", current);
+    const value = await openInputModal(l("editTrackersTitle"), l("trackerUrlsLabel"), current);
     if (value === null) return;
     const urls = value.split(/[\n,]+/).map((x) => x.trim()).filter(Boolean);
     try {
@@ -853,13 +1085,13 @@ async function loadSystem() {
     const usedPercent = system.disk_total ? (system.disk_used / system.disk_total) * 100 : 0;
     qs("#free-space").textContent = bytes(system.disk_free);
     qs("#free-meter").style.width = `${Math.max(3, 100 - usedPercent)}%`;
-    qs("#dht-state").textContent = `DHT ${system.dht_enabled ? "on" : "off"}`;
+    qs("#dht-state").textContent = system.dht_enabled ? l("dhtOn") : l("dhtOff");
     if (!state.storagePath) {
       state.storagePath = system.download_root;
       qs("#storage-path").value = state.storagePath;
     }
   } catch {
-    qs("#connection-state").textContent = "Disconnected";
+    qs("#connection-state").textContent = l("disconnected");
   }
 }
 
@@ -904,7 +1136,7 @@ async function runGlobalSearch() {
         <span class="rt-res-health" style="background:${file.type === "directory" ? "#5BA2FF" : "#FFB84D"}"></span>
         <span class="rt-res-nm">${esc(file.name)}</span>
       </span>
-      <span class="rt-res-size">${file.type === "file" ? bytes(file.size) : "folder"}</span>
+      <span class="rt-res-size">${file.type === "file" ? bytes(file.size) : l("folderType")}</span>
       <span class="rt-res-sp rt-mono">${esc(file.type)}</span>
       <span class="rt-res-sp rt-mono">local</span>
       <span class="rt-res-src">${esc(file.path)}<span class="rt-res-age">storage</span></span>
@@ -1010,11 +1242,11 @@ function renderRss() {
 }
 
 async function addRssFeed() {
-  const url = await openInputModal("Add RSS feed", "Feed URL");
+  const url = await openInputModal(l("addRssTitle"), l("feedUrlLabel"));
   if (!url) return;
   let hostname = url;
   try { hostname = new URL(url).hostname; } catch { /* use raw url */ }
-  const title = await openInputModal("Add RSS feed", "Feed title", hostname);
+  const title = await openInputModal(l("addRssTitle"), l("feedTitleLabel"), hostname);
   if (!title) return;
   await api("/api/rss/feeds", {
     method: "POST",
@@ -1025,11 +1257,11 @@ async function addRssFeed() {
 }
 
 async function addRssRule() {
-  const label = await openInputModal("New rule", "Rule name");
+  const label = await openInputModal(l("newRuleTitle"), l("ruleNameLabel"));
   if (!label) return;
-  const pattern = await openInputModal("New rule", "Match pattern (use * as wildcard)", "*");
+  const pattern = await openInputModal(l("newRuleTitle"), l("matchPatternLabel"), "*");
   if (!pattern) return;
-  const destination = await openInputModal("New rule", "Destination folder", state.storagePath || "/var/lib/torrent-client/downloads");
+  const destination = await openInputModal(l("newRuleTitle"), l("destFolderLabel"), state.storagePath || "/var/lib/torrent-client/downloads");
   if (!destination) return;
   await api("/api/rss/rules", {
     method: "POST",
@@ -1052,10 +1284,10 @@ function renderSettingsScreen() {
   const toggle = (key) => `<button type="button" class="rt-tog ${s[key] ? "on" : "off"}" data-setting-toggle="${key}"><span class="rt-tog-knob"></span></button>`;
   const uiToggle = (key) => `<button type="button" class="rt-tog ${ui[key] ? "on" : "off"}" data-ui-toggle="${key}"><span class="rt-tog-knob"></span></button>`;
   if (state.settingsSection === "general") {
-    panel.innerHTML = `<div class="rt-set-group"><div class="rt-set-grouphead">General</div>${row("Launch Riptide on system startup", "Stored as a local UI preference; systemd service stays enabled separately", uiToggle("autostart"))}${row("Desktop notifications", "Notify when a download completes in this browser", uiToggle("notifications"))}${row("Theme", "", `<button type="button" class="rt-select" data-cycle-theme>${icon("settings", 14)} ${esc(ui.theme)}</button>`)}${row(l("language"), "", `<div class="rt-seg rt-seg-inline"><button type="button" data-lang="en" class="${ui.language === "en" || !ui.language ? "active" : ""}">EN</button><button type="button" data-lang="az" class="${ui.language === "az" ? "active" : ""}">AZ</button><button type="button" data-lang="ru" class="${ui.language === "ru" ? "active" : ""}">RU</button></div>`)}</div>`;
+    panel.innerHTML = `<div class="rt-set-group"><div class="rt-set-grouphead">${l("setGeneral")}</div>${row(l("startup"), l("startupDesc"), uiToggle("autostart"))}${row(l("desktopNotify"), l("desktopNotifyDesc"), uiToggle("notifications"))}${row(l("theme"), "", `<button type="button" class="rt-select" data-cycle-theme>${icon("settings", 14)} ${esc(ui.theme)}</button>`)}${row(l("language"), "", `<div class="rt-seg rt-seg-inline"><button type="button" data-lang="en" class="${ui.language === "en" || !ui.language ? "active" : ""}">EN</button><button type="button" data-lang="az" class="${ui.language === "az" ? "active" : ""}">AZ</button><button type="button" data-lang="ru" class="${ui.language === "ru" ? "active" : ""}">RU</button></div>`)}</div>`;
   }
   if (state.settingsSection === "downloads") {
-    panel.innerHTML = `<div class="rt-set-group"><div class="rt-set-grouphead">Downloads</div>${row("Default save location", "", `<div class="rt-pathfield">${icon("folder", 14)}<input id="screen_default_download_folder" value="${esc(s.default_download_folder || "")}" /><button type="button" class="rt-path-btn" data-browse-download>Browse</button></div>`)}${row("Watch folder", "Auto-import .torrent files from this directory", `<div class="rt-pathfield">${icon("folderOpen", 14)}<input id="screen_watch_folder" value="${esc(s.watch_folder || "")}" placeholder="/var/lib/torrent-client/watch" /></div>`)}${row("Enable watch folder", "", toggle("watch_folder_enabled"))}${row("Keep incomplete files in download root", "Stored as a local UI preference until incomplete-folder backend support is added", uiToggle("incomplete_folder"))}${row("Maximum active downloads", "", `<input class="rt-numfield" id="screen_max_active_downloads" type="number" min="1" value="${s.max_active_downloads || 3}" />`)}</div>`;
+    panel.innerHTML = `<div class="rt-set-group"><div class="rt-set-grouphead">${l("setDownloads")}</div>${row(l("defaultSaveLoc"), "", `<div class="rt-pathfield">${icon("folder", 14)}<input id="screen_default_download_folder" value="${esc(s.default_download_folder || "")}" /><button type="button" class="rt-path-btn" data-browse-download>${l("browse")}</button></div>`)}${row(l("watchFolder"), l("watchFolderDesc"), `<div class="rt-pathfield">${icon("folderOpen", 14)}<input id="screen_watch_folder" value="${esc(s.watch_folder || "")}" placeholder="/var/lib/torrent-client/watch" /></div>`)}${row(l("enableWatchFolder"), "", toggle("watch_folder_enabled"))}${row(l("keepIncomplete"), l("keepIncompleteDesc"), uiToggle("incomplete_folder"))}${row(l("maxActiveDownloads"), "", `<input class="rt-numfield" id="screen_max_active_downloads" type="number" min="1" value="${s.max_active_downloads || 3}" />`)}</div>`;
   }
   if (state.settingsSection === "bandwidth") {
     const days = (s.alt_speed_days || "1111111").split("");
@@ -1065,39 +1297,39 @@ function renderSettingsScreen() {
     ).join("");
     panel.innerHTML = `
       <div class="rt-set-group">
-        <div class="rt-set-grouphead">Bandwidth limits</div>
-        ${row("Maximum download rate", "0 = unlimited", `<div class="rt-numunit"><input class="rt-numfield" id="screen_global_download_limit" type="number" min="0" value="${fromBytes(s.global_download_limit, "kb")}" /><span>KB/s</span></div>`)}
-        ${row("Maximum upload rate", "0 = unlimited", `<div class="rt-numunit"><input class="rt-numfield" id="screen_global_upload_limit" type="number" min="0" value="${fromBytes(s.global_upload_limit, "kb")}" /><span>KB/s</span></div>`)}
+        <div class="rt-set-grouphead">${l("setBandwidth")}</div>
+        ${row(l("maxDlRate"), l("zeroUnlimited"), `<div class="rt-numunit"><input class="rt-numfield" id="screen_global_download_limit" type="number" min="0" value="${fromBytes(s.global_download_limit, "kb")}" /><span>KB/s</span></div>`)}
+        ${row(l("maxUlRate"), l("zeroUnlimited"), `<div class="rt-numunit"><input class="rt-numfield" id="screen_global_upload_limit" type="number" min="0" value="${fromBytes(s.global_upload_limit, "kb")}" /><span>KB/s</span></div>`)}
         <div class="rt-set-note">${icon("gauge", 14)}Global limits are applied directly to the libtorrent session.</div>
       </div>
       <div class="rt-set-group">
-        <div class="rt-set-grouphead">Alternate speed schedule</div>
-        ${row("Enable alt speed", "Apply lower limits on a schedule", toggle("alt_speed_enabled"))}
-        ${row("Alt download rate", "KB/s, 0 = unlimited", `<div class="rt-numunit"><input class="rt-numfield" id="screen_alt_speed_dl" type="number" min="0" value="${fromBytes(s.alt_speed_dl, "kb")}" /><span>KB/s</span></div>`)}
-        ${row("Alt upload rate", "KB/s, 0 = unlimited", `<div class="rt-numunit"><input class="rt-numfield" id="screen_alt_speed_ul" type="number" min="0" value="${fromBytes(s.alt_speed_ul, "kb")}" /><span>KB/s</span></div>`)}
-        ${row("Schedule", "Active hours", `<div class="rt-alttime"><input class="rt-timefield" id="screen_alt_begin" type="time" value="${esc(s.alt_speed_begin || "09:00")}" /> <span>to</span> <input class="rt-timefield" id="screen_alt_end" type="time" value="${esc(s.alt_speed_end || "23:00")}" /></div>`)}
-        ${row("Days", "", `<div class="rt-day-row" id="alt-day-row">${dayBtns}</div>`)}
+        <div class="rt-set-grouphead">${l("setAltSpeed")}</div>
+        ${row(l("enableAltSpeed"), l("enableAltSpeedDesc"), toggle("alt_speed_enabled"))}
+        ${row(l("altDlRate"), l("zeroUnlimited"), `<div class="rt-numunit"><input class="rt-numfield" id="screen_alt_speed_dl" type="number" min="0" value="${fromBytes(s.alt_speed_dl, "kb")}" /><span>KB/s</span></div>`)}
+        ${row(l("altUlRate"), l("zeroUnlimited"), `<div class="rt-numunit"><input class="rt-numfield" id="screen_alt_speed_ul" type="number" min="0" value="${fromBytes(s.alt_speed_ul, "kb")}" /><span>KB/s</span></div>`)}
+        ${row(l("schedule"), l("scheduleDesc"), `<div class="rt-alttime"><input class="rt-timefield" id="screen_alt_begin" type="time" value="${esc(s.alt_speed_begin || "09:00")}" /> <span>to</span> <input class="rt-timefield" id="screen_alt_end" type="time" value="${esc(s.alt_speed_end || "23:00")}" /></div>`)}
+        ${row(l("days"), "", `<div class="rt-day-row" id="alt-day-row">${dayBtns}</div>`)}
       </div>`;
   }
   if (state.settingsSection === "connection") {
     panel.innerHTML = `
       <div class="rt-set-group">
-        <div class="rt-set-grouphead">Connection</div>
-        ${row("Incoming port", "libtorrent listens on 6881-6891", `<input class="rt-numfield" value="6881" disabled />`)}
-        ${row("Listen port", "", `<input class="rt-numfield" id="screen_listen_port" type="number" min="1" max="65535" value="${s.listen_port || 6881}" />`)}
-        ${row("Random port on startup", "", toggle("random_port"))}
-        ${row("Map port with UPnP / NAT-PMP", "", toggle("upnp_enabled"))}
-        ${row("Distributed Hash Table (DHT)", "Find peers without a tracker", toggle("dht_enabled"))}
-        ${row("Peer Exchange (PEX)", "Exchange peer lists with connected peers", toggle("pex_enabled"))}
-        ${row("Local Peer Discovery", "", toggle("lsd_enabled"))}
-        ${row("Global connections", "", `<input class="rt-numfield" id="screen_global_connections_limit" type="number" min="1" value="${s.global_connections_limit || 500}" />`)}
-        ${row("Connections per torrent", "", `<input class="rt-numfield" id="screen_torrent_connections_limit" type="number" min="1" value="${s.torrent_connections_limit || 100}" />`)}
-        ${row("Global upload slots", "", `<input class="rt-numfield" id="screen_global_upload_slots" type="number" min="1" value="${s.global_upload_slots || 20}" />`)}
-        ${row("Upload slots per torrent", "", `<input class="rt-numfield" id="screen_torrent_upload_slots" type="number" min="1" value="${s.torrent_upload_slots || 4}" />`)}
-        ${row("Connection speed", "New outgoing connections per second", `<input class="rt-numfield" id="screen_connection_speed" type="number" min="1" value="${s.connection_speed || 30}" />`)}
-        ${row("Queueing", "qBittorrent-style active torrent limits", toggle("queueing_enabled"))}
-        ${row("Max active torrents", "", `<input class="rt-numfield" id="screen_max_active_torrents" type="number" min="1" value="${s.max_active_torrents || 500}" />`)}
-        ${row("Max active uploads", "", `<input class="rt-numfield" id="screen_max_active_uploads" type="number" min="1" value="${s.max_active_uploads || 5}" />`)}
+        <div class="rt-set-grouphead">${l("setConnection")}</div>
+        ${row(l("incomingPort"), "libtorrent listens on 6881-6891", `<input class="rt-numfield" value="6881" disabled />`)}
+        ${row(l("listenPort"), "", `<input class="rt-numfield" id="screen_listen_port" type="number" min="1" max="65535" value="${s.listen_port || 6881}" />`)}
+        ${row(l("randomPort"), "", toggle("random_port"))}
+        ${row(l("upnp"), "", toggle("upnp_enabled"))}
+        ${row(l("dht"), l("dhtDesc"), toggle("dht_enabled"))}
+        ${row(l("pex"), l("pexDesc"), toggle("pex_enabled"))}
+        ${row(l("lsd"), "", toggle("lsd_enabled"))}
+        ${row(l("globalConns"), "", `<input class="rt-numfield" id="screen_global_connections_limit" type="number" min="1" value="${s.global_connections_limit || 500}" />`)}
+        ${row(l("connsPerTorrent"), "", `<input class="rt-numfield" id="screen_torrent_connections_limit" type="number" min="1" value="${s.torrent_connections_limit || 100}" />`)}
+        ${row(l("globalSlots"), "", `<input class="rt-numfield" id="screen_global_upload_slots" type="number" min="1" value="${s.global_upload_slots || 20}" />`)}
+        ${row(l("slotsPerTorrent"), "", `<input class="rt-numfield" id="screen_torrent_upload_slots" type="number" min="1" value="${s.torrent_upload_slots || 4}" />`)}
+        ${row(l("connSpeed"), l("connSpeedDesc"), `<input class="rt-numfield" id="screen_connection_speed" type="number" min="1" value="${s.connection_speed || 30}" />`)}
+        ${row(l("queueing"), l("queueingDesc"), toggle("queueing_enabled"))}
+        ${row(l("maxActive"), "", `<input class="rt-numfield" id="screen_max_active_torrents" type="number" min="1" value="${s.max_active_torrents || 500}" />`)}
+        ${row(l("maxActiveUl"), "", `<input class="rt-numfield" id="screen_max_active_uploads" type="number" min="1" value="${s.max_active_uploads || 5}" />`)}
       </div>`;
   }
   if (state.settingsSection === "labels") {
@@ -1108,19 +1340,19 @@ function renderSettingsScreen() {
             <span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${esc(lbl.color || "var(--rt-fg-4)")};flex-shrink:0;"></span>
             ${esc(lbl.name)}${lbl.builtin ? ` <span style="font-size:10px;color:var(--rt-fg-4);font-weight:400;">(built-in)</span>` : ""}
           </div>
-          <div class="rt-set-row-desc">${lbl.save_path ? esc(lbl.save_path) : "No custom save path"}</div>
+          <div class="rt-set-row-desc">${lbl.save_path ? esc(lbl.save_path) : l("noCustomSavePath")}</div>
         </div>
         <div class="rt-set-row-control" style="display:flex;gap:8px;">
-          <button type="button" class="rt-btn rt-btn-secondary rt-btn-auto" data-edit-label="${esc(lbl.name)}">${icon("folder", 13)} Edit path</button>
+          <button type="button" class="rt-btn rt-btn-secondary rt-btn-auto" data-edit-label="${esc(lbl.name)}">${icon("folder", 13)} ${l("editPath")}</button>
           ${!lbl.builtin ? `<button type="button" class="rt-btn rt-btn-danger rt-btn-auto" data-delete-label="${esc(lbl.name)}">${icon("trash", 13)} Delete</button>` : ""}
         </div>
       </div>`).join("");
-    panel.innerHTML = `<div class="rt-set-group"><div class="rt-set-grouphead">Labels</div>${labelRows || `<div class="rt-set-row"><div class="rt-set-row-text" style="color:var(--rt-fg-3)">No labels configured.</div></div>`}<div style="padding-top:12px;"><button type="button" class="rt-btn rt-btn-primary rt-btn-auto" id="add-custom-label">${icon("plus", 13)} Add custom label</button></div></div>`;
+    panel.innerHTML = `<div class="rt-set-group"><div class="rt-set-grouphead">${l("setLabels")}</div>${labelRows || `<div class="rt-set-row"><div class="rt-set-row-text" style="color:var(--rt-fg-3)">${l("noCustomSavePath")}</div></div>`}<div style="padding-top:12px;"><button type="button" class="rt-btn rt-btn-primary rt-btn-auto" id="add-custom-label">${icon("plus", 13)} ${l("addCustomLabel")}</button></div></div>`;
     panel.querySelector("#add-custom-label")?.addEventListener("click", async () => {
-      const name = await openInputModal("Add label", "Label name");
+      const name = await openInputModal(l("addLabelTitle"), l("labelNameLabel"));
       if (!name) return;
-      const color = await openInputModal("Add label", "Color (CSS value, e.g. #ff7a66)", "#5ba2ff");
-      const save_path = await openInputModal("Add label", "Default save path (optional)", "");
+      const color = await openInputModal(l("addLabelTitle"), l("labelColorLabel"), "#5ba2ff");
+      const save_path = await openInputModal(l("addLabelTitle"), l("labelPathLabel"), "");
       try {
         await api("/api/labels", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, color: color || "#5ba2ff", save_path: save_path || null }) });
         await loadLabels();
@@ -1132,7 +1364,7 @@ function renderSettingsScreen() {
       btn.addEventListener("click", async () => {
         const name = btn.dataset.editLabel;
         const lbl = state.labels.find((l) => l.name === name);
-        const save_path = await openInputModal("Edit save path", `Save path for "${name}"`, lbl?.save_path || "");
+        const save_path = await openInputModal(l("editSavePathTitle"), `${l("savePath")} "${name}"`, lbl?.save_path || "");
         if (save_path === null) return;
         try {
           await api(`/api/labels/${encodeURIComponent(name)}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ save_path: save_path || null }) });
@@ -1145,7 +1377,7 @@ function renderSettingsScreen() {
     panel.querySelectorAll("[data-delete-label]").forEach((btn) => {
       btn.addEventListener("click", async () => {
         const name = btn.dataset.deleteLabel;
-        const ok = await openConfirmModal("Delete label", `Delete label "${name}"?`, "Delete");
+        const ok = await openConfirmModal(l("deleteLabelTitle"), `${l("deleteLabelMsg")} "${name}"?`, l("delete"));
         if (!ok) return;
         try {
           await api(`/api/labels/${encodeURIComponent(name)}`, { method: "DELETE" });
@@ -1161,10 +1393,10 @@ function renderSettingsScreen() {
     const encButtons = [["Disabled", 0], ["Prefer", 1], ["Require", 2]].map(([label, value]) =>
       `<button type="button" data-encryption="${label}" data-enc-policy="${value}" class="${Number(s.encryption_policy || 0) === value ? "active" : ""}">${label}</button>`
     ).join("");
-    panel.innerHTML = `<div class="rt-set-group"><div class="rt-set-grouphead">Privacy</div>${row("Protocol encryption", "", `<div class="rt-seg rt-seg-inline">${encButtons}</div>`)}${row("Prefer TCP over uTP", "Matches qBittorrent mixed mode", `<button type="button" class="rt-tog ${Number(s.utp_tcp_mixed_mode || 0) === 0 ? "on" : "off"}" data-mixed-mode><span class="rt-tog-knob"></span></button>`)}${row("Limit TCP overhead", "qBittorrent default is off", toggle("limit_tcp_overhead"))}${row("Limit uTP rate", "qBittorrent default is on", toggle("limit_utp_rate"))}${row("Allow multiple connections from same IP", "", toggle("allow_multiple_connections_from_same_ip"))}${row("Anonymous mode", "", toggle("anonymous_mode"))}${row("IP filter", "One CIDR or start-end range per line", `<textarea id="screen_ip_filter" class="rt-textarea" placeholder="203.0.113.0/24">${esc(s.ip_filter || "")}</textarea>`)}${row("Route traffic through VPN interface", "nftables kill-switch restricts torrentclient to tun0 and loopback", `<span class="rt-select">${icon("shield", 14)} enabled</span>`)}${row("Authentication", "Session cookie frontend plus Basic Auth API compatibility", `<span class="rt-select">${icon("lock", 14)} enabled</span>`)}<div class="rt-set-note">${icon("lock", 14)}Riptide stores credentials locally in /etc/torrent-client.env and sends no telemetry.</div></div>`;
+    panel.innerHTML = `<div class="rt-set-group"><div class="rt-set-grouphead">${l("setPrivacy")}</div>${row(l("encryption"), "", `<div class="rt-seg rt-seg-inline">${encButtons}</div>`)}${row(l("preferTcp"), l("preferTcpDesc"), `<button type="button" class="rt-tog ${Number(s.utp_tcp_mixed_mode || 0) === 0 ? "on" : "off"}" data-mixed-mode><span class="rt-tog-knob"></span></button>`)}${row(l("limitTcpOverhead"), l("limitTcpDesc"), toggle("limit_tcp_overhead"))}${row(l("limitUtpRate"), l("limitUtpDesc"), toggle("limit_utp_rate"))}${row(l("multiConnSameIp"), "", toggle("allow_multiple_connections_from_same_ip"))}${row(l("anonymousMode"), "", toggle("anonymous_mode"))}${row(l("ipFilter"), "One CIDR or start-end range per line", `<textarea id="screen_ip_filter" class="rt-textarea" placeholder="203.0.113.0/24">${esc(s.ip_filter || "")}</textarea>`)}${row(l("vpnRoute"), l("vpnRouteDesc"), `<span class="rt-select">${icon("shield", 14)} enabled</span>`)}${row(l("authSetting"), l("authSettingDesc"), `<span class="rt-select">${icon("lock", 14)} enabled</span>`)}<div class="rt-set-note">${icon("lock", 14)}Riptide stores credentials locally in /etc/torrent-client.env and sends no telemetry.</div></div>`;
   }
   if (state.settingsSection === "general") {
-    panel.insertAdjacentHTML("beforeend", `<div class="rt-set-group"><div class="rt-set-grouphead">Backup</div>${row("Import / export settings", "Includes settings, labels, RSS feeds and RSS rules", `<div class="rt-inline-actions"><button type="button" class="rt-btn rt-btn-secondary rt-btn-auto" data-export-settings>${icon("download", 13)} Export</button><button type="button" class="rt-btn rt-btn-secondary rt-btn-auto" data-import-settings>${icon("upload", 13)} Import</button><input id="settings-import-file" class="hidden" type="file" accept="application/json,.json" /></div>`)}</div>`);
+    panel.insertAdjacentHTML("beforeend", `<div class="rt-set-group"><div class="rt-set-grouphead">${l("backupSection")}</div>${row(l("backupDesc"), "", `<div class="rt-inline-actions"><button type="button" class="rt-btn rt-btn-secondary rt-btn-auto" data-export-settings>${icon("download", 13)} ${l("exportBtn")}</button><button type="button" class="rt-btn rt-btn-secondary rt-btn-auto" data-import-settings>${icon("upload", 13)} ${l("importBtn")}</button><input id="settings-import-file" class="hidden" type="file" accept="application/json,.json" /></div>`)}</div>`);
   }
   panel.insertAdjacentHTML("beforeend", `<div class="settings-save-row"><button class="rt-btn rt-btn-primary rt-btn-auto" type="submit">${icon("check", 14)} Save settings</button></div>`);
 }
@@ -1182,19 +1414,19 @@ async function loadStorage(path = state.storagePath) {
     qs("#storage-path").value = data.path;
     const rows = [];
     if (!data.roots.includes(data.path)) {
-      rows.push(`<div class="storage-row"><span>${icon("folderOpen", 14)} ..</span><span></span><button data-open="${esc(parentPath(data.path))}">${icon("folderOpen", 14)} Open</button><span></span></div>`);
+      rows.push(`<div class="storage-row"><span>${icon("folderOpen", 14)} ..</span><span></span><button data-open="${esc(parentPath(data.path))}">${icon("folderOpen", 14)} ${l("open")}</button><span></span></div>`);
     }
-    rows.push(`<div class="storage-row storage-action-row"><span>${icon("magnet", 14)} Create torrent from this folder</span><span></span><button data-create-torrent="${esc(data.path)}">${icon("plus", 14)} Create</button><span></span><span></span></div>`);
+    rows.push(`<div class="storage-row storage-action-row"><span>${icon("magnet", 14)} ${l("createTorrentFrom")}</span><span></span><button data-create-torrent="${esc(data.path)}">${icon("plus", 14)} ${l("createBtn")}</button><span></span><span></span></div>`);
     rows.push(...data.items.map((item) => `
       <div class="storage-row">
         <span title="${esc(item.path)}">${icon(item.type === "directory" ? "folder" : "file", 14)} ${esc(item.name)}</span>
-        <span>${item.type === "file" ? bytes(item.size) : "folder"}</span>
-        <button data-open="${esc(item.path)}">${icon(item.type === "directory" ? "folderOpen" : "folder", 14)} ${item.type === "directory" ? "Open" : "Move"}</button>
-        ${item.type === "file" ? `<button data-file-actions="${esc(item.path)}" data-file-iso="${item.is_iso ? "1" : ""}" data-file-archive="${item.is_archive ? "1" : ""}">${icon("more-horizontal", 14)} Actions</button>` : `<span></span>`}
-        <button class="danger" data-delete="${esc(item.path)}">${icon("trash", 14)} Delete</button>
+        <span>${item.type === "file" ? bytes(item.size) : l("folderType")}</span>
+        <button data-open="${esc(item.path)}">${icon(item.type === "directory" ? "folderOpen" : "folder", 14)} ${item.type === "directory" ? l("open") : l("move")}</button>
+        ${item.type === "file" ? `<button data-file-actions="${esc(item.path)}" data-file-iso="${item.is_iso ? "1" : ""}" data-file-archive="${item.is_archive ? "1" : ""}">${icon("more-horizontal", 14)} ${l("actions")}</button>` : `<span></span>`}
+        <button class="danger" data-delete="${esc(item.path)}">${icon("trash", 14)} ${l("delete")}</button>
       </div>
     `));
-    qs("#storage-list").innerHTML = rows.length ? rows.join("") : `<div class="muted">Download folder is empty.</div>`;
+    qs("#storage-list").innerHTML = rows.length ? rows.join("") : `<div class="muted">${l("emptyFolder")}</div>`;
   } catch (error) {
     showMessage(error.message, true);
   }
@@ -1202,7 +1434,7 @@ async function loadStorage(path = state.storagePath) {
 
 async function moveStorageItem(path) {
   const name = path.split("/").pop();
-  const destination = await openInputModal("Move file", "Destination path", `${state.storagePath}/${name}`);
+  const destination = await openInputModal(l("moveFileTitle"), l("destPathLabel"), `${state.storagePath}/${name}`);
   if (!destination || destination === path) return;
   await api("/api/files/move", {
     method: "POST",
@@ -1213,7 +1445,7 @@ async function moveStorageItem(path) {
 }
 
 async function deleteStorageItem(path) {
-  const confirmed = await openConfirmModal("Delete file", `Permanently delete "${path.split("/").pop()}"?`, "Delete");
+  const confirmed = await openConfirmModal(l("deleteFileTitle"), `${l("deleteFileMsg")} "${path.split("/").pop()}"?`, l("delete"));
   if (!confirmed) return;
   await api("/api/files", {
     method: "DELETE",
@@ -1237,7 +1469,7 @@ async function showArchiveContents(path) {
 
 async function extractArchive(path) {
   const suggested = path.replace(/\.(zip|tar|gz|tgz|bz2|xz|7z|rar)$/i, "");
-  const destination = await openInputModal("Extract archive", "Destination path", suggested);
+  const destination = await openInputModal(l("extractTitle"), l("destPathLabel"), suggested);
   if (!destination) return;
   const result = await api("/api/files/archive/extract", {
     method: "POST",
@@ -1279,7 +1511,7 @@ function showStorageCtxMenu(x, y, path, options = {}) {
     <button class="rt-ctx-item hl" data-storage-ctx="open-file" role="menuitem">
       <span>${icon("folderOpen", 14)}</span><span>Open / download</span>
     </button>
-    ${options.isArchive ? `<button class="rt-ctx-item" data-storage-ctx="inspect-archive" role="menuitem"><span>${icon("file", 14)}</span><span>Inspect archive</span></button>` : ""}
+    ${options.isArchive ? `<button class="rt-ctx-item" data-storage-ctx="inspect-archive" role="menuitem"><span>${icon("file", 14)}</span><span>${l("inspectArchive")}</span></button>` : ""}
     ${options.isArchive ? `<button class="rt-ctx-item" data-storage-ctx="extract-archive" role="menuitem"><span>${icon("download", 14)}</span><span>Extract archive</span></button>` : ""}
     ${options.isIso ? `<button class="rt-ctx-item" data-storage-ctx="mount-iso" role="menuitem"><span>${icon("disc", 14)}</span><span>Mount ISO</span></button>` : ""}
     <button class="rt-ctx-item" data-storage-ctx="checksum" role="menuitem">
@@ -1294,9 +1526,9 @@ function showStorageCtxMenu(x, y, path, options = {}) {
 }
 
 async function createTorrentFromPath(sourcePath) {
-  const trackersRaw = await openInputModal("Create torrent", "Tracker URLs, comma separated", "");
+  const trackersRaw = await openInputModal(l("createTorrentTitle"), l("trackerUrlsLabel"), "");
   if (trackersRaw === null) return;
-  const comment = await openInputModal("Create torrent", "Comment (optional)", "Created by Riptide");
+  const comment = await openInputModal(l("createTorrentTitle"), l("commentLabel"), l("defaultComment"));
   const trackers = trackersRaw.split(/[\n,]+/).map((x) => x.trim()).filter(Boolean);
   try {
     const response = await fetch("/api/torrents/create-file", {
@@ -1387,7 +1619,7 @@ async function promptTorrentLimit(torrentId, direction) {
   if (!torrent) return;
   const current = direction === "download" ? torrent.download_limit : torrent.upload_limit;
   const value = await openInputModal(
-    direction === "download" ? "Download limit" : "Upload limit",
+    direction === "download" ? l("limitDownDir") : l("limitUpDir"),
     "KB/s, 0 = unlimited",
     String(fromBytes(current || 0, "kb"))
   );
@@ -1712,7 +1944,7 @@ qs("#settings-screen-form").addEventListener("click", async (event) => {
   }
   if (browse) {
     const current = qs("#screen_default_download_folder")?.value || state.settings.default_download_folder;
-    const next = await openInputModal("Save location", "Default save path", current);
+    const next = await openInputModal(l("saveLocTitle"), l("defaultSavePathLabel"), current);
     if (next) qs("#screen_default_download_folder").value = next;
   }
   if (theme) {
@@ -1923,58 +2155,58 @@ function showCtxMenu(x, y, torrentId) {
   if (!torrent) return;
   menu.innerHTML = `
     <button class="rt-ctx-item hl" data-ctx="select" role="menuitem">
-      <span>${icon("activity", 14)}</span><span>Inspect</span>
+      <span>${icon("activity", 14)}</span><span>${l("inspect")}</span>
     </button>
     ${torrent.paused
-      ? `<button class="rt-ctx-item" data-ctx="resume" role="menuitem"><span>${icon("play", 14)}</span><span>Resume</span></button>`
-      : `<button class="rt-ctx-item" data-ctx="pause" role="menuitem"><span>${icon("pause", 14)}</span><span>Pause</span></button>`}
+      ? `<button class="rt-ctx-item" data-ctx="resume" role="menuitem"><span>${icon("play", 14)}</span><span>${l("resume")}</span></button>`
+      : `<button class="rt-ctx-item" data-ctx="pause" role="menuitem"><span>${icon("pause", 14)}</span><span>${l("pause")}</span></button>`}
     <button class="rt-ctx-item" data-ctx="open-folder" role="menuitem">
-      <span>${icon("folderOpen", 14)}</span><span>Open download folder</span>
+      <span>${icon("folderOpen", 14)}</span><span>${l("openFolder")}</span>
     </button>
     <div class="rt-ctx-sep"></div>
     <button class="rt-ctx-item" data-ctx="limit-down" role="menuitem">
-      <span>${icon("download", 14)}</span><span>Set download limit</span><span class="rt-ctx-key">${fromBytes(torrent.download_limit || 0, "kb") || 0}</span>
+      <span>${icon("download", 14)}</span><span>${l("setDownloadLimit")}</span><span class="rt-ctx-key">${fromBytes(torrent.download_limit || 0, "kb") || 0}</span>
     </button>
     <button class="rt-ctx-item" data-ctx="limit-up" role="menuitem">
-      <span>${icon("upload", 14)}</span><span>Set upload limit</span><span class="rt-ctx-key">${fromBytes(torrent.upload_limit || 0, "kb") || 0}</span>
+      <span>${icon("upload", 14)}</span><span>${l("setUploadLimit")}</span><span class="rt-ctx-key">${fromBytes(torrent.upload_limit || 0, "kb") || 0}</span>
     </button>
     <button class="rt-ctx-item" data-ctx="limit-clear" role="menuitem">
-      <span>${icon("gauge", 14)}</span><span>Clear speed limits</span>
+      <span>${icon("gauge", 14)}</span><span>${l("clearLimits")}</span>
     </button>
     <div class="rt-ctx-sep"></div>
     <button class="rt-ctx-item" data-ctx="copy-magnet" role="menuitem">
-      <span>${icon("magnet", 14)}</span><span>Copy info hash</span>
+      <span>${icon("magnet", 14)}</span><span>${l("copyHash")}</span>
     </button>
     <button class="rt-ctx-item" data-ctx="sequential" role="menuitem">
-      <span>${icon("arrow-right", 14)}</span><span>${torrent.sequential ? "Disable sequential" : "Sequential download"}</span>
+      <span>${icon("arrow-right", 14)}</span><span>${torrent.sequential ? l("disableSequential") : l("sequential")}</span>
     </button>
     <button class="rt-ctx-item" data-ctx="super-seeding" role="menuitem">
-      <span>${icon("upload", 14)}</span><span>${torrent.super_seeding ? "Disable super seeding" : "Super seeding"}</span>
+      <span>${icon("upload", 14)}</span><span>${torrent.super_seeding ? l("disableSuperSeeding") : l("superSeeding")}</span>
     </button>
     <button class="rt-ctx-item" data-ctx="reannounce" role="menuitem">
-      <span>${icon("refresh", 14)}</span><span>Force reannounce</span>
+      <span>${icon("refresh", 14)}</span><span>${l("forceReannounce")}</span>
     </button>
     <button class="rt-ctx-item" data-ctx="recheck" role="menuitem">
-      <span>${icon("check", 14)}</span><span>Force recheck</span>
+      <span>${icon("check", 14)}</span><span>${l("forceRecheck")}</span>
     </button>
     <button class="rt-ctx-item" data-ctx="edit-trackers" role="menuitem">
-      <span>${icon("server", 14)}</span><span>Edit trackers</span>
+      <span>${icon("server", 14)}</span><span>${l("editTrackers")}</span>
     </button>
     <button class="rt-ctx-item" data-ctx="seeding-limits" role="menuitem">
-      <span>${icon("repeat", 14)}</span><span>Seeding limits</span>
+      <span>${icon("repeat", 14)}</span><span>${l("seedingLimits")}</span>
     </button>
     <div class="rt-ctx-sep"></div>
     <button class="rt-ctx-item" data-ctx="queue-top" role="menuitem">
-      <span>${icon("arrowUp", 14)}</span><span>Queue top</span>
+      <span>${icon("arrowUp", 14)}</span><span>${l("queueTop")}</span>
     </button>
     <button class="rt-ctx-item" data-ctx="queue-up" role="menuitem">
-      <span>${icon("arrowUp", 14)}</span><span>Queue up</span>
+      <span>${icon("arrowUp", 14)}</span><span>${l("queueUp")}</span>
     </button>
     <button class="rt-ctx-item" data-ctx="queue-down" role="menuitem">
-      <span>${icon("arrowDown", 14)}</span><span>Queue down</span>
+      <span>${icon("arrowDown", 14)}</span><span>${l("queueDown")}</span>
     </button>
     <button class="rt-ctx-item" data-ctx="set-label" role="menuitem">
-      <span>${icon("tag", 14)}</span><span>Set label</span>
+      <span>${icon("tag", 14)}</span><span>${l("setLabel")}</span>
     </button>
     <div class="rt-ctx-sep"></div>
     <button class="rt-ctx-item danger" data-ctx="delete" role="menuitem">
@@ -2049,7 +2281,7 @@ qs("#ctx-menu").onclick = async (e) => {
     } catch (e) { showToast(e.message, "error"); }
   }
   if (btn.dataset.ctx === "recheck") {
-    const ok = await openConfirmModal("Force recheck", "Recheck downloaded pieces for this torrent?", "Recheck");
+    const ok = await openConfirmModal(l("recheckTitle"), l("recheckMsg"), l("recheckBtn"));
     if (!ok) return;
     try {
       await api(`/api/torrents/${id}/recheck`, { method: "POST" });
@@ -2061,7 +2293,7 @@ qs("#ctx-menu").onclick = async (e) => {
     try {
       const details = await api(`/api/torrents/${id}/details`);
       const current = details.trackers.map((t) => t.url).join("\n");
-      const value = await openInputModal("Edit trackers", "Tracker URLs, comma separated", current);
+      const value = await openInputModal(l("editTrackersTitle"), l("trackerUrlsLabel"), current);
       if (value === null) return;
       const urls = value.split(/[\n,]+/).map((x) => x.trim()).filter(Boolean);
       await api(`/api/torrents/${id}/trackers`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ urls }) });
@@ -2071,13 +2303,13 @@ qs("#ctx-menu").onclick = async (e) => {
   }
   if (btn.dataset.ctx === "seeding-limits") {
     const torrent = state.torrents.find((t) => t.torrent_id === id);
-    const ratio = await openInputModal("Seeding limits", "Ratio limit, 0 = unlimited", torrent?.ratio_limit || 0);
+    const ratio = await openInputModal(l("seedLimitsTitle"), l("seedRatioLabel"), torrent?.ratio_limit || 0);
     if (ratio === null) return;
-    const minutes = await openInputModal("Seeding limits", "Seeding time in minutes, 0 = unlimited", torrent?.seeding_time_limit || 0);
+    const minutes = await openInputModal(l("seedLimitsTitle"), l("seedTimeLabel"), torrent?.seeding_time_limit || 0);
     if (minutes === null) return;
     try {
       await api(`/api/torrents/${id}/seeding-limits`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ratio_limit: Number(ratio), seeding_time_limit: Number(minutes) }) });
-      showToast("Seeding limits saved", "success");
+      showToast(l("seedLimitsSaved"), "success");
       await loadTorrents();
     } catch (e) { showToast(e.message, "error"); }
   }
