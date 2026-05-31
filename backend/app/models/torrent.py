@@ -51,6 +51,10 @@ class SequentialRequest(BaseModel):
     enabled: bool
 
 
+class SuperSeedingRequest(BaseModel):
+    enabled: bool
+
+
 class FilePriorityRequest(BaseModel):
     priorities: List[int]
 

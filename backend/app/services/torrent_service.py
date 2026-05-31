@@ -165,6 +165,9 @@ class TorrentService:
     def set_sequential(self, torrent_id: str, enabled: bool) -> None:
         self.engine.set_sequential_download(torrent_id, enabled)
 
+    def set_super_seeding(self, torrent_id: str, enabled: bool) -> None:
+        self.engine.set_super_seeding(torrent_id, enabled)
+
     def set_file_priorities(self, torrent_id: str, priorities: list) -> None:
         self.engine.set_file_priorities(torrent_id, priorities)
 

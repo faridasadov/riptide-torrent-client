@@ -109,6 +109,7 @@ class TorrentSessionManager:
         return ses
 
     def apply_settings(self, settings: Dict[str, Any]) -> None:
+        self._set_listen_port(settings)
         if settings.get("dht_enabled", True):
             self.session.start_dht()
         else:
@@ -131,6 +132,15 @@ class TorrentSessionManager:
         self._set_queue_settings(settings)
         self._apply_choking_settings(settings)
         self._apply_ip_filter(str(settings.get("ip_filter", "") or ""))
+
+    def _set_listen_port(self, settings: Dict[str, Any]) -> None:
+        try:
+            port = 0 if settings.get("random_port") else int(settings.get("listen_port", 6881) or 6881)
+            pack = self.session.get_settings()
+            pack["listen_interfaces"] = f"0.0.0.0:{port},[::]:{port}"
+            self.session.apply_settings(pack)
+        except Exception as e:
+            logger.warning("Failed to set listen port: %s", e)
 
     def _apply_ip_filter(self, text: str) -> None:
         try:
@@ -161,6 +171,7 @@ class TorrentSessionManager:
             pack["unchoke_slots_limit"] = int(settings.get("global_upload_slots", 20) or 20)
             pack["connections_limit"] = int(settings.get("global_connections_limit", 500) or 500)
             pack["max_peerlist_size"] = 5000
+            pack["max_pex_peers"] = 50 if settings.get("pex_enabled", True) else 0
             pack["num_want"] = 400
             pack["connection_speed"] = int(settings.get("connection_speed", 30) or 30)
             pack["torrent_connect_boost"] = 100     # aggressive initial peer connections
@@ -317,6 +328,10 @@ class TorrentSessionManager:
         handle = self.get_handle(torrent_id)
         handle.set_sequential_download(enabled)
 
+    def set_super_seeding(self, torrent_id: str, enabled: bool) -> None:
+        handle = self.get_handle(torrent_id)
+        handle.super_seeding(enabled)
+
     def force_recheck(self, torrent_id: str) -> None:
         handle = self.get_handle(torrent_id)
         handle.force_recheck()
@@ -425,6 +440,7 @@ class TorrentSessionManager:
             "upload_limit": int((db_row or {}).get("upload_limit", 0) or 0),
             "label": (db_row or {}).get("label"),
             "sequential": self._get_sequential(handle),
+            "super_seeding": self._get_super_seeding(handle),
             "queue_position": int((db_row or {}).get("queue_position", 0) or 0),
             "ratio_limit": float((db_row or {}).get("ratio_limit", 0) or 0),
             "seeding_time_limit": int((db_row or {}).get("seeding_time_limit", 0) or 0),
@@ -463,6 +479,12 @@ class TorrentSessionManager:
         except Exception:
             pass
         return False
+
+    def _get_super_seeding(self, handle) -> bool:
+        try:
+            return bool(getattr(handle.status(), "super_seeding", False))
+        except Exception:
+            return False
 
     def get_details(self, torrent_id: str, db_row: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         status = self.get_status(torrent_id, db_row)
@@ -570,6 +592,8 @@ class TorrentSessionManager:
             "download_limit": int(row.get("download_limit", 0) or 0),
             "upload_limit": int(row.get("upload_limit", 0) or 0),
             "label": row.get("label"),
+            "sequential": False,
+            "super_seeding": False,
         }
 
     def save_resume_data(self, torrent_id: str) -> Optional[bytes]:

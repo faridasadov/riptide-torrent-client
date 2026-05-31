@@ -9,7 +9,7 @@ from fastapi.responses import FileResponse
 from app.core.config import MAX_TORRENT_FILE_BYTES
 from app.core.storage import TorrentRepository
 from app.core.torrent_session import TorrentEngineUnavailable
-from app.models.torrent import AddMagnetRequest, AddTorrentResponse, CreateTorrentRequest, FilePriorityRequest, LimitRequest, SeedingLimitsRequest, SequentialRequest, SetLabelRequest, TrackerListRequest
+from app.models.torrent import AddMagnetRequest, AddTorrentResponse, CreateTorrentRequest, FilePriorityRequest, LimitRequest, SeedingLimitsRequest, SequentialRequest, SetLabelRequest, SuperSeedingRequest, TrackerListRequest
 
 router = APIRouter(prefix="/api/torrents", tags=["torrents"])
 _torrent_repo = TorrentRepository()
@@ -192,6 +192,15 @@ async def set_label(torrent_id: str, payload: SetLabelRequest, request: Request)
 async def set_sequential(torrent_id: str, payload: SequentialRequest, request: Request):
     try:
         _service(request).set_sequential(torrent_id, payload.enabled)
+        return {"success": True}
+    except Exception as exc:
+        raise _handle_error(exc)
+
+
+@router.patch("/{torrent_id}/super-seeding")
+async def set_super_seeding(torrent_id: str, payload: SuperSeedingRequest, request: Request):
+    try:
+        _service(request).set_super_seeding(torrent_id, payload.enabled)
         return {"success": True}
     except Exception as exc:
         raise _handle_error(exc)

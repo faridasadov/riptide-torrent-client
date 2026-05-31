@@ -11,6 +11,9 @@ class Settings(BaseModel):
     dht_enabled: bool
     upnp_enabled: bool
     lsd_enabled: bool
+    pex_enabled: bool = True
+    listen_port: int = Field(default=6881, ge=1, le=65535)
+    random_port: bool = False
     alt_speed_enabled: bool = False
     alt_speed_dl: int = Field(default=0, ge=0)
     alt_speed_ul: int = Field(default=0, ge=0)
@@ -47,6 +50,9 @@ class SettingsUpdate(BaseModel):
     dht_enabled: Optional[bool] = None
     upnp_enabled: Optional[bool] = None
     lsd_enabled: Optional[bool] = None
+    pex_enabled: Optional[bool] = None
+    listen_port: Optional[int] = Field(default=None, ge=1, le=65535)
+    random_port: Optional[bool] = None
     alt_speed_enabled: Optional[bool] = None
     alt_speed_dl: Optional[int] = Field(default=None, ge=0)
     alt_speed_ul: Optional[int] = Field(default=None, ge=0)

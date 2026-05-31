@@ -20,7 +20,7 @@ const state = {
     autostart: true,
     notifications: false,
     theme: "Deep ocean",
-    language: "az",
+    language: "en",
     incomplete_folder: true,
     encryption: "Prefer",
     compact: false,
@@ -83,6 +83,54 @@ function applyTheme() {
 }
 
 const I18N = {
+  en: {
+    logout: "Logout",
+    all: "All torrents",
+    downloading: "Downloading",
+    seeding: "Seeding",
+    completed: "Completed",
+    paused: "Paused",
+    labels: "Labels",
+    tools: "Tools",
+    search: "Search",
+    rss: "RSS feeds",
+    settings: "Settings",
+    about: "About",
+    freeSpace: "Free space",
+    addTorrent: "Add torrent",
+    files: "Files",
+    filterTorrents: "Filter torrents...",
+    searchTitle: "Search torrents",
+    searchPlaceholder: "Search local torrents and downloaded files...",
+    rssTitle: "RSS feeds",
+    rules: "Auto-download rules",
+    addFeed: "Add feed",
+    selectTorrent: "Select a torrent",
+    delete: "Delete",
+    general: "General",
+    peers: "Peers",
+    trackers: "Trackers",
+    progress: "Progress",
+    downloaded: "Downloaded",
+    ratio: "Ratio",
+    eta: "ETA",
+    seeds: "Seeds",
+    speedLimits: "Speed limits",
+    unlimited: "Unlimited",
+    download: "Download",
+    upload: "Upload",
+    saveLimits: "Save limits",
+    magnetLink: "Magnet link",
+    savePath: "Save path",
+    category: "Category",
+    cancel: "Cancel",
+    addMagnet: "Add magnet",
+    uploadFile: "Upload file",
+    torrentFile: "Torrent file",
+    startPaused: "Start paused",
+    sequential: "Sequential download",
+    language: "Language",
+  },
   az: {
     logout: "Çıxış",
     all: "Hamısı",
@@ -182,8 +230,8 @@ const I18N = {
 };
 
 function l(key) {
-  const lang = state.uiSettings.language || "az";
-  return I18N[lang]?.[key] || I18N.az[key] || key;
+  const lang = state.uiSettings.language || "en";
+  return I18N[lang]?.[key] || I18N.en[key] || key;
 }
 
 function setText(selector, text) {
@@ -192,7 +240,7 @@ function setText(selector, text) {
 }
 
 function applyLanguage() {
-  document.documentElement.lang = state.uiSettings.language === "ru" ? "ru" : "az";
+  document.documentElement.lang = state.uiSettings.language || "en";
   setText("#logout span", l("logout"));
   const filterLabels = { all: l("all"), downloading: l("downloading"), seeding: l("seeding"), completed: l("completed"), paused: l("paused") };
   Object.entries(filterLabels).forEach(([key, value]) => {
@@ -1004,7 +1052,7 @@ function renderSettingsScreen() {
   const toggle = (key) => `<button type="button" class="rt-tog ${s[key] ? "on" : "off"}" data-setting-toggle="${key}"><span class="rt-tog-knob"></span></button>`;
   const uiToggle = (key) => `<button type="button" class="rt-tog ${ui[key] ? "on" : "off"}" data-ui-toggle="${key}"><span class="rt-tog-knob"></span></button>`;
   if (state.settingsSection === "general") {
-    panel.innerHTML = `<div class="rt-set-group"><div class="rt-set-grouphead">General</div>${row("Launch Riptide on system startup", "Stored as a local UI preference; systemd service stays enabled separately", uiToggle("autostart"))}${row("Desktop notifications", "Notify when a download completes in this browser", uiToggle("notifications"))}${row("Theme", "", `<button type="button" class="rt-select" data-cycle-theme>${icon("settings", 14)} ${esc(ui.theme)}</button>`)}${row(l("language"), "", `<div class="rt-seg rt-seg-inline"><button type="button" data-lang="az" class="${ui.language !== "ru" ? "active" : ""}">AZ</button><button type="button" data-lang="ru" class="${ui.language === "ru" ? "active" : ""}">RU</button></div>`)}</div>`;
+    panel.innerHTML = `<div class="rt-set-group"><div class="rt-set-grouphead">General</div>${row("Launch Riptide on system startup", "Stored as a local UI preference; systemd service stays enabled separately", uiToggle("autostart"))}${row("Desktop notifications", "Notify when a download completes in this browser", uiToggle("notifications"))}${row("Theme", "", `<button type="button" class="rt-select" data-cycle-theme>${icon("settings", 14)} ${esc(ui.theme)}</button>`)}${row(l("language"), "", `<div class="rt-seg rt-seg-inline"><button type="button" data-lang="en" class="${ui.language === "en" || !ui.language ? "active" : ""}">EN</button><button type="button" data-lang="az" class="${ui.language === "az" ? "active" : ""}">AZ</button><button type="button" data-lang="ru" class="${ui.language === "ru" ? "active" : ""}">RU</button></div>`)}</div>`;
   }
   if (state.settingsSection === "downloads") {
     panel.innerHTML = `<div class="rt-set-group"><div class="rt-set-grouphead">Downloads</div>${row("Default save location", "", `<div class="rt-pathfield">${icon("folder", 14)}<input id="screen_default_download_folder" value="${esc(s.default_download_folder || "")}" /><button type="button" class="rt-path-btn" data-browse-download>Browse</button></div>`)}${row("Watch folder", "Auto-import .torrent files from this directory", `<div class="rt-pathfield">${icon("folderOpen", 14)}<input id="screen_watch_folder" value="${esc(s.watch_folder || "")}" placeholder="/var/lib/torrent-client/watch" /></div>`)}${row("Enable watch folder", "", toggle("watch_folder_enabled"))}${row("Keep incomplete files in download root", "Stored as a local UI preference until incomplete-folder backend support is added", uiToggle("incomplete_folder"))}${row("Maximum active downloads", "", `<input class="rt-numfield" id="screen_max_active_downloads" type="number" min="1" value="${s.max_active_downloads || 3}" />`)}</div>`;
@@ -1036,8 +1084,11 @@ function renderSettingsScreen() {
       <div class="rt-set-group">
         <div class="rt-set-grouphead">Connection</div>
         ${row("Incoming port", "libtorrent listens on 6881-6891", `<input class="rt-numfield" value="6881" disabled />`)}
+        ${row("Listen port", "", `<input class="rt-numfield" id="screen_listen_port" type="number" min="1" max="65535" value="${s.listen_port || 6881}" />`)}
+        ${row("Random port on startup", "", toggle("random_port"))}
         ${row("Map port with UPnP / NAT-PMP", "", toggle("upnp_enabled"))}
         ${row("Distributed Hash Table (DHT)", "Find peers without a tracker", toggle("dht_enabled"))}
+        ${row("Peer Exchange (PEX)", "Exchange peer lists with connected peers", toggle("pex_enabled"))}
         ${row("Local Peer Discovery", "", toggle("lsd_enabled"))}
         ${row("Global connections", "", `<input class="rt-numfield" id="screen_global_connections_limit" type="number" min="1" value="${s.global_connections_limit || 500}" />`)}
         ${row("Connections per torrent", "", `<input class="rt-numfield" id="screen_torrent_connections_limit" type="number" min="1" value="${s.torrent_connections_limit || 100}" />`)}
@@ -1658,6 +1709,9 @@ qs("#settings-screen-form").addEventListener("submit", async (event) => {
     payload.dht_enabled = state.settings.dht_enabled;
     payload.upnp_enabled = state.settings.upnp_enabled;
     payload.lsd_enabled = state.settings.lsd_enabled;
+    payload.pex_enabled = state.settings.pex_enabled;
+    payload.random_port = state.settings.random_port;
+    payload.listen_port = Number(qs("#screen_listen_port")?.value || 6881);
     payload.queueing_enabled = state.settings.queueing_enabled;
     payload.global_connections_limit = Number(qs("#screen_global_connections_limit")?.value || 500);
     payload.torrent_connections_limit = Number(qs("#screen_torrent_connections_limit")?.value || 100);
@@ -1810,6 +1864,9 @@ function showCtxMenu(x, y, torrentId) {
     <button class="rt-ctx-item" data-ctx="sequential" role="menuitem">
       <span>${icon("arrow-right", 14)}</span><span>${torrent.sequential ? "Disable sequential" : "Sequential download"}</span>
     </button>
+    <button class="rt-ctx-item" data-ctx="super-seeding" role="menuitem">
+      <span>${icon("upload", 14)}</span><span>${torrent.super_seeding ? "Disable super seeding" : "Super seeding"}</span>
+    </button>
     <button class="rt-ctx-item" data-ctx="reannounce" role="menuitem">
       <span>${icon("refresh", 14)}</span><span>Force reannounce</span>
     </button>
@@ -1874,6 +1931,17 @@ qs("#ctx-menu").onclick = async (e) => {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ enabled: !t?.sequential }),
+      });
+      await loadTorrents();
+    } catch (e) { showToast(e.message, "error"); }
+  }
+  if (btn.dataset.ctx === "super-seeding") {
+    const t = state.torrents.find((x) => x.torrent_id === id);
+    try {
+      await api(`/api/torrents/${id}/super-seeding`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled: !t?.super_seeding }),
       });
       await loadTorrents();
     } catch (e) { showToast(e.message, "error"); }
