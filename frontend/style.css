@@ -657,7 +657,7 @@ input:focus-visible {
 
 .storage-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 90px 70px 70px;
+  grid-template-columns: minmax(0, 1fr) 90px 84px 84px 70px;
   gap: 8px;
   align-items: center;
   min-height: 38px;
@@ -693,6 +693,21 @@ input:focus-visible {
 
 .storage-row .danger {
   color: var(--rt-danger);
+}
+
+.rt-text-preview {
+  margin: 0;
+  max-height: 360px;
+  overflow: auto;
+  padding: 12px;
+  border-radius: var(--rt-radius-md);
+  background: var(--rt-bg-2);
+  border: 1px solid var(--rt-border);
+  color: var(--rt-fg-1);
+  font-family: var(--rt-font-mono);
+  font-size: 12px;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .torrent-list {

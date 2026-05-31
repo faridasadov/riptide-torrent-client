@@ -1184,12 +1184,13 @@ async function loadStorage(path = state.storagePath) {
     if (!data.roots.includes(data.path)) {
       rows.push(`<div class="storage-row"><span>${icon("folderOpen", 14)} ..</span><span></span><button data-open="${esc(parentPath(data.path))}">${icon("folderOpen", 14)} Open</button><span></span></div>`);
     }
-    rows.push(`<div class="storage-row storage-action-row"><span>${icon("magnet", 14)} Create torrent from this folder</span><span></span><button data-create-torrent="${esc(data.path)}">${icon("plus", 14)} Create</button><span></span></div>`);
+    rows.push(`<div class="storage-row storage-action-row"><span>${icon("magnet", 14)} Create torrent from this folder</span><span></span><button data-create-torrent="${esc(data.path)}">${icon("plus", 14)} Create</button><span></span><span></span></div>`);
     rows.push(...data.items.map((item) => `
       <div class="storage-row">
         <span title="${esc(item.path)}">${icon(item.type === "directory" ? "folder" : "file", 14)} ${esc(item.name)}</span>
         <span>${item.type === "file" ? bytes(item.size) : "folder"}</span>
         <button data-open="${esc(item.path)}">${icon(item.type === "directory" ? "folderOpen" : "folder", 14)} ${item.type === "directory" ? "Open" : "Move"}</button>
+        ${item.type === "file" ? `<button data-file-actions="${esc(item.path)}" data-file-iso="${item.is_iso ? "1" : ""}" data-file-archive="${item.is_archive ? "1" : ""}">${icon("more-horizontal", 14)} Actions</button>` : `<span></span>`}
         <button class="danger" data-delete="${esc(item.path)}">${icon("trash", 14)} Delete</button>
       </div>
     `));
@@ -1220,6 +1221,76 @@ async function deleteStorageItem(path) {
     body: JSON.stringify({ path }),
   });
   await loadStorage();
+}
+
+async function showArchiveContents(path) {
+  const data = await api("/api/files/archive/inspect", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ path }),
+  });
+  const text = data.entries.length
+    ? data.entries.map((entry) => `${entry.path}  (${bytes(entry.size)})`).join("\n")
+    : "Archive is empty.";
+  openTextPreviewModal(`Archive contents: ${path.split("/").pop()}`, text);
+}
+
+async function extractArchive(path) {
+  const suggested = path.replace(/\.(zip|tar|gz|tgz|bz2|xz|7z|rar)$/i, "");
+  const destination = await openInputModal("Extract archive", "Destination path", suggested);
+  if (!destination) return;
+  const result = await api("/api/files/archive/extract", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ path, destination }),
+  });
+  showToast(`Archive extracted to ${result.destination}`, "success");
+  await loadStorage(result.destination);
+}
+
+async function mountIso(path) {
+  const result = await api("/api/files/iso/mount", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ path }),
+  });
+  const text = result.mount_point
+    ? `Mounted at ${result.mount_point}\nDevice: ${result.device}`
+    : `Mounted device: ${result.device}`;
+  openTextPreviewModal(`ISO mounted: ${path.split("/").pop()}`, text);
+}
+
+async function showChecksum(path) {
+  const result = await api("/api/files/checksum", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ path }),
+  });
+  openTextPreviewModal(`Checksums: ${path.split("/").pop()}`, `MD5    ${result.md5}\nSHA256 ${result.sha256}`);
+}
+
+function openDownloadedFile(path) {
+  window.open(`/api/files/download?path=${encodeURIComponent(path)}`, "_blank", "noopener");
+}
+
+function showStorageCtxMenu(x, y, path, options = {}) {
+  const menu = qs("#ctx-menu");
+  menu.innerHTML = `
+    <button class="rt-ctx-item hl" data-storage-ctx="open-file" role="menuitem">
+      <span>${icon("folderOpen", 14)}</span><span>Open / download</span>
+    </button>
+    ${options.isArchive ? `<button class="rt-ctx-item" data-storage-ctx="inspect-archive" role="menuitem"><span>${icon("file", 14)}</span><span>Inspect archive</span></button>` : ""}
+    ${options.isArchive ? `<button class="rt-ctx-item" data-storage-ctx="extract-archive" role="menuitem"><span>${icon("download", 14)}</span><span>Extract archive</span></button>` : ""}
+    ${options.isIso ? `<button class="rt-ctx-item" data-storage-ctx="mount-iso" role="menuitem"><span>${icon("disc", 14)}</span><span>Mount ISO</span></button>` : ""}
+    <button class="rt-ctx-item" data-storage-ctx="checksum" role="menuitem">
+      <span>${icon("check", 14)}</span><span>Show checksums</span>
+    </button>
+  `;
+  menu.dataset.storagePath = path;
+  delete menu.dataset.torrentId;
+  menu.style.left = `${Math.min(x, window.innerWidth - 250)}px`;
+  menu.style.top = `${Math.min(y, window.innerHeight - 350)}px`;
+  menu.classList.remove("hidden");
 }
 
 async function createTorrentFromPath(sourcePath) {
@@ -1465,7 +1536,14 @@ qs("#storage-list").onclick = async (event) => {
   const open = button.dataset.open;
   const del = button.dataset.delete;
   const create = button.dataset.createTorrent;
+  const fileActions = button.dataset.fileActions;
   if (create) return createTorrentFromPath(create);
+  if (fileActions) {
+    return showStorageCtxMenu(event.clientX, event.clientY, fileActions, {
+      isIso: Boolean(button.dataset.fileIso),
+      isArchive: Boolean(button.dataset.fileArchive),
+    });
+  }
   if (open && button.textContent.includes("Move")) return moveStorageItem(open);
   if (open) return loadStorage(open);
   if (del) return deleteStorageItem(del);
@@ -1833,6 +1911,12 @@ function openInputModal(title, label, defaultValue = "") {
   });
 }
 
+function openTextPreviewModal(title, text) {
+  qs("#text-preview-title").textContent = title;
+  qs("#text-preview-body").textContent = text;
+  openModal("text-preview-modal");
+}
+
 function showCtxMenu(x, y, torrentId) {
   const menu = qs("#ctx-menu");
   const torrent = state.torrents.find((t) => t.torrent_id === torrentId);
@@ -1909,9 +1993,20 @@ function closeCtxMenu() {
 
 qs("#ctx-menu").onclick = async (e) => {
   const btn = e.target.closest("[data-ctx]");
-  if (!btn) return;
-  const id = qs("#ctx-menu").dataset.torrentId;
+  const storageBtn = e.target.closest("[data-storage-ctx]");
+  if (!btn && !storageBtn) return;
+  const menu = qs("#ctx-menu");
+  const id = menu.dataset.torrentId;
+  const storagePath = menu.dataset.storagePath;
   closeCtxMenu();
+  if (storageBtn && storagePath) {
+    if (storageBtn.dataset.storageCtx === "open-file") return openDownloadedFile(storagePath);
+    if (storageBtn.dataset.storageCtx === "inspect-archive") return showArchiveContents(storagePath);
+    if (storageBtn.dataset.storageCtx === "extract-archive") return extractArchive(storagePath);
+    if (storageBtn.dataset.storageCtx === "mount-iso") return mountIso(storagePath);
+    if (storageBtn.dataset.storageCtx === "checksum") return showChecksum(storagePath);
+    return;
+  }
   if (btn.dataset.ctx === "select") await selectTorrent(id);
   if (btn.dataset.ctx === "resume") await act(`/api/torrents/${id}/resume`, "POST");
   if (btn.dataset.ctx === "pause") await act(`/api/torrents/${id}/pause`, "POST");
@@ -2020,6 +2115,8 @@ function showAbout() {
 qs("#about-toggle").onclick = showAbout;
 qs(".brand").onclick = showAbout;
 qs("#about-modal-close").onclick = () => closeModal("about-modal");
+qs("#text-preview-close").onclick = () => closeModal("text-preview-modal");
+qs("#text-preview-cancel").onclick = () => closeModal("text-preview-modal");
 
 qs("#compact-toggle").onclick = () => {
   state.uiSettings.compact = !state.uiSettings.compact;
@@ -2030,7 +2127,7 @@ qs("#compact-toggle").onclick = () => {
 
 document.addEventListener("keydown", (e) => {
   if (e.key !== "Escape") return;
-  ["add-modal", "confirm-modal", "input-modal", "about-modal", "label-picker-modal"].forEach((id) => {
+  ["add-modal", "confirm-modal", "input-modal", "about-modal", "label-picker-modal", "text-preview-modal"].forEach((id) => {
     if (!qs(`#${id}`).classList.contains("hidden")) closeModal(id);
   });
   closeCtxMenu();
@@ -2040,7 +2137,7 @@ document.addEventListener("click", (e) => {
   if (!qs("#ctx-menu").classList.contains("hidden") && !e.target.closest("#ctx-menu")) {
     closeCtxMenu();
   }
-  ["add-modal", "confirm-modal", "input-modal", "about-modal", "label-picker-modal"].forEach((id) => {
+  ["add-modal", "confirm-modal", "input-modal", "about-modal", "label-picker-modal", "text-preview-modal"].forEach((id) => {
     const scrim = qs(`#${id}`);
     if (!scrim.classList.contains("hidden") && e.target === scrim) closeModal(id);
   });
