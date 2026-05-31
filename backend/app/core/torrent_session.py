@@ -120,11 +120,16 @@ class TorrentSessionManager:
     def _apply_choking_settings(self) -> None:
         try:
             pack = self.session.get_settings()
-            pack["choking_algorithm"] = 0           # fixed_slots: always unchoke N peers
+            pack["choking_algorithm"] = 0           # fixed_slots
             pack["seed_choking_algorithm"] = 1      # fastest_upload
-            pack["unchoke_slots_limit"] = 100       # unchoke 100 peers regardless of ul rate
+            pack["unchoke_slots_limit"] = 100
+            pack["connections_limit"] = 500
+            pack["max_peerlist_size"] = 5000
             pack["num_want"] = 400
             pack["connection_speed"] = 20
+            pack["torrent_connect_boost"] = 100     # aggressive initial peer connections
+            pack["allow_multiple_connections_per_ip"] = True
+            pack["listen_queue_size"] = 30
             pack["peer_turnover"] = 4
             pack["peer_turnover_cutoff"] = 90
             pack["peer_turnover_interval"] = 300
