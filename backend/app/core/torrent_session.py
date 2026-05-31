@@ -478,6 +478,7 @@ class TorrentSessionManager:
             "ratio_limit": float((db_row or {}).get("ratio_limit", 0) or 0),
             "seeding_time_limit": int((db_row or {}).get("seeding_time_limit", 0) or 0),
             "completed_action": (db_row or {}).get("completed_action", "seed"),
+            "added_at": (db_row or {}).get("added_at", ""),
         }
 
     def apply_completed_actions(self, db_rows: list) -> list:
@@ -506,6 +507,14 @@ class TorrentSessionManager:
                     pass
                 handle.pause()
                 applied.append(info_hash)
+            elif action == "move":
+                dest = row.get("completed_action_path", "")
+                if dest:
+                    try:
+                        handle.move_storage(str(dest))
+                    except Exception:
+                        pass
+                    applied.append(info_hash)
         return applied
 
     def check_alt_speed(self, settings: Dict[str, Any]) -> None:
@@ -610,8 +619,10 @@ class TorrentSessionManager:
 
         try:
             peers = []
+            _seed_flag = getattr(self.lt.peer_info, "seed", 0x200)
             for peer in handle.get_peer_info()[:80]:
                 flags = int(getattr(peer, "flags", 0) or 0)
+                peer_progress = float(getattr(peer, "progress", 0.0) or 0.0)
                 peers.append(
                     {
                         "ip": str(getattr(peer, "ip", "")),
@@ -620,11 +631,12 @@ class TorrentSessionManager:
                         "upload_speed": int(getattr(peer, "up_speed", 0) or 0),
                         "downloaded": int(getattr(peer, "total_download", 0) or 0),
                         "uploaded": int(getattr(peer, "total_upload", 0) or 0),
-                        "progress": round(float(getattr(peer, "progress", 0.0) or 0.0) * 100, 2),
+                        "progress": round(peer_progress * 100, 2),
                         "interesting": bool(flags & getattr(self.lt.peer_info, "interesting", 0)),
                         "flags": flags,
                         "source": int(getattr(peer, "source", 0) or 0),
                         "connection_type": "uTP" if bool(flags & getattr(self.lt.peer_info, "utp_socket", 0)) else "BT",
+                        "is_seed": bool(flags & _seed_flag) or peer_progress >= 1.0,
                     }
                 )
             details["peers"] = peers

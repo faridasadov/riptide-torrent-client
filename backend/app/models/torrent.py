@@ -79,7 +79,8 @@ class RenameRequest(BaseModel):
 
 
 class CompletedActionRequest(BaseModel):
-    action: str = Field(pattern="^(seed|stop)$")
+    action: str = Field(pattern="^(seed|stop|move)$")
+    path: Optional[str] = Field(default=None, max_length=1000)
 
 
 class LabelOut(BaseModel):

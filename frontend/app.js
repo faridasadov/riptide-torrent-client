@@ -18,6 +18,7 @@ const state = {
   rssShowRules: false,
   labels: [],
   addFilePreview: null,
+  sessionStats: null,
   uiSettings: {
     autostart: true,
     notifications: false,
@@ -206,8 +207,13 @@ const I18N = {
     sortName: "Name", sortSize: "Size", sortProgress: "Progress", sortSpeed: "Speed",
     bulkPause: "Pause selected", bulkResume: "Resume selected", bulkDelete: "Delete selected",
     selectedCount: "selected",
-    completedAction: "When done", actionSeed: "Keep seeding", actionStop: "Stop",
+    completedAction: "When done", actionSeed: "Keep seeding", actionStop: "Stop", actionMove: "Move to folder",
+    actionMovePath: "Destination folder path", save: "Save", saved: "Saved", copied: "Copied",
     testRule: "Test", testRuleTitle: "Rule test results", noRuleMatches: "No matching items found.",
+    copySavePath: "Copy save path", showQr: "QR code",
+    clipboardMagnet: "Magnet link detected", clickToAdd: "click to add",
+    downloadComplete: "Download complete", allTime: "all time",
+    received: "received", unknownClient: "Unknown",
   },
   az: {
     logout: "Çıxış", all: "Hamısı", downloading: "Yüklənənlər", seeding: "Paylaşanlar",
@@ -332,8 +338,13 @@ const I18N = {
     sortName: "Ad", sortSize: "Ölçü", sortProgress: "İrəliləyiş", sortSpeed: "Sürət",
     bulkPause: "Seçilənləri dayandır", bulkResume: "Seçilənləri davam et", bulkDelete: "Seçilənləri sil",
     selectedCount: "seçilib",
-    completedAction: "Bitdikdə", actionSeed: "Paylaşmağa davam et", actionStop: "Dayandır",
+    completedAction: "Bitdikdə", actionSeed: "Paylaşmağa davam et", actionStop: "Dayandır", actionMove: "Qovluğa köçür",
+    actionMovePath: "Təyinat qovluğu yolu", save: "Saxla", saved: "Saxlanıldı", copied: "Kopyalandı",
     testRule: "Sına", testRuleTitle: "Qayda test nəticələri", noRuleMatches: "Uyğun element tapılmadı.",
+    copySavePath: "Yükləmə yolunu kopyala", showQr: "QR kod",
+    clipboardMagnet: "Magnet link aşkarlandı", clickToAdd: "əlavə etmək üçün klikləyin",
+    downloadComplete: "Yükləmə tamamlandı", allTime: "ümumi",
+    received: "alındı", unknownClient: "Naməlum",
   },
   ru: {
     logout: "Выйти", all: "Все", downloading: "Загружаются", seeding: "Раздаются",
@@ -461,8 +472,13 @@ const I18N = {
     sortName: "Имя", sortSize: "Размер", sortProgress: "Прогресс", sortSpeed: "Скорость",
     bulkPause: "Остановить выбранные", bulkResume: "Возобновить выбранные", bulkDelete: "Удалить выбранные",
     selectedCount: "выбрано",
-    completedAction: "По завершении", actionSeed: "Продолжать раздачу", actionStop: "Остановить",
+    completedAction: "По завершении", actionSeed: "Продолжать раздачу", actionStop: "Остановить", actionMove: "Переместить в папку",
+    actionMovePath: "Путь к папке назначения", save: "Сохранить", saved: "Сохранено", copied: "Скопировано",
     testRule: "Тест", testRuleTitle: "Результаты теста правила", noRuleMatches: "Совпадений не найдено.",
+    copySavePath: "Копировать путь загрузки", showQr: "QR-код",
+    clipboardMagnet: "Обнаружена magnet-ссылка", clickToAdd: "нажмите для добавления",
+    downloadComplete: "Загрузка завершена", allTime: "за всё время",
+    received: "получено", unknownClient: "Неизвестно",
   },
 };
 
@@ -841,7 +857,7 @@ function renderList() {
       <button class="rt-row-play" data-row-toggle="${torrent.torrent_id}" aria-label="${torrent.paused ? "Resume" : "Pause"}" title="${torrent.paused ? "Resume" : "Pause"}">${icon(playIcon, 13)}</button>
       <div>
         <div class="torrent-name">${esc(torrent.name || l("metadataLoading"))}</div>
-        <div class="row-meta"><span class="${pillClass(torrent)}">${esc(statusText(torrent))}</span> <span class="rt-label-badge rt-label-${labelOf(torrent)}">${labelOf(torrent)}</span> ${torrent.progress.toFixed(1)}% · ${bytes(torrent.downloaded)} / ${bytes(torrent.total_size)}</div>
+        <div class="row-meta"><span class="${pillClass(torrent)}">${esc(statusText(torrent))}</span> <span class="rt-label-badge rt-label-${labelOf(torrent)}">${labelOf(torrent)}</span> <span class="rt-health-dot" style="background:${healthColor(torrent.seeds)}" title="${torrent.seeds} seeds"></span> ${torrent.progress.toFixed(1)}% · ${bytes(torrent.downloaded)} / ${bytes(torrent.total_size)}${torrent.added_at ? ` · <span class="rt-age">${relativeTime(torrent.added_at)}</span>` : ""}</div>
         <div class="bar"><span style="width:${Math.min(torrent.progress, 100)}%"></span></div>
       </div>
       <div class="speeds">
@@ -873,6 +889,43 @@ function renderTotals() {
   qs("#global-up").textContent = `↑ ${bytes(up)}/s`;
   qs("#connection-state").textContent = `${l("connected")} (${active} active)`;
   qs("#footer-ratio").textContent = `Ratio ${downloaded ? (uploaded / downloaded).toFixed(2) : "0.00"}`;
+  const statsEl = qs("#footer-stats");
+  if (statsEl && state.sessionStats) {
+    statsEl.textContent = `↓ ${bytes(state.sessionStats.total_downloaded || 0)} ↑ ${bytes(state.sessionStats.total_uploaded || 0)} ${l("allTime")}`;
+  }
+}
+
+function relativeTime(isoStr) {
+  if (!isoStr) return "";
+  const s = Math.floor((Date.now() - new Date(isoStr).getTime()) / 1000);
+  if (s < 60) return `${s}s`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h`;
+  return `${Math.floor(h / 24)}d`;
+}
+
+function healthColor(seeds) {
+  if (seeds >= 5) return "var(--rt-success)";
+  if (seeds >= 1) return "var(--rt-aqua)";
+  return "#f59e0b";
+}
+
+function clientIcon(client) {
+  const c = (client || "").toLowerCase();
+  if (c.includes("qbittorrent") || c.startsWith("qb")) return { label: "qB", color: "#f97316" };
+  if (c.includes("utorrent") || c.includes("µtorrent")) return { label: "µT", color: "#4ade80" };
+  if (c.includes("transmission")) return { label: "Tr", color: "#3b82f6" };
+  if (c.includes("deluge")) return { label: "De", color: "#22c55e" };
+  if (c.includes("vuze") || c.includes("azureus")) return { label: "Az", color: "#8b5cf6" };
+  if (c.includes("rtorrent")) return { label: "rT", color: "#06b6d4" };
+  if (c.includes("bitcomet")) return { label: "BC", color: "#f59e0b" };
+  if (c.includes("webtorrent")) return { label: "wT", color: "#10b981" };
+  if (c.includes("libtorrent") || c.includes("lt/")) return { label: "lt", color: "#6b7280" };
+  if (c.includes("bittorrent")) return { label: "BT", color: "#ef4444" };
+  if (!client || client.length < 2) return { label: "??", color: "#6b7280" };
+  return { label: client.substring(0, 2).toUpperCase(), color: "#6b7280" };
 }
 
 const _geoCache = new Map();
@@ -1003,15 +1056,36 @@ async function selectTorrent(torrentId) {
       <select class="rt-select rt-complete-action-sel" data-torrent-id="${esc(torrent.info_hash)}">
         <option value="seed" ${completedActionVal === "seed" ? "selected" : ""}>${l("actionSeed")}</option>
         <option value="stop" ${completedActionVal === "stop" ? "selected" : ""}>${l("actionStop")}</option>
+        <option value="move" ${completedActionVal === "move" ? "selected" : ""}>${l("actionMove")}</option>
       </select>
     </div>
+    <div class="rt-complete-action-path ${completedActionVal === "move" ? "" : "hidden"}">
+      <input class="rt-complete-path-input" type="text" placeholder="${l("actionMovePath")}" value="${esc((torrent.completed_action_path || ""))}">
+      <button class="rt-btn rt-btn-secondary rt-btn-auto rt-complete-path-save">${l("save")}</button>
+    </div>
   `);
-  general.querySelector(".rt-complete-action-sel").onchange = async (e) => {
+  const sel = general.querySelector(".rt-complete-action-sel");
+  const pathRow = general.querySelector(".rt-complete-action-path");
+  sel.onchange = async (e) => {
+    pathRow.classList.toggle("hidden", e.target.value !== "move");
+    if (e.target.value !== "move") {
+      try {
+        await api(`/api/torrents/${torrent.info_hash}/completed-action`, {
+          method: "PATCH", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: e.target.value }),
+        });
+      } catch (err) { showToast(err.message, "error"); }
+    }
+  };
+  general.querySelector(".rt-complete-path-save").onclick = async () => {
+    const path = general.querySelector(".rt-complete-path-input").value.trim();
+    if (!path) return;
     try {
       await api(`/api/torrents/${torrent.info_hash}/completed-action`, {
         method: "PATCH", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: e.target.value }),
+        body: JSON.stringify({ action: "move", path }),
       });
+      showToast(l("saved"));
     } catch (err) { showToast(err.message, "error"); }
   };
   general.insertAdjacentHTML("beforeend", `
@@ -1091,11 +1165,13 @@ async function selectTorrent(torrentId) {
     peersEl.innerHTML = details.peers.map((p, i) => {
       const active = p.download_speed > 0 || p.upload_speed > 0;
       const cachedFlag = _geoCache.has(p.ip) ? (countryFlag(_geoCache.get(p.ip)) || "") : "";
+      const ci = clientIcon(p.client);
+      const seedBadge = p.is_seed ? `<span class="rt-seed-badge" title="Seed">S</span>` : "";
       return `<div class="rt-tracker-row">
         <div class="rt-bdot" style="background:${active ? "var(--rt-aqua)" : "var(--rt-fg-4)"}"></div>
         <div class="rt-tracker-main">
-          <div class="rt-tracker-url"><span class="rt-peer-flag" data-peer-idx="${i}">${cachedFlag}</span>${esc(p.ip)}</div>
-          <div class="rt-tracker-meta">${esc(p.client || l("unknownClient"))} · ${esc(p.connection_type || "BT")} · ↓ ${bytes(p.download_speed)}/s ↑ ${bytes(p.upload_speed || 0)}/s · got ${bytes(p.downloaded || 0)} sent ${bytes(p.uploaded || 0)}</div>
+          <div class="rt-tracker-url"><span class="rt-peer-flag" data-peer-idx="${i}">${cachedFlag}</span>${seedBadge}<span class="rt-client-badge" style="background:${ci.color}">${esc(ci.label)}</span> ${esc(p.ip)}</div>
+          <div class="rt-tracker-meta">${esc(p.client || l("unknownClient"))} · ${esc(p.connection_type || "BT")} · ↓ ${bytes(p.download_speed)}/s ↑ ${bytes(p.upload_speed || 0)}/s · <b>${bytes(p.downloaded || 0)}</b> ${l("received")}</div>
         </div>
         <div class="rt-file-size">${p.progress != null ? p.progress.toFixed(0) + "%" : ""}</div>
       </div>`;
@@ -1159,6 +1235,7 @@ async function loadTorrents() {
   _loadingTorrents = true;
   try {
     state.torrents = await api("/api/torrents");
+    state.torrents.forEach(maybeNotify);
     if (!state.selectedId && state.torrents[0]) state.selectedId = state.torrents[0].torrent_id;
     if (state.selectedId && !state.torrents.some((t) => t.torrent_id === state.selectedId)) {
       state.selectedId = state.torrents[0]?.torrent_id || null;
@@ -1291,6 +1368,7 @@ function renderRss() {
   qs("#rss-feeds").innerHTML = state.rssFeeds.map((feed) => `
     <button class="rt-feed-item ${feed.id === state.rssSelectedFeed ? "active" : ""}" data-feed-id="${feed.id}">
       <span class="rt-feed-dot ${feed.active ? "on" : ""}"></span>
+      <img class="rt-feed-favicon" src="${(() => { try { return new URL(feed.url).origin + "/favicon.ico"; } catch { return ""; } })()}" alt="" onerror="this.style.display='none'" loading="lazy">
       <span class="rt-feed-main"><span class="rt-feed-title">${esc(feed.title)}</span><span class="rt-feed-url">${esc(feed.url)}</span></span>
       <span class="rt-feed-unread">${feed.active ? "on" : "off"}</span>
     </button>
@@ -2245,16 +2323,18 @@ qs("#login-form").addEventListener("submit", async (event) => {
   }
 });
 
-function showToast(text, type = "") {
+function showToast(text, type = "", onClick = null) {
   const wrap = qs("#toast-wrap");
   const el = document.createElement("div");
-  el.className = `rt-toast${type ? " " + type : ""}`;
+  el.className = `rt-toast${type ? " " + type : ""}${onClick ? " clickable" : ""}`;
   el.textContent = text;
+  if (onClick) el.addEventListener("click", () => { onClick(); el.remove(); });
   wrap.appendChild(el);
+  const t = onClick ? 6000 : 3000;
   setTimeout(() => {
     el.style.animation = "rt-toast-out var(--rt-dur) var(--rt-ease) forwards";
     setTimeout(() => el.remove(), 250);
-  }, 3000);
+  }, t);
 }
 
 function openModal(id) {
@@ -2349,6 +2429,12 @@ function showCtxMenu(x, y, torrentId) {
     </button>
     <button class="rt-ctx-item" data-ctx="rename" role="menuitem">
       <span>${icon("file", 14)}</span><span>${l("rename")}</span>
+    </button>
+    <button class="rt-ctx-item" data-ctx="copy-save-path" role="menuitem">
+      <span>${icon("folder", 14)}</span><span>${l("copySavePath")}</span>
+    </button>
+    <button class="rt-ctx-item" data-ctx="qr-magnet" role="menuitem">
+      <span>${icon("share", 14)}</span><span>${l("showQr")}</span>
     </button>
     <button class="rt-ctx-item" data-ctx="sequential" role="menuitem">
       <span>${icon("arrow-right", 14)}</span><span>${torrent.sequential ? l("disableSequential") : l("sequential")}</span>
@@ -2494,6 +2580,22 @@ qs("#ctx-menu").onclick = async (e) => {
       await loadTorrents();
     } catch (e) { showToast(e.message, "error"); }
   }
+  if (btn.dataset.ctx === "copy-save-path") {
+    const torrent = state.torrents.find((t) => t.torrent_id === id);
+    if (torrent?.save_path) {
+      await navigator.clipboard.writeText(torrent.save_path).catch(() => {});
+      showToast(l("copied"));
+    }
+  }
+  if (btn.dataset.ctx === "qr-magnet") {
+    try {
+      const data = await api(`/api/torrents/${id}/magnet`);
+      const enc = encodeURIComponent(data.magnet);
+      qs("#qr-img").src = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${enc}`;
+      qs("#qr-magnet-text").textContent = data.magnet;
+      openModal("qr-modal");
+    } catch (e) { showToast(e.message, "error"); }
+  }
   if (btn.dataset.ctx === "copy-hash") {
     const torrent = state.torrents.find((t) => t.torrent_id === id);
     if (torrent) {
@@ -2552,11 +2654,35 @@ qs("#compact-toggle").onclick = () => {
 };
 
 document.addEventListener("keydown", (e) => {
-  if (e.key !== "Escape") return;
-  ["add-modal", "confirm-modal", "input-modal", "about-modal", "label-picker-modal", "text-preview-modal"].forEach((id) => {
-    if (!qs(`#${id}`).classList.contains("hidden")) closeModal(id);
-  });
-  closeCtxMenu();
+  if (e.key === "Escape") {
+    ["add-modal", "confirm-modal", "input-modal", "about-modal", "label-picker-modal", "text-preview-modal", "qr-modal"].forEach((id) => {
+      if (!qs(`#${id}`)?.classList.contains("hidden")) closeModal(id);
+    });
+    closeCtxMenu();
+    return;
+  }
+  const tag = document.activeElement?.tagName;
+  if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+  if (state.screen !== "torrents") return;
+  if (e.key === "p" || e.key === "P") {
+    e.preventDefault();
+    if (state.selectedId) act(`/api/torrents/${state.selectedId}/pause`, "POST");
+  } else if (e.key === "r" || e.key === "R") {
+    e.preventDefault();
+    if (state.selectedId) act(`/api/torrents/${state.selectedId}/resume`, "POST");
+  } else if (e.key === "Delete") {
+    e.preventDefault();
+    if (state.selectedId) {
+      const t = state.torrents.find(x => x.torrent_id === state.selectedId);
+      if (t) deleteTorrent(t.torrent_id, t.name);
+    }
+  } else if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+    e.preventDefault();
+    const ids = state.torrents.map(t => t.torrent_id);
+    const idx = ids.indexOf(state.selectedId);
+    const next = e.key === "ArrowDown" ? Math.min(idx + 1, ids.length - 1) : Math.max(idx - 1, 0);
+    if (ids[next]) selectTorrent(ids[next]);
+  }
 });
 
 document.addEventListener("click", (e) => {
@@ -2576,6 +2702,31 @@ window.matchMedia("(prefers-color-scheme: light)").addEventListener("change", (e
   }
 });
 
+let _lastClipboard = "";
+window.addEventListener("focus", async () => {
+  if (!navigator.clipboard?.readText) return;
+  try {
+    const text = (await navigator.clipboard.readText()).trim();
+    if (text.startsWith("magnet:?") && text !== _lastClipboard) {
+      _lastClipboard = text;
+      showToast(`${l("clipboardMagnet")} — ${l("clickToAdd")}`, "info", () => {
+        qs("#magnet-input").value = text;
+        openModal("add-modal");
+      });
+    }
+  } catch { /* clipboard permission denied */ }
+});
+
+function maybeNotify(torrent) {
+  if (!state.uiSettings.notifications) return;
+  if (Notification.permission !== "granted") return;
+  if (torrent.progress < 100) return;
+  const key = `_notified_${torrent.torrent_id}`;
+  if (sessionStorage.getItem(key)) return;
+  sessionStorage.setItem(key, "1");
+  new Notification(`${l("downloadComplete")}: ${torrent.name}`, { icon: "/static/assets/logo-mark.svg" });
+}
+
 async function boot() {
   try {
     await api("/api/auth/me");
@@ -2584,6 +2735,11 @@ async function boot() {
     await loadSystem();
     await loadLabels();
     await loadTorrents();
+    if (state.uiSettings.notifications && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+    try { state.sessionStats = await api("/api/torrents/session-stats"); renderTotals(); } catch { /* ignore */ }
+    qs("#qr-modal-close")?.addEventListener("click", () => closeModal("qr-modal"));
     if (typeof RIPTIDE !== "undefined" && !sessionStorage.getItem("about_shown")) {
       sessionStorage.setItem("about_shown", "1");
       showAbout();
@@ -2600,3 +2756,7 @@ applyLanguage();
 boot();
 setInterval(() => state.authenticated && loadTorrents(), 2000);
 setInterval(() => state.authenticated && loadSystem(), 10000);
+setInterval(async () => {
+  if (!state.authenticated) return;
+  try { state.sessionStats = await api("/api/torrents/session-stats"); renderTotals(); } catch { /* ignore */ }
+}, 30000);

@@ -117,6 +117,20 @@ class TorrentRepository:
                 (action, info_hash),
             )
 
+    def update_completed_action_path(self, info_hash: str, path: Optional[str]) -> None:
+        with get_conn() as conn:
+            conn.execute(
+                "UPDATE torrents SET completed_action_path = ? WHERE info_hash = ?",
+                (path, info_hash),
+            )
+
+    def exists(self, info_hash: str) -> bool:
+        with get_conn() as conn:
+            row = conn.execute(
+                "SELECT 1 FROM torrents WHERE info_hash = ?", (info_hash.lower(),)
+            ).fetchone()
+            return row is not None
+
     def delete(self, info_hash: str) -> None:
         with get_conn() as conn:
             conn.execute("DELETE FROM torrents WHERE info_hash = ?", (info_hash,))
@@ -322,3 +336,21 @@ class LabelRepository:
             raise ValueError("Cannot delete a built-in label")
         with get_conn() as conn:
             conn.execute("DELETE FROM labels WHERE name = ?", (name,))
+
+
+class SessionStatsRepository:
+    def get(self) -> Dict[str, int]:
+        with get_conn() as conn:
+            rows = conn.execute("SELECT key, value FROM session_stats").fetchall()
+            return {row["key"]: int(row["value"] or 0) for row in rows}
+
+    def add(self, downloaded: int, uploaded: int) -> None:
+        with get_conn() as conn:
+            conn.execute(
+                "UPDATE session_stats SET value = CAST(CAST(value AS INTEGER) + ? AS TEXT) WHERE key = 'total_downloaded'",
+                (max(0, downloaded),),
+            )
+            conn.execute(
+                "UPDATE session_stats SET value = CAST(CAST(value AS INTEGER) + ? AS TEXT) WHERE key = 'total_uploaded'",
+                (max(0, uploaded),),
+            )

@@ -29,6 +29,7 @@ async def periodic_alt_speed(app: FastAPI) -> None:
 
 
 async def periodic_completed_actions(app: FastAPI) -> None:
+    tick = 0
     while True:
         await asyncio.sleep(30)
         service = app.state.torrent_service
@@ -37,6 +38,12 @@ async def periodic_completed_actions(app: FastAPI) -> None:
                 await asyncio.to_thread(service.check_completed_actions)
             except Exception:
                 pass
+            tick += 1
+            if tick % 2 == 0:
+                try:
+                    await asyncio.to_thread(service.record_stats)
+                except Exception:
+                    pass
 
 
 async def periodic_watch_folder(app: FastAPI) -> None:

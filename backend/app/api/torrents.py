@@ -8,7 +8,7 @@ from fastapi.responses import FileResponse
 
 from app.core.config import MAX_TORRENT_FILE_BYTES
 from app.core.storage import TorrentRepository
-from app.core.torrent_session import TorrentEngineUnavailable
+from app.core.torrent_session import TorrentEngineUnavailable, extract_info_hash_from_magnet
 from app.models.torrent import AddMagnetRequest, AddTorrentResponse, CompletedActionRequest, CreateTorrentRequest, FilePriorityRequest, LimitRequest, RenameRequest, SeedingLimitsRequest, SequentialRequest, SetLabelRequest, SuperSeedingRequest, TrackerListRequest
 
 router = APIRouter(prefix="/api/torrents", tags=["torrents"])
@@ -34,6 +34,9 @@ def _handle_error(exc: Exception) -> HTTPException:
 @router.post("/add-magnet", response_model=AddTorrentResponse)
 async def add_magnet(payload: AddMagnetRequest, request: Request):
     try:
+        info_hash = extract_info_hash_from_magnet(payload.magnet)
+        if info_hash and _service(request).is_duplicate(info_hash):
+            raise HTTPException(status_code=409, detail="duplicate")
         result = _service(request).add_magnet(
             payload.magnet,
             payload.save_path,
@@ -41,6 +44,8 @@ async def add_magnet(payload: AddMagnetRequest, request: Request):
             payload.sequential,
         )
         return {"success": True, **result}
+    except HTTPException:
+        raise
     except Exception as exc:
         raise _handle_error(exc)
 
@@ -299,9 +304,17 @@ async def rename_torrent(torrent_id: str, payload: RenameRequest, request: Reque
 @router.patch("/{torrent_id}/completed-action")
 async def set_completed_action(torrent_id: str, payload: CompletedActionRequest, request: Request):
     try:
-        _service(request).set_completed_action(torrent_id, payload.action)
+        _service(request).set_completed_action(torrent_id, payload.action, payload.path)
         return {"success": True}
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
+    except Exception as exc:
+        raise _handle_error(exc)
+
+
+@router.get("/session-stats")
+async def session_stats(request: Request):
+    try:
+        return _service(request).get_session_stats()
     except Exception as exc:
         raise _handle_error(exc)

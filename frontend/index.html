@@ -198,6 +198,7 @@
         <span id="dht-state">DHT -</span>
         <span id="footer-count">0 torrents</span>
         <span id="footer-ratio">Ratio 0.00</span>
+        <span id="footer-stats"></span>
       </footer>
     </main>
     <script src="/static/about.js" defer></script>
@@ -344,6 +345,20 @@
         </div>
         <div class="rt-modal-foot">
           <button type="button" class="rt-btn rt-btn-ghost" id="text-preview-cancel">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- QR Modal -->
+    <div id="qr-modal" class="rt-modal-scrim hidden" role="dialog" aria-modal="true" aria-labelledby="qr-modal-title">
+      <div class="rt-modal rt-qr-modal">
+        <div class="rt-modal-head">
+          <span class="rt-modal-title" id="qr-modal-title">QR Code</span>
+          <button class="rt-modal-close" id="qr-modal-close" aria-label="Close">&times;</button>
+        </div>
+        <div class="rt-modal-body rt-qr-body">
+          <img id="qr-img" src="" alt="QR code" class="rt-qr-img">
+          <p id="qr-magnet-text" class="rt-qr-magnet"></p>
         </div>
       </div>
     </div>

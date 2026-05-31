@@ -99,11 +99,25 @@ def init_db() -> None:
             "ALTER TABLE torrents ADD COLUMN seeding_time_limit INTEGER NOT NULL DEFAULT 0",
             "ALTER TABLE torrents ADD COLUMN custom_name TEXT DEFAULT NULL",
             "ALTER TABLE torrents ADD COLUMN completed_action TEXT NOT NULL DEFAULT 'seed'",
+            "ALTER TABLE torrents ADD COLUMN completed_action_path TEXT DEFAULT NULL",
         ]:
             try:
                 conn.execute(ddl)
             except Exception:
                 pass  # column already exists
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS session_stats (
+                key TEXT PRIMARY KEY,
+                value TEXT NOT NULL DEFAULT '0'
+            )
+            """
+        )
+        for stat_key in ("total_downloaded", "total_uploaded"):
+            conn.execute(
+                "INSERT OR IGNORE INTO session_stats (key, value) VALUES (?, '0')",
+                (stat_key,),
+            )
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS labels (

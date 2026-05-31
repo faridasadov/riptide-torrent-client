@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from app.core.config import DEFAULT_SETTINGS, RESUME_DIR
-from app.core.storage import SettingsRepository, TorrentRepository
+from app.core.storage import SessionStatsRepository, SettingsRepository, TorrentRepository
 from app.core.torrent_session import (
     TorrentEngineUnavailable,
     TorrentSessionManager,
@@ -180,10 +180,30 @@ class TorrentService:
     def rename(self, torrent_id: str, name: str) -> None:
         self.torrent_repo.update_custom_name(torrent_id.lower(), name.strip())
 
-    def set_completed_action(self, torrent_id: str, action: str) -> None:
-        if action not in ("seed", "stop"):
+    def set_completed_action(self, torrent_id: str, action: str, path: Optional[str] = None) -> None:
+        if action not in ("seed", "stop", "move"):
             raise ValueError(f"Invalid completed action: {action}")
+        if action == "move" and not path:
+            raise ValueError("Path required for move action")
         self.torrent_repo.update_completed_action(torrent_id.lower(), action)
+        if path:
+            self.torrent_repo.update_completed_action_path(torrent_id.lower(), path.strip())
+
+    def get_session_stats(self) -> Dict[str, int]:
+        return SessionStatsRepository().get()
+
+    def record_stats(self) -> None:
+        rows = self.torrent_repo.list()
+        total_dl = total_ul = 0
+        for row in rows:
+            status = self.engine.get_status(row["info_hash"], row)
+            total_dl += status.get("download_speed", 0)
+            total_ul += status.get("upload_speed", 0)
+        if total_dl > 0 or total_ul > 0:
+            SessionStatsRepository().add(total_dl * 60, total_ul * 60)
+
+    def is_duplicate(self, info_hash: str) -> bool:
+        return self.torrent_repo.exists(info_hash.lower())
 
     def check_completed_actions(self) -> None:
         rows = self.torrent_repo.list()
