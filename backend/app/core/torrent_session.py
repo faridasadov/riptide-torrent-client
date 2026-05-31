@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 from urllib.parse import parse_qs, urlparse
 
-from app.core.config import ALLOWED_DOWNLOAD_ROOTS, MIN_FREE_SPACE_BYTES, RESUME_DIR
+from app.core.config import ALLOWED_DOWNLOAD_ROOTS, DOWNLOAD_DIR, MIN_FREE_SPACE_BYTES, RESUME_DIR
 
 logger = logging.getLogger(__name__)
 
@@ -62,8 +62,8 @@ def extract_info_hash_from_magnet(magnet: str) -> Optional[str]:
     return None
 
 
-def validate_save_path(path: str) -> str:
-    target = Path(path).expanduser().resolve()
+def validate_save_path(path: Optional[str]) -> str:
+    target = Path(path).expanduser().resolve() if path and path.strip() else DOWNLOAD_DIR
     if not any(target == root or root in target.parents for root in ALLOWED_DOWNLOAD_ROOTS):
         allowed = ", ".join(str(root) for root in ALLOWED_DOWNLOAD_ROOTS)
         raise ValueError(f"Download folder must be inside allowed roots: {allowed}")

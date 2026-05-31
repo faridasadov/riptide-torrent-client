@@ -31,13 +31,14 @@ class LoginRequest(BaseModel):
 async def login(payload: LoginRequest, request: Request, response: Response):
     _check_rate_limit(request.client.host)
     if not AUTH_ENABLED or (payload.username == AUTH_USERNAME and payload.password == AUTH_PASSWORD):
+        is_https = request.headers.get("x-forwarded-proto") == "https" or request.url.scheme == "https"
         response.set_cookie(
             SESSION_COOKIE_NAME,
             create_session_token(),
             max_age=SESSION_MAX_AGE,
             httponly=True,
             samesite="lax",
-            secure=True,
+            secure=is_https,
         )
         return {"authenticated": True, "username": AUTH_USERNAME}
     response.status_code = 401

@@ -55,7 +55,7 @@ async def add_file(
         with tempfile.NamedTemporaryFile(delete=False, suffix=".torrent") as tmp:
             tmp.write(content)
             tmp_path = tmp.name
-        result = _service(request).add_torrent_file(tmp_path, save_path)
+        result = _service(request).add_torrent_file(tmp_path, file.filename, save_path)
         return {"success": True, **result}
     except Exception as exc:
         raise _handle_error(exc)

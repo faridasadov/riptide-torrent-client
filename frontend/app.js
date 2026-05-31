@@ -1447,6 +1447,15 @@ async function boot() {
     await loadSystem();
     await loadLabels();
     await loadTorrents();
+    if (typeof RIPTIDE !== "undefined") {
+      qs("#about-version").textContent = `v${RIPTIDE.version}`;
+      qs("#about-tagline").textContent = RIPTIDE.tagline;
+      qs("#about-brand").textContent = RIPTIDE.brand;
+      qs("#about-engine").textContent = RIPTIDE.engine;
+      qs("#about-stack").textContent = RIPTIDE.stack.join(", ");
+      qs("#about-copy").textContent = RIPTIDE.copyright;
+      openModal("about-modal");
+    }
   } catch {
     showLogin();
   }
