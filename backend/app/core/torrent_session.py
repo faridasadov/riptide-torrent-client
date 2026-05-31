@@ -115,6 +115,21 @@ class TorrentSessionManager:
             int(settings.get("global_upload_limit", 0) or 0),
         )
         self._set_active_downloads(int(settings.get("max_active_downloads", 3) or 3))
+        self._apply_choking_settings()
+
+    def _apply_choking_settings(self) -> None:
+        try:
+            pack = self.session.get_settings()
+            # rate_based_choker: dynamically adjusts unchoke slots based on upload
+            # capacity — keeps more download connections open even when upload is limited
+            pack["choking_algorithm"] = 2
+            # fastest_upload seed choker: prefer peers who download quickly from us
+            pack["seed_choking_algorithm"] = 1
+            # More unchoke slots so download connections aren't starved
+            pack["unchoke_slots_limit"] = 16
+            self.session.apply_settings(pack)
+        except Exception as e:
+            logger.warning("Failed to apply choking settings: %s", e)
 
     def _set_session_limits(self, download_limit: int, upload_limit: int) -> None:
         if hasattr(self.session, "set_download_rate_limit"):
