@@ -9,7 +9,7 @@ from fastapi.responses import FileResponse
 from app.core.config import MAX_TORRENT_FILE_BYTES
 from app.core.storage import TorrentRepository
 from app.core.torrent_session import TorrentEngineUnavailable, extract_info_hash_from_magnet
-from app.models.torrent import AddMagnetRequest, AddTorrentResponse, CompletedActionRequest, CreateTorrentRequest, FilePriorityRequest, LimitRequest, RenameRequest, SeedingLimitsRequest, SequentialRequest, SetLabelRequest, SuperSeedingRequest, TrackerListRequest
+from app.models.torrent import AddMagnetRequest, AddTorrentResponse, BlockPeerRequest, CompletedActionRequest, CreateTorrentRequest, FilePriorityRequest, ForceStartRequest, LimitRequest, MoveContentRequest, RenameRequest, SeedingLimitsRequest, SequentialRequest, SetLabelRequest, SuperSeedingRequest, TrackerListRequest
 
 router = APIRouter(prefix="/api/torrents", tags=["torrents"])
 _torrent_repo = TorrentRepository()
@@ -42,6 +42,7 @@ async def add_magnet(payload: AddMagnetRequest, request: Request):
             payload.save_path,
             payload.start_paused,
             payload.sequential,
+            payload.force_start,
         )
         return {"success": True, **result}
     except HTTPException:
@@ -58,6 +59,8 @@ async def add_file(
     start_paused: bool = Form(False),
     sequential: bool = Form(False),
     priorities: str = Form(None),
+    skip_hash_check: bool = Form(False),
+    force_start: bool = Form(False),
 ):
     if not file.filename or not file.filename.endswith(".torrent"):
         raise HTTPException(status_code=400, detail="Only .torrent files are accepted")
@@ -83,6 +86,8 @@ async def add_file(
             start_paused,
             sequential,
             parsed_priorities,
+            skip_hash_check,
+            force_start,
         )
         return {"success": True, **result}
     except Exception as exc:
@@ -211,6 +216,15 @@ async def set_super_seeding(torrent_id: str, payload: SuperSeedingRequest, reque
         raise _handle_error(exc)
 
 
+@router.patch("/{torrent_id}/force-start")
+async def set_force_start(torrent_id: str, payload: ForceStartRequest, request: Request):
+    try:
+        _service(request).set_force_start(torrent_id, payload.enabled)
+        return {"success": True}
+    except Exception as exc:
+        raise _handle_error(exc)
+
+
 @router.patch("/{torrent_id}/files")
 async def set_file_priorities(torrent_id: str, payload: FilePriorityRequest, request: Request):
     try:
@@ -308,6 +322,24 @@ async def set_completed_action(torrent_id: str, payload: CompletedActionRequest,
         return {"success": True}
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
+    except Exception as exc:
+        raise _handle_error(exc)
+
+
+@router.patch("/{torrent_id}/move-content")
+async def move_content(torrent_id: str, payload: MoveContentRequest, request: Request):
+    try:
+        destination = _service(request).move_content(torrent_id, payload.destination)
+        return {"success": True, "destination": destination}
+    except Exception as exc:
+        raise _handle_error(exc)
+
+
+@router.post("/{torrent_id}/peers/block")
+async def block_peer(torrent_id: str, payload: BlockPeerRequest, request: Request):
+    try:
+        ip_filter = _service(request).block_peer_ip(payload.ip)
+        return {"success": True, "ip_filter": ip_filter}
     except Exception as exc:
         raise _handle_error(exc)
 

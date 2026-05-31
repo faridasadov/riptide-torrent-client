@@ -1,5 +1,8 @@
 import asyncio
+import json
 from contextlib import asynccontextmanager
+from datetime import datetime
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -13,6 +16,17 @@ from app.core.storage import SettingsRepository, TorrentRepository
 from app.database.db import init_db
 from app.services.resume_service import ResumeService
 from app.services.torrent_service import UnavailableTorrentService, create_service
+
+RELEASE_FILE = Path(__file__).resolve().parents[2] / "release.json"
+
+
+def load_release() -> dict:
+    data = json.loads(RELEASE_FILE.read_text(encoding="utf-8"))
+    data["copyright"] = f"© {datetime.now().year} {data.get('brand', 'faridasadov')}. All rights reserved."
+    return data
+
+
+RELEASE = load_release()
 
 
 async def periodic_alt_speed(app: FastAPI) -> None:
@@ -114,7 +128,7 @@ async def lifespan(app: FastAPI):
         ResumeService(service.engine, TorrentRepository()).save_resume_data()
 
 
-app = FastAPI(title="Local Torrent Client", version="0.1.6", lifespan=lifespan)
+app = FastAPI(title="Local Torrent Client", version=RELEASE["version"], lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=CORS_ORIGINS,
@@ -150,8 +164,24 @@ async def site():
 
 @app.get("/static/about.js")
 async def frontend_about_js():
+    release = load_release()
+    payload = {
+        "name": release["name"],
+        "version": release["version"],
+        "tagline": release["tagline"],
+        "brand": release["brand"],
+        "author": release["author"],
+        "copyright": release["copyright"],
+        "engine": release["engine"],
+        "stack": release["stack"],
+        "links": release.get("links", {}),
+    }
+    changelog = release.get("changelog", {})
     return Response(
-        (FRONTEND_DIR / "about.js").read_text(encoding="utf-8"),
+        (
+            f"const RIPTIDE_CHANGELOG = Object.freeze({json.dumps(changelog, ensure_ascii=True)});\n"
+            f"const RIPTIDE = Object.freeze({json.dumps(payload, ensure_ascii=True)});\n"
+        ),
         media_type="application/javascript",
     )
 

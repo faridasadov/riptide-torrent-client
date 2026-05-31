@@ -73,6 +73,7 @@ const RT_ICON_PATHS = {
   info: '<circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>',
   'arrow-right': '<line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>',
   repeat: '<path d="m17 2 4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>',
+  share: '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4"/><path d="m15.4 6.5-6.8 4"/>',
 };
 
 function icon(name, size = 16) {
@@ -207,6 +208,10 @@ const I18N = {
     pauseAll: "Pause all", resumeAll: "Resume all",
     copyMagnet: "Copy magnet link", rename: "Rename",
     renameTitle: "Rename torrent", renameLabel: "New name",
+    moveContent: "Move content", moveContentTitle: "Move torrent content",
+    forceStart: "Force start", disableForceStart: "Disable force start",
+    blockPeer: "Block peer IP", skipHashCheck: "Skip initial hash check",
+    portStatus: "Port status", portListening: "Listening", portReachable: "Local reachability",
     deleteWithFiles: "Also delete downloaded files",
     sortName: "Name", sortSize: "Size", sortProgress: "Progress", sortSpeed: "Speed",
     bulkPause: "Pause selected", bulkResume: "Resume selected", bulkDelete: "Delete selected",
@@ -342,6 +347,10 @@ const I18N = {
     pauseAll: "Hamısını dayandır", resumeAll: "Hamısını davam et",
     copyMagnet: "Magnet linkini kopyala", rename: "Adını dəyiş",
     renameTitle: "Torrentin adını dəyiş", renameLabel: "Yeni ad",
+    moveContent: "Məzmunu köçür", moveContentTitle: "Torrent məzmununu köçür",
+    forceStart: "Məcburi başlat", disableForceStart: "Məcburi başlatmanı söndür",
+    blockPeer: "Peer IP-sini blokla", skipHashCheck: "İlkin hash yoxlamasını keç",
+    portStatus: "Port statusu", portListening: "Dinləyir", portReachable: "Lokal əlçatanlıq",
     deleteWithFiles: "Yüklənmiş faylları da sil",
     sortName: "Ad", sortSize: "Ölçü", sortProgress: "İrəliləyiş", sortSpeed: "Sürət",
     bulkPause: "Seçilənləri dayandır", bulkResume: "Seçilənləri davam et", bulkDelete: "Seçilənləri sil",
@@ -480,6 +489,10 @@ const I18N = {
     pauseAll: "Остановить все", resumeAll: "Возобновить все",
     copyMagnet: "Копировать magnet-ссылку", rename: "Переименовать",
     renameTitle: "Переименовать торрент", renameLabel: "Новое имя",
+    moveContent: "Переместить данные", moveContentTitle: "Переместить данные торрента",
+    forceStart: "Принудительный старт", disableForceStart: "Отключить принудительный старт",
+    blockPeer: "Заблокировать IP пира", skipHashCheck: "Пропустить начальную хеш-проверку",
+    portStatus: "Статус порта", portListening: "Слушает", portReachable: "Локальная доступность",
     deleteWithFiles: "Также удалить загруженные файлы",
     sortName: "Имя", sortSize: "Размер", sortProgress: "Прогресс", sortSpeed: "Скорость",
     bulkPause: "Остановить выбранные", bulkResume: "Возобновить выбранные", bulkDelete: "Удалить выбранные",
@@ -569,6 +582,8 @@ function applyLanguage() {
   document.querySelectorAll(".rt-add-options label").forEach((el) => {
     if (el.querySelector("#magnet-start-paused,#file-start-paused")) el.lastChild.textContent = " " + l("startPaused");
     if (el.querySelector("#magnet-sequential,#file-sequential")) el.lastChild.textContent = " " + l("sequential");
+    if (el.querySelector("#magnet-force-start,#file-force-start")) el.lastChild.textContent = " " + l("forceStart");
+    if (el.querySelector("#file-skip-hash")) el.lastChild.textContent = " " + l("skipHashCheck");
   });
 }
 
@@ -683,6 +698,17 @@ function eta(seconds) {
   const m = Math.floor((seconds % 3600) / 60);
   const s = Math.floor(seconds % 60);
   return h ? `${h}h ${m}m` : `${m}m ${s}s`;
+}
+
+function durationLabel(seconds) {
+  const value = Number(seconds || 0);
+  if (value <= 0) return "now";
+  if (value < 60) return `${value}s`;
+  const minutes = Math.floor(value / 60);
+  if (minutes < 60) return `${minutes}m`;
+  const hours = Math.floor(minutes / 60);
+  const remain = minutes % 60;
+  return remain ? `${hours}h ${remain}m` : `${hours}h`;
 }
 
 function labelOf(torrent) {
@@ -1201,7 +1227,10 @@ async function selectTorrent(torrentId) {
           <div class="rt-tracker-url"><span class="rt-peer-flag" data-peer-idx="${i}">${cachedFlag}</span>${seedBadge}<span class="rt-client-badge" style="background:${ci.color}">${esc(ci.label)}</span> ${esc(p.ip)}</div>
           <div class="rt-tracker-meta">${esc(p.client || l("unknownClient"))} · ${esc(p.connection_type || "BT")} · ↓ ${bytes(p.download_speed)}/s ↑ ${bytes(p.upload_speed || 0)}/s · <b>${bytes(p.downloaded || 0)}</b> ${l("received")}</div>
         </div>
-        <div class="rt-file-size">${p.progress != null ? p.progress.toFixed(0) + "%" : ""}</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="rt-file-size">${p.progress != null ? p.progress.toFixed(0) + "%" : ""}</div>
+          <button type="button" class="rt-icon-btn" data-block-peer="${esc(p.ip)}" title="${l("blockPeer")}">${icon("shield", 14)}</button>
+        </div>
       </div>`;
     }).join("");
     details.peers.forEach((p, i) => {
@@ -1221,13 +1250,17 @@ async function selectTorrent(torrentId) {
   if (!details.trackers.length) {
     trackersEl.innerHTML = `${trackerControls}<div class="muted">${l("noTrackerMeta")}</div>`;
   } else {
-    trackersEl.innerHTML = trackerControls + details.trackers.map((t) => {
+    trackersEl.innerHTML = trackerControls + details.trackers.map((t, idx) => {
       const ok = !t.message || !t.message.toLowerCase().includes("error");
       return `<div class="rt-tracker-row">
         <div class="rt-bdot" style="background:${ok ? "var(--rt-success)" : "var(--rt-fg-4)"}"></div>
         <div class="rt-tracker-main">
           <div class="rt-tracker-url">${esc(t.url)}</div>
-          <div class="rt-tracker-meta">${l("tierLabel")} ${esc(String(t.tier ?? ""))} · ${l("seedsLabel")} ${esc(t.scrape_complete ?? "-")} · ${l("leechersLabel")} ${esc(t.scrape_incomplete ?? "-")}${t.message ? " · " + esc(t.message) : ""}</div>
+          <div class="rt-tracker-meta">${l("tierLabel")} ${esc(String(t.tier ?? ""))} · ${l("seedsLabel")} ${esc(t.scrape_complete ?? "-")} · ${l("leechersLabel")} ${esc(t.scrape_incomplete ?? "-")} · next ${esc(durationLabel(t.next_announce))}${t.message ? " · " + esc(t.message) : ""}</div>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button type="button" class="rt-icon-btn" data-tracker-up="${idx}" title="Move up">${icon("arrowUp", 13)}</button>
+          <button type="button" class="rt-icon-btn" data-tracker-down="${idx}" title="Move down">${icon("arrowDown", 13)}</button>
         </div>
       </div>`;
     }).join("");
@@ -1253,6 +1286,36 @@ async function selectTorrent(torrentId) {
       showToast("Trackers updated", "success");
       await selectTorrent(torrentId);
     } catch (e) { showToast(e.message, "error"); }
+  });
+  trackersEl.querySelectorAll("[data-tracker-up],[data-tracker-down]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const current = details.trackers.map((t) => t.url);
+      const index = Number(button.dataset.trackerUp ?? button.dataset.trackerDown);
+      const direction = button.dataset.trackerUp !== undefined ? -1 : 1;
+      const nextIndex = index + direction;
+      if (index < 0 || nextIndex < 0 || nextIndex >= current.length) return;
+      [current[index], current[nextIndex]] = [current[nextIndex], current[index]];
+      try {
+        await api(`/api/torrents/${torrentId}/trackers`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ urls: current }),
+        });
+        await selectTorrent(torrentId);
+      } catch (e) { showToast(e.message, "error"); }
+    });
+  });
+  peersEl.querySelectorAll("[data-block-peer]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      try {
+        await api(`/api/torrents/${torrentId}/peers/block`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ip: button.dataset.blockPeer }),
+        });
+        showToast(`${button.dataset.blockPeer} blocked`, "success");
+      } catch (e) { showToast(e.message, "error"); }
+    });
   });
 }
 
@@ -1553,7 +1616,9 @@ function renderSettingsScreen() {
         ${row(l("queueing"), l("queueingDesc"), toggle("queueing_enabled"))}
         ${row(l("maxActive"), "", `<input class="rt-numfield" id="screen_max_active_torrents" type="number" min="1" value="${s.max_active_torrents || 500}" />`)}
         ${row(l("maxActiveUl"), "", `<input class="rt-numfield" id="screen_max_active_uploads" type="number" min="1" value="${s.max_active_uploads || 5}" />`)}
+        <div class="rt-set-note" id="port-status-note">${l("portStatus")}: ...</div>
       </div>`;
+    setTimeout(() => loadPortStatus(), 0);
   }
   if (state.settingsSection === "labels") {
     const labelRows = state.labels.map((lbl) => `
@@ -1638,14 +1703,16 @@ async function loadStorage(path = state.storagePath) {
     qs("#storage-path").value = data.path;
     const rows = [];
     if (!data.roots.includes(data.path)) {
-      rows.push(`<div class="storage-row"><span>${icon("folderOpen", 14)} ..</span><span></span><button data-open="${esc(parentPath(data.path))}">${icon("folderOpen", 14)} ${l("open")}</button><span></span></div>`);
+      rows.push(`<div class="storage-row"><span>${icon("folderOpen", 14)} ..</span><span></span><button data-enter="${esc(parentPath(data.path))}">${icon("folderOpen", 14)} ${l("open")}</button><span></span></div>`);
     }
     rows.push(`<div class="storage-row storage-action-row"><span>${icon("magnet", 14)} ${l("createTorrentFrom")}</span><span></span><button data-create-torrent="${esc(data.path)}">${icon("plus", 14)} ${l("createBtn")}</button><span></span><span></span></div>`);
     rows.push(...data.items.map((item) => `
       <div class="storage-row">
         <span title="${esc(item.path)}">${icon(item.type === "directory" ? "folder" : "file", 14)} ${esc(item.name)}</span>
         <span>${item.type === "file" ? bytes(item.size) : l("folderType")}</span>
-        <button data-open="${esc(item.path)}">${icon(item.type === "directory" ? "folderOpen" : "folder", 14)} ${item.type === "directory" ? l("open") : l("move")}</button>
+        ${item.type === "directory"
+          ? `<button data-enter="${esc(item.path)}">${icon("folderOpen", 14)} ${l("open")}</button>`
+          : `<button data-move="${esc(item.path)}">${icon("folder", 14)} ${l("move")}</button>`}
         ${item.type === "file" ? `<button data-file-actions="${esc(item.path)}" data-file-iso="${item.is_iso ? "1" : ""}" data-file-archive="${item.is_archive ? "1" : ""}">${icon("more-horizontal", 14)} ${l("actions")}</button>` : `<span></span>`}
         <button class="danger" data-delete="${esc(item.path)}">${icon("trash", 14)} ${l("delete")}</button>
       </div>
@@ -1838,6 +1905,19 @@ async function openTorrentLocation(torrentId) {
   showToast("Download folder opened", "success");
 }
 
+async function moveTorrentContent(torrentId) {
+  const torrent = state.torrents.find((t) => t.torrent_id === torrentId);
+  const destination = await openInputModal(l("moveContentTitle"), l("destPathLabel"), torrent?.save_path || state.storagePath);
+  if (!destination) return;
+  const result = await api(`/api/torrents/${torrentId}/move-content`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ destination }),
+  });
+  showToast(`Moved to ${result.destination}`, "success");
+  await loadTorrents();
+}
+
 async function promptTorrentLimit(torrentId, direction) {
   const torrent = state.torrents.find((t) => t.torrent_id === torrentId);
   if (!torrent) return;
@@ -1859,6 +1939,17 @@ async function promptTorrentLimit(torrentId, direction) {
   });
   showToast("Torrent speed limit saved", "success");
   await loadTorrents();
+}
+
+async function loadPortStatus() {
+  const el = qs("#port-status-note");
+  if (!el) return;
+  try {
+    const status = await api("/api/system/port-status");
+    el.textContent = `${l("portListening")}: ${status.listen_port || 0} · ${l("portReachable")}: ${status.local_tcp_reachable ? "yes" : "no"}`;
+  } catch {
+    el.textContent = `${l("portStatus")}: unavailable`;
+  }
 }
 
 async function deleteTorrent(torrentId) {
@@ -2039,7 +2130,9 @@ document.querySelectorAll(".settings-section").forEach((button) => {
 qs("#storage-list").onclick = async (event) => {
   const button = event.target.closest("button");
   if (!button) return;
-  const open = button.dataset.open;
+  event.stopPropagation();
+  const enter = button.dataset.enter;
+  const move = button.dataset.move;
   const del = button.dataset.delete;
   const create = button.dataset.createTorrent;
   const fileActions = button.dataset.fileActions;
@@ -2050,8 +2143,8 @@ qs("#storage-list").onclick = async (event) => {
       isArchive: Boolean(button.dataset.fileArchive),
     });
   }
-  if (open && button.textContent.includes("Move")) return moveStorageItem(open);
-  if (open) return loadStorage(open);
+  if (move) return moveStorageItem(move);
+  if (enter) return loadStorage(enter);
   if (del) return deleteStorageItem(del);
 };
 
@@ -2100,6 +2193,7 @@ qs("#magnet-form").addEventListener("submit", async (event) => {
         save_path: qs("#save-path").value.trim() || null,
         start_paused: qs("#magnet-start-paused")?.checked || false,
         sequential: qs("#magnet-sequential")?.checked || false,
+        force_start: qs("#magnet-force-start")?.checked || false,
       }),
     });
     event.target.reset();
@@ -2125,6 +2219,8 @@ qs("#file-form").addEventListener("submit", async (event) => {
   form.append("save_path", qs("#file-save-path").value.trim());
   form.append("start_paused", qs("#file-start-paused")?.checked ? "true" : "false");
   form.append("sequential", qs("#file-sequential")?.checked ? "true" : "false");
+  form.append("skip_hash_check", qs("#file-skip-hash")?.checked ? "true" : "false");
+  form.append("force_start", qs("#file-force-start")?.checked ? "true" : "false");
   const previewPriorities = state.addFilePreview?.files?.map((_, idx) =>
     Number(qs(`[data-preview-pri="${idx}"]`)?.value ?? 4)
   );
@@ -2459,6 +2555,9 @@ function showCtxMenu(x, y, torrentId) {
     <button class="rt-ctx-item" data-ctx="rename" role="menuitem">
       <span>${icon("file", 14)}</span><span>${l("rename")}</span>
     </button>
+    <button class="rt-ctx-item" data-ctx="move-content" role="menuitem">
+      <span>${icon("folderOpen", 14)}</span><span>${l("moveContent")}</span>
+    </button>
     <button class="rt-ctx-item" data-ctx="copy-save-path" role="menuitem">
       <span>${icon("folder", 14)}</span><span>${l("copySavePath")}</span>
     </button>
@@ -2470,6 +2569,9 @@ function showCtxMenu(x, y, torrentId) {
     </button>
     <button class="rt-ctx-item" data-ctx="super-seeding" role="menuitem">
       <span>${icon("upload", 14)}</span><span>${torrent.super_seeding ? l("disableSuperSeeding") : l("superSeeding")}</span>
+    </button>
+    <button class="rt-ctx-item" data-ctx="force-start" role="menuitem">
+      <span>${icon("zap", 14)}</span><span>${torrent.force_start ? l("disableForceStart") : l("forceStart")}</span>
     </button>
     <button class="rt-ctx-item" data-ctx="reannounce" role="menuitem">
       <span>${icon("refresh", 14)}</span><span>${l("forceReannounce")}</span>
@@ -2502,6 +2604,7 @@ function showCtxMenu(x, y, torrentId) {
     </button>
   `;
   menu.dataset.torrentId = torrentId;
+  delete menu.dataset.storagePath;
   menu.style.left = `${Math.min(x, window.innerWidth - 250)}px`;
   menu.style.top = `${Math.min(y, window.innerHeight - 350)}px`;
   menu.classList.remove("hidden");
@@ -2531,6 +2634,7 @@ qs("#ctx-menu").onclick = async (e) => {
   if (btn.dataset.ctx === "resume") await act(`/api/torrents/${id}/resume`, "POST");
   if (btn.dataset.ctx === "pause") await act(`/api/torrents/${id}/pause`, "POST");
   if (btn.dataset.ctx === "open-folder") await openTorrentLocation(id);
+  if (btn.dataset.ctx === "move-content") await moveTorrentContent(id);
   if (btn.dataset.ctx === "limit-down") await promptTorrentLimit(id, "download");
   if (btn.dataset.ctx === "limit-up") await promptTorrentLimit(id, "upload");
   if (btn.dataset.ctx === "limit-clear") {
@@ -2557,6 +2661,17 @@ qs("#ctx-menu").onclick = async (e) => {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ enabled: !t?.super_seeding }),
+      });
+      await loadTorrents();
+    } catch (e) { showToast(e.message, "error"); }
+  }
+  if (btn.dataset.ctx === "force-start") {
+    const t = state.torrents.find((x) => x.torrent_id === id);
+    try {
+      await api(`/api/torrents/${id}/force-start`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled: !t?.force_start }),
       });
       await loadTorrents();
     } catch (e) { showToast(e.message, "error"); }

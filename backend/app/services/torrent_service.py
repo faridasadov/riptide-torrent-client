@@ -30,6 +30,7 @@ class TorrentService:
         save_path: str = None,
         start_paused: bool = False,
         sequential: bool = False,
+        force_start: bool = False,
     ) -> Dict[str, str]:
         candidate_hash = extract_info_hash_from_magnet(magnet)
         if not candidate_hash:
@@ -41,6 +42,8 @@ class TorrentService:
         torrent_id = self.engine.add_magnet(magnet, final_path)
         if sequential:
             self.engine.set_sequential_download(torrent_id, True)
+        if force_start:
+            self.engine.set_force_start(torrent_id, True)
         if start_paused:
             self.engine.pause_torrent(torrent_id)
         try:
@@ -54,6 +57,7 @@ class TorrentService:
                     "magnet": magnet,
                     "save_path": final_path,
                     "paused": start_paused,
+                    "force_start": force_start,
                 }
             )
         except Exception:
@@ -72,6 +76,8 @@ class TorrentService:
         start_paused: bool = False,
         sequential: bool = False,
         priorities: Optional[List[int]] = None,
+        skip_hash_check: bool = False,
+        force_start: bool = False,
     ) -> Dict[str, str]:
         final_path = validate_save_path(save_path or self.settings_repo.get_all()["default_download_folder"])
         info = self.engine.get_torrent_file_info(source_file)
@@ -85,9 +91,11 @@ class TorrentService:
         stored_path = stored_dir / f"{torrent_id}{suffix}"
         shutil.copyfile(source_file, stored_path)
 
-        added = self.engine.add_torrent_file(str(stored_path), final_path)
+        added = self.engine.add_torrent_file(str(stored_path), final_path, seed_mode=skip_hash_check)
         if sequential:
             self.engine.set_sequential_download(torrent_id, True)
+        if force_start:
+            self.engine.set_force_start(torrent_id, True)
         if priorities:
             self.engine.set_file_priorities(torrent_id, priorities)
         if start_paused:
@@ -100,6 +108,7 @@ class TorrentService:
                     "torrent_file_path": str(stored_path),
                     "save_path": final_path,
                     "paused": start_paused,
+                    "force_start": force_start,
                 }
             )
         except Exception:
@@ -192,6 +201,9 @@ class TorrentService:
     def get_session_stats(self) -> Dict[str, int]:
         return SessionStatsRepository().get()
 
+    def get_port_status(self) -> Dict[str, Any]:
+        return self.engine.get_port_status()
+
     def record_stats(self) -> None:
         rows = self.torrent_repo.list()
         total_dl = total_ul = 0
@@ -217,6 +229,10 @@ class TorrentService:
     def set_super_seeding(self, torrent_id: str, enabled: bool) -> None:
         self.engine.set_super_seeding(torrent_id, enabled)
 
+    def set_force_start(self, torrent_id: str, enabled: bool) -> None:
+        self.engine.set_force_start(torrent_id, enabled)
+        self.torrent_repo.update_force_start(torrent_id.lower(), enabled)
+
     def set_file_priorities(self, torrent_id: str, priorities: list) -> None:
         self.engine.set_file_priorities(torrent_id, priorities)
 
@@ -236,6 +252,17 @@ class TorrentService:
 
     def seeding_limits(self, torrent_id: str, ratio_limit: float, seeding_time_limit: int) -> None:
         self.torrent_repo.update_seeding_limits(torrent_id.lower(), ratio_limit, seeding_time_limit)
+
+    def move_content(self, torrent_id: str, destination: str) -> str:
+        target = self.engine.move_storage(torrent_id.lower(), destination)
+        self.torrent_repo.update_save_path(torrent_id.lower(), target)
+        return target
+
+    def block_peer_ip(self, ip: str) -> str:
+        settings = self.settings_repo.get_all()
+        merged = self.engine.block_peer_ip(ip, settings)
+        self.settings_repo.update({"ip_filter": merged})
+        return merged
 
     def preview_torrent_file(self, source_file: str) -> Dict[str, Any]:
         return self.engine.preview_torrent_file(source_file)

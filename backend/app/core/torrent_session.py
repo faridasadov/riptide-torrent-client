@@ -2,6 +2,7 @@ import logging
 import os
 import re
 import shutil
+import socket
 import threading
 import time
 import tempfile
@@ -259,6 +260,7 @@ class TorrentSessionManager:
         torrent_path: str,
         save_path: str,
         resume_data: Optional[bytes] = None,
+        seed_mode: bool = False,
     ) -> Dict[str, str]:
         try:
             info = self.lt.torrent_info(torrent_path)
@@ -266,6 +268,8 @@ class TorrentSessionManager:
             raise ValueError(f"Invalid or damaged .torrent file: {exc}") from exc
 
         params: Dict[str, Any] = {"ti": info, "save_path": validate_save_path(save_path)}
+        if seed_mode:
+            params["flags"] = getattr(self.lt.torrent_flags, "seed_mode", 0)
         if resume_data:
             params["resume_data"] = resume_data
         try:
@@ -364,6 +368,17 @@ class TorrentSessionManager:
         handle = self.get_handle(torrent_id)
         handle.super_seeding(enabled)
 
+    def set_force_start(self, torrent_id: str, enabled: bool) -> None:
+        handle = self.get_handle(torrent_id)
+        flags = getattr(self.lt, "torrent_flags", None)
+        if enabled and flags and hasattr(flags, "auto_managed"):
+            handle.unset_flags(flags.auto_managed)
+            handle.resume()
+            return
+        handle.resume()
+        if flags and hasattr(flags, "auto_managed"):
+            handle.set_flags(flags.auto_managed)
+
     def force_recheck(self, torrent_id: str) -> None:
         handle = self.get_handle(torrent_id)
         handle.force_recheck()
@@ -402,6 +417,24 @@ class TorrentSessionManager:
             return int(handle.queue_position())
         except Exception:
             return 0
+
+    def move_storage(self, torrent_id: str, destination: str) -> str:
+        handle = self.get_handle(torrent_id)
+        target = validate_save_path(destination)
+        handle.move_storage(target)
+        return target
+
+    def block_peer_ip(self, ip: str, settings: Optional[Dict[str, Any]] = None) -> str:
+        ip_obj = ipaddress.ip_address(ip)
+        entry = f"{ip_obj}/32" if ip_obj.version == 4 else f"{ip_obj}/128"
+        merged = dict(settings or {})
+        existing = str(merged.get("ip_filter", "") or "").strip()
+        lines = [line.strip() for line in existing.splitlines() if line.strip()]
+        if entry not in lines:
+            lines.append(entry)
+        merged["ip_filter"] = "\n".join(lines)
+        self._apply_ip_filter(merged["ip_filter"])
+        return merged["ip_filter"]
 
     def preview_torrent_file(self, torrent_path: str) -> Dict[str, Any]:
         info = self.lt.torrent_info(torrent_path)
@@ -478,7 +511,9 @@ class TorrentSessionManager:
             "ratio_limit": float((db_row or {}).get("ratio_limit", 0) or 0),
             "seeding_time_limit": int((db_row or {}).get("seeding_time_limit", 0) or 0),
             "completed_action": (db_row or {}).get("completed_action", "seed"),
+            "completed_action_path": (db_row or {}).get("completed_action_path", ""),
             "added_at": (db_row or {}).get("added_at", ""),
+            "force_start": bool((db_row or {}).get("force_start", 0)),
         }
 
     def apply_completed_actions(self, db_rows: list) -> list:
@@ -668,6 +703,33 @@ class TorrentSessionManager:
             "label": row.get("label"),
             "sequential": False,
             "super_seeding": False,
+            "completed_action": row.get("completed_action", "seed"),
+            "completed_action_path": row.get("completed_action_path", ""),
+            "force_start": bool(row.get("force_start", 0)),
+        }
+
+    def get_port_status(self) -> Dict[str, Any]:
+        settings = self.session.get_settings()
+        listen = str(settings.get("listen_interfaces", "0.0.0.0:0"))
+        port = 0
+        try:
+            port = int(self.session.listen_port())
+        except Exception:
+            match = re.search(r":(\d+)", listen)
+            port = int(match.group(1)) if match else 0
+        locally_reachable = False
+        if port > 0:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(0.4)
+            try:
+                locally_reachable = sock.connect_ex(("127.0.0.1", port)) == 0
+            finally:
+                sock.close()
+        return {
+            "listen_interfaces": listen,
+            "listen_port": port,
+            "dht_running": bool(self.session.is_dht_running()),
+            "local_tcp_reachable": locally_reachable,
         }
 
     def save_resume_data(self, torrent_id: str) -> Optional[bytes]:
@@ -758,3 +820,8 @@ class TorrentSessionManager:
             threading.Thread(target=_apply_ul, daemon=True).start()
         else:
             self.set_torrent_limits(torrent_id, upload_limit=0)
+        if row.get("force_start"):
+            try:
+                self.set_force_start(torrent_id, True)
+            except Exception:
+                pass

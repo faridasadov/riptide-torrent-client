@@ -100,6 +100,7 @@ def init_db() -> None:
             "ALTER TABLE torrents ADD COLUMN custom_name TEXT DEFAULT NULL",
             "ALTER TABLE torrents ADD COLUMN completed_action TEXT NOT NULL DEFAULT 'seed'",
             "ALTER TABLE torrents ADD COLUMN completed_action_path TEXT DEFAULT NULL",
+            "ALTER TABLE torrents ADD COLUMN force_start INTEGER NOT NULL DEFAULT 0",
         ]:
             try:
                 conn.execute(ddl)

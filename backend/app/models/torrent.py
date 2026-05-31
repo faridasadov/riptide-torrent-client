@@ -8,6 +8,7 @@ class AddMagnetRequest(BaseModel):
     save_path: Optional[str] = None
     start_paused: bool = False
     sequential: bool = False
+    force_start: bool = False
 
 
 class AddTorrentResponse(BaseModel):
@@ -55,6 +56,10 @@ class SuperSeedingRequest(BaseModel):
     enabled: bool
 
 
+class ForceStartRequest(BaseModel):
+    enabled: bool
+
+
 class FilePriorityRequest(BaseModel):
     priorities: List[int]
 
@@ -76,6 +81,14 @@ class CreateTorrentRequest(BaseModel):
 
 class RenameRequest(BaseModel):
     name: str = Field(min_length=1, max_length=255)
+
+
+class MoveContentRequest(BaseModel):
+    destination: str = Field(min_length=1, max_length=1000)
+
+
+class BlockPeerRequest(BaseModel):
+    ip: str = Field(min_length=3, max_length=128)
 
 
 class CompletedActionRequest(BaseModel):

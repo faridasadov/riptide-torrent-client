@@ -1,6 +1,6 @@
 import shutil
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException, Request
 
 from app.core.storage import SettingsRepository, TorrentRepository
 
@@ -30,3 +30,11 @@ async def system_status():
         "upnp_enabled": settings["upnp_enabled"],
         "lsd_enabled": settings["lsd_enabled"],
     }
+
+
+@router.get("/port-status")
+async def port_status(request: Request):
+    service = request.app.state.torrent_service
+    if not hasattr(service, "get_port_status"):
+        raise HTTPException(status_code=503, detail="Torrent engine unavailable")
+    return service.get_port_status()

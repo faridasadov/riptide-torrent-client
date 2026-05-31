@@ -34,9 +34,9 @@ class TorrentRepository:
                 """
                 INSERT INTO torrents (
                     info_hash, name, magnet, torrent_file_path, save_path, paused,
-                    download_limit, upload_limit, label
+                    download_limit, upload_limit, label, force_start
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(info_hash) DO UPDATE SET
                     name = excluded.name,
                     magnet = excluded.magnet,
@@ -45,7 +45,8 @@ class TorrentRepository:
                     paused = excluded.paused,
                     download_limit = excluded.download_limit,
                     upload_limit = excluded.upload_limit,
-                    label = COALESCE(excluded.label, torrents.label)
+                    label = COALESCE(excluded.label, torrents.label),
+                    force_start = excluded.force_start
                 """,
                 (
                     item["info_hash"],
@@ -57,6 +58,7 @@ class TorrentRepository:
                     int(item.get("download_limit", 0) or 0),
                     int(item.get("upload_limit", 0) or 0),
                     item.get("label"),
+                    int(bool(item.get("force_start", False))),
                 ),
             )
 
@@ -122,6 +124,20 @@ class TorrentRepository:
             conn.execute(
                 "UPDATE torrents SET completed_action_path = ? WHERE info_hash = ?",
                 (path, info_hash),
+            )
+
+    def update_save_path(self, info_hash: str, save_path: str) -> None:
+        with get_conn() as conn:
+            conn.execute(
+                "UPDATE torrents SET save_path = ? WHERE info_hash = ?",
+                (save_path, info_hash),
+            )
+
+    def update_force_start(self, info_hash: str, enabled: bool) -> None:
+        with get_conn() as conn:
+            conn.execute(
+                "UPDATE torrents SET force_start = ? WHERE info_hash = ?",
+                (int(bool(enabled)), info_hash),
             )
 
     def exists(self, info_hash: str) -> bool:

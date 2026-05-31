@@ -63,6 +63,28 @@ def _archive_members(target: Path) -> list[dict]:
         with tarfile.open(target) as archive:
             members = archive.getmembers()[:200]
             return [{"path": member.name, "size": int(member.size)} for member in members]
+    seven_zip = shutil.which("7z") or shutil.which("7zz")
+    if seven_zip and lower.endswith((".7z", ".rar")):
+        result = subprocess.run([seven_zip, "l", "-slt", str(target)], capture_output=True, text=True, check=True)
+        entries = []
+        current_path = None
+        current_size = 0
+        for line in result.stdout.splitlines():
+            if line.startswith("Path = "):
+                if current_path and current_path != target.name:
+                    entries.append({"path": current_path, "size": current_size})
+                    if len(entries) >= 200:
+                        break
+                current_path = line.split("=", 1)[1].strip()
+                current_size = 0
+            elif line.startswith("Size = "):
+                try:
+                    current_size = int(line.split("=", 1)[1].strip())
+                except ValueError:
+                    current_size = 0
+        if current_path and current_path != target.name and len(entries) < 200:
+            entries.append({"path": current_path, "size": current_size})
+        return entries
     raise HTTPException(status_code=400, detail="Archive preview is currently supported for ZIP and TAR archives")
 
 
@@ -76,6 +98,10 @@ def _extract_archive(target: Path, destination: Path) -> None:
     if tarfile.is_tarfile(target):
         with tarfile.open(target) as archive:
             archive.extractall(destination)
+        return
+    seven_zip = shutil.which("7z") or shutil.which("7zz")
+    if seven_zip and target.name.lower().endswith((".7z", ".rar")):
+        subprocess.run([seven_zip, "x", "-y", f"-o{destination}", str(target)], check=True, capture_output=True, text=True)
         return
     raise HTTPException(status_code=400, detail="Archive extraction is currently supported for ZIP and TAR archives")
 
