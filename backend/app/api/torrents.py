@@ -6,7 +6,7 @@ from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
 from app.core.config import MAX_TORRENT_FILE_BYTES
 from app.core.storage import TorrentRepository
 from app.core.torrent_session import TorrentEngineUnavailable
-from app.models.torrent import AddMagnetRequest, AddTorrentResponse, LimitRequest, SetLabelRequest
+from app.models.torrent import AddMagnetRequest, AddTorrentResponse, FilePriorityRequest, LimitRequest, SequentialRequest, SetLabelRequest
 
 router = APIRouter(prefix="/api/torrents", tags=["torrents"])
 _torrent_repo = TorrentRepository()
@@ -131,6 +131,24 @@ async def limit_torrent(torrent_id: str, payload: LimitRequest, request: Request
 async def set_label(torrent_id: str, payload: SetLabelRequest, request: Request):
     try:
         _torrent_repo.update_label(torrent_id.lower(), payload.label)
+        return {"success": True}
+    except Exception as exc:
+        raise _handle_error(exc)
+
+
+@router.patch("/{torrent_id}/sequential")
+async def set_sequential(torrent_id: str, payload: SequentialRequest, request: Request):
+    try:
+        _service(request).set_sequential(torrent_id, payload.enabled)
+        return {"success": True}
+    except Exception as exc:
+        raise _handle_error(exc)
+
+
+@router.patch("/{torrent_id}/files")
+async def set_file_priorities(torrent_id: str, payload: FilePriorityRequest, request: Request):
+    try:
+        _service(request).set_file_priorities(torrent_id, payload.priorities)
         return {"success": True}
     except Exception as exc:
         raise _handle_error(exc)

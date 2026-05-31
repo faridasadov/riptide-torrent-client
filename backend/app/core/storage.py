@@ -247,7 +247,7 @@ class LabelRepository:
     def list(self) -> List[Dict]:
         with get_conn() as conn:
             rows = conn.execute(
-                "SELECT * FROM labels ORDER BY builtin DESC, name ASC"
+                "SELECT * FROM labels ORDER BY builtin DESC, CASE WHEN name = 'other' THEN 1 ELSE 0 END ASC, name ASC"
             ).fetchall()
             return [_row_to_dict(row) for row in rows]
 

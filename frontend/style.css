@@ -2435,6 +2435,37 @@ select.rt-modal-input {
   color: var(--rt-fg-3);
   flex-shrink: 0;
 }
+.rt-file-pri {
+  background: var(--rt-bg-3);
+  border: 1px solid var(--rt-border);
+  color: var(--rt-fg-2);
+  border-radius: 4px;
+  padding: 2px 4px;
+  font-size: 11px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.rt-day-row { display: flex; gap: 4px; flex-wrap: wrap; }
+.rt-day-btn {
+  background: var(--rt-bg-3);
+  border: 1px solid var(--rt-border);
+  color: var(--rt-fg-3);
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-size: 11px;
+  cursor: pointer;
+}
+.rt-day-btn.active { background: var(--rt-aqua); border-color: var(--rt-aqua); color: #000; }
+.rt-alttime { display: flex; align-items: center; gap: 8px; }
+.rt-timefield {
+  background: var(--rt-bg-3);
+  border: 1px solid var(--rt-border);
+  color: var(--rt-fg-1);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 12px;
+  width: 90px;
+}
 
 .rt-tracker-row {
   display: flex;

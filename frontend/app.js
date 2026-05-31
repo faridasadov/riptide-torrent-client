@@ -63,6 +63,8 @@ const RT_ICON_PATHS = {
   disc: '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/>',
   zap: '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
   'more-horizontal': '<circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>',
+  info: '<circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>',
+  'arrow-right': '<line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>',
 };
 
 function icon(name, size = 16) {
@@ -474,17 +476,34 @@ async function selectTorrent(torrentId) {
   if (!details.files.length) {
     filesEl.innerHTML = `<div class="muted">No file metadata yet.</div>`;
   } else {
-    filesEl.innerHTML = details.files.map((f) => {
+    const PRI_LABELS = { 0: "Skip", 1: "Low", 4: "Normal", 7: "High" };
+    filesEl.innerHTML = details.files.map((f, idx) => {
       const pct = f.size ? Math.min((f.downloaded / f.size) * 100, 100) : 0;
       const name = f.path.split("/").pop();
+      const priOpts = Object.entries(PRI_LABELS).map(([v, l]) =>
+        `<option value="${v}"${(f.priority ?? 4) === Number(v) ? " selected" : ""}>${l}</option>`
+      ).join("");
       return `<div class="rt-file-row">
         <div class="rt-file-main">
           <div class="rt-file-name" title="${esc(f.path)}">${esc(name)}</div>
           <div class="rt-file-track"><div class="rt-file-fill" style="width:${pct.toFixed(1)}%"></div></div>
         </div>
+        <select class="rt-file-pri" data-idx="${idx}">${priOpts}</select>
         <div class="rt-file-size">${bytes(f.downloaded)} / ${bytes(f.size)}</div>
       </div>`;
     }).join("");
+    filesEl.querySelectorAll(".rt-file-pri").forEach((sel) => {
+      sel.onchange = async () => {
+        const priorities = [...filesEl.querySelectorAll(".rt-file-pri")].map((s) => Number(s.value));
+        try {
+          await api(`/api/torrents/${state.selectedId}/files`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ priorities }),
+          });
+        } catch (e) { showToast(e.message, "error"); }
+      };
+    });
   }
 
   const peersEl = qs("#tab-peers");
@@ -757,7 +776,26 @@ function renderSettingsScreen() {
     panel.innerHTML = `<div class="rt-set-group"><div class="rt-set-grouphead">Downloads</div>${row("Default save location", "", `<div class="rt-pathfield">${icon("folder", 14)}<input id="screen_default_download_folder" value="${esc(s.default_download_folder || "")}" /><button type="button" class="rt-path-btn" data-browse-download>Browse</button></div>`)}${row("Keep incomplete files in download root", "Stored as a local UI preference until incomplete-folder backend support is added", uiToggle("incomplete_folder"))}${row("Maximum active downloads", "", `<input class="rt-numfield" id="screen_max_active_downloads" type="number" min="1" value="${s.max_active_downloads || 3}" />`)}</div>`;
   }
   if (state.settingsSection === "bandwidth") {
-    panel.innerHTML = `<div class="rt-set-group"><div class="rt-set-grouphead">Bandwidth limits</div>${row("Maximum download rate", "0 = unlimited", `<div class="rt-numunit"><input class="rt-numfield" id="screen_global_download_limit" type="number" min="0" value="${fromBytes(s.global_download_limit, "kb")}" /><span>KB/s</span></div>`)}${row("Maximum upload rate", "0 = unlimited", `<div class="rt-numunit"><input class="rt-numfield" id="screen_global_upload_limit" type="number" min="0" value="${fromBytes(s.global_upload_limit, "kb")}" /><span>KB/s</span></div>`)}<div class="rt-set-note">${icon("gauge", 14)}Global limits are applied directly to the libtorrent session.</div></div>`;
+    const days = (s.alt_speed_days || "1111111").split("");
+    const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+    const dayBtns = dayNames.map((d, i) =>
+      `<button type="button" class="rt-day-btn${days[i] === "1" ? " active" : ""}" data-day="${i}">${d}</button>`
+    ).join("");
+    panel.innerHTML = `
+      <div class="rt-set-group">
+        <div class="rt-set-grouphead">Bandwidth limits</div>
+        ${row("Maximum download rate", "0 = unlimited", `<div class="rt-numunit"><input class="rt-numfield" id="screen_global_download_limit" type="number" min="0" value="${fromBytes(s.global_download_limit, "kb")}" /><span>KB/s</span></div>`)}
+        ${row("Maximum upload rate", "0 = unlimited", `<div class="rt-numunit"><input class="rt-numfield" id="screen_global_upload_limit" type="number" min="0" value="${fromBytes(s.global_upload_limit, "kb")}" /><span>KB/s</span></div>`)}
+        <div class="rt-set-note">${icon("gauge", 14)}Global limits are applied directly to the libtorrent session.</div>
+      </div>
+      <div class="rt-set-group">
+        <div class="rt-set-grouphead">Alternate speed schedule</div>
+        ${row("Enable alt speed", "Apply lower limits on a schedule", toggle("alt_speed_enabled"))}
+        ${row("Alt download rate", "KB/s, 0 = unlimited", `<div class="rt-numunit"><input class="rt-numfield" id="screen_alt_speed_dl" type="number" min="0" value="${fromBytes(s.alt_speed_dl, "kb")}" /><span>KB/s</span></div>`)}
+        ${row("Alt upload rate", "KB/s, 0 = unlimited", `<div class="rt-numunit"><input class="rt-numfield" id="screen_alt_speed_ul" type="number" min="0" value="${fromBytes(s.alt_speed_ul, "kb")}" /><span>KB/s</span></div>`)}
+        ${row("Schedule", "Active hours", `<div class="rt-alttime"><input class="rt-timefield" id="screen_alt_begin" type="time" value="${esc(s.alt_speed_begin || "09:00")}" /> <span>to</span> <input class="rt-timefield" id="screen_alt_end" type="time" value="${esc(s.alt_speed_end || "23:00")}" /></div>`)}
+        ${row("Days", "", `<div class="rt-day-row" id="alt-day-row">${dayBtns}</div>`)}
+      </div>`;
   }
   if (state.settingsSection === "connection") {
     panel.innerHTML = `<div class="rt-set-group"><div class="rt-set-grouphead">Connection</div>${row("Incoming port", "libtorrent listens on 6881-6891", `<input class="rt-numfield" value="6881" disabled />`)}${row("Map port with UPnP / NAT-PMP", "", toggle("upnp_enabled"))}${row("Distributed Hash Table (DHT)", "Find peers without a tracker", toggle("dht_enabled"))}${row("Local Peer Discovery", "", toggle("lsd_enabled"))}</div>`;
@@ -1165,6 +1203,15 @@ qs("#file-form").addEventListener("submit", async (event) => {
 });
 
 
+qs("#magnet-label").addEventListener("change", () => {
+  const label = state.labels.find((l) => l.name === qs("#magnet-label").value);
+  if (label?.save_path) qs("#magnet-save-path").value = label.save_path;
+});
+qs("#file-label").addEventListener("change", () => {
+  const label = state.labels.find((l) => l.name === qs("#file-label").value);
+  if (label?.save_path) qs("#file-save-path").value = label.save_path;
+});
+
 qs("#settings-screen-form").addEventListener("click", async (event) => {
   const settingToggle = event.target.closest("[data-setting-toggle]");
   const uiToggle = event.target.closest("[data-ui-toggle]");
@@ -1198,6 +1245,8 @@ qs("#settings-screen-form").addEventListener("click", async (event) => {
     applyTheme();
     renderSettingsScreen();
   }
+  const dayBtn = event.target.closest(".rt-day-btn");
+  if (dayBtn) dayBtn.classList.toggle("active");
 });
 
 qs("#settings-screen-form").addEventListener("submit", async (event) => {
@@ -1210,6 +1259,12 @@ qs("#settings-screen-form").addEventListener("submit", async (event) => {
   if (state.settingsSection === "bandwidth") {
     payload.global_download_limit = toBytes(qs("#screen_global_download_limit")?.value || 0, "kb");
     payload.global_upload_limit = toBytes(qs("#screen_global_upload_limit")?.value || 0, "kb");
+    payload.alt_speed_dl = toBytes(qs("#screen_alt_speed_dl")?.value || 0, "kb");
+    payload.alt_speed_ul = toBytes(qs("#screen_alt_speed_ul")?.value || 0, "kb");
+    payload.alt_speed_begin = qs("#screen_alt_begin")?.value || "09:00";
+    payload.alt_speed_end = qs("#screen_alt_end")?.value || "23:00";
+    const dayBtns = qs("#alt-day-row")?.querySelectorAll(".rt-day-btn") || [];
+    payload.alt_speed_days = [...dayBtns].map((b) => (b.classList.contains("active") ? "1" : "0")).join("");
   }
   if (state.settingsSection === "connection") {
     payload.dht_enabled = state.settings.dht_enabled;
@@ -1347,6 +1402,9 @@ function showCtxMenu(x, y, torrentId) {
     <button class="rt-ctx-item" data-ctx="copy-magnet" role="menuitem">
       <span>${icon("magnet", 14)}</span><span>Copy info hash</span>
     </button>
+    <button class="rt-ctx-item" data-ctx="sequential" role="menuitem">
+      <span>${icon("arrow-right", 14)}</span><span>${torrent.sequential ? "Disable sequential" : "Sequential download"}</span>
+    </button>
     <button class="rt-ctx-item" data-ctx="set-label" role="menuitem">
       <span>${icon("tag", 14)}</span><span>Set label</span>
     </button>
@@ -1382,6 +1440,17 @@ qs("#ctx-menu").onclick = async (e) => {
     await loadTorrents();
   }
   if (btn.dataset.ctx === "delete") await deleteTorrent(id);
+  if (btn.dataset.ctx === "sequential") {
+    const t = state.torrents.find((x) => x.torrent_id === id);
+    try {
+      await api(`/api/torrents/${id}/sequential`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled: !t?.sequential }),
+      });
+      await loadTorrents();
+    } catch (e) { showToast(e.message, "error"); }
+  }
   if (btn.dataset.ctx === "set-label") openLabelPickerModal(id);
   if (btn.dataset.ctx === "copy-magnet") {
     const torrent = state.torrents.find((t) => t.torrent_id === id);
@@ -1447,13 +1516,14 @@ async function boot() {
     await loadSystem();
     await loadLabels();
     await loadTorrents();
-    if (typeof RIPTIDE !== "undefined") {
+    if (typeof RIPTIDE !== "undefined" && !sessionStorage.getItem("about_shown")) {
       qs("#about-version").textContent = `v${RIPTIDE.version}`;
       qs("#about-tagline").textContent = RIPTIDE.tagline;
       qs("#about-brand").textContent = RIPTIDE.brand;
       qs("#about-engine").textContent = RIPTIDE.engine;
       qs("#about-stack").textContent = RIPTIDE.stack.join(", ");
       qs("#about-copy").textContent = RIPTIDE.copyright;
+      sessionStorage.setItem("about_shown", "1");
       openModal("about-modal");
     }
   } catch {

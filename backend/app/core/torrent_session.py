@@ -209,8 +209,16 @@ class TorrentSessionManager:
 
     def set_torrent_limits(self, torrent_id: str, download_limit: int, upload_limit: int) -> None:
         handle = self.get_handle(torrent_id)
-        handle.set_download_limit(download_limit)
-        handle.set_upload_limit(upload_limit)
+        handle.set_download_limit(download_limit if download_limit > 0 else -1)
+        handle.set_upload_limit(upload_limit if upload_limit > 0 else -1)
+
+    def set_sequential_download(self, torrent_id: str, enabled: bool) -> None:
+        handle = self.get_handle(torrent_id)
+        handle.set_sequential_download(enabled)
+
+    def set_file_priorities(self, torrent_id: str, priorities: list) -> None:
+        handle = self.get_handle(torrent_id)
+        handle.prioritize_files(priorities)
 
     def get_status(self, torrent_id: str, db_row: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         with self._lock:
@@ -245,7 +253,42 @@ class TorrentSessionManager:
             "download_limit": int((db_row or {}).get("download_limit", 0) or 0),
             "upload_limit": int((db_row or {}).get("upload_limit", 0) or 0),
             "label": (db_row or {}).get("label"),
+            "sequential": self._get_sequential(handle),
         }
+
+    def check_alt_speed(self, settings: Dict[str, Any]) -> None:
+        if not settings.get("alt_speed_enabled"):
+            return
+        import datetime
+        now = datetime.datetime.now()
+        begin = settings.get("alt_speed_begin", "09:00")
+        end_t = settings.get("alt_speed_end", "23:00")
+        days = settings.get("alt_speed_days", "1111111")
+        try:
+            bh, bm = map(int, begin.split(":"))
+            eh, em = map(int, end_t.split(":"))
+            day_idx = now.weekday()
+            cur = now.hour * 60 + now.minute
+            in_sched = (
+                len(days) > day_idx
+                and days[day_idx] == "1"
+                and cur >= bh * 60 + bm
+                and cur < eh * 60 + em
+            )
+            dl = int(settings.get("alt_speed_dl", 0) or 0) if in_sched else int(settings.get("global_download_limit", 0) or 0)
+            ul = int(settings.get("alt_speed_ul", 0) or 0) if in_sched else int(settings.get("global_upload_limit", 0) or 0)
+            self._set_session_limits(dl, ul)
+        except Exception as e:
+            logger.warning("Alt speed check failed: %s", e)
+
+    def _get_sequential(self, handle) -> bool:
+        try:
+            tf = getattr(self.lt, "torrent_flags", None)
+            if tf and hasattr(tf, "sequential_download"):
+                return bool(handle.flags() & tf.sequential_download)
+        except Exception:
+            pass
+        return False
 
     def get_details(self, torrent_id: str, db_row: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         status = self.get_status(torrent_id, db_row)
@@ -264,6 +307,10 @@ class TorrentSessionManager:
             info = handle.get_torrent_info()
             file_storage = info.files()
             file_progress = handle.file_progress()
+            try:
+                priorities = handle.get_file_priorities()
+            except Exception:
+                priorities = []
             files = []
             for index in range(file_storage.num_files()):
                 files.append(
@@ -271,6 +318,7 @@ class TorrentSessionManager:
                         "path": file_storage.file_path(index),
                         "size": int(file_storage.file_size(index)),
                         "downloaded": int(file_progress[index]) if index < len(file_progress) else 0,
+                        "priority": int(priorities[index]) if index < len(priorities) else 4,
                     }
                 )
             details["files"] = files

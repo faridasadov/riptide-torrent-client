@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -38,10 +38,19 @@ class TorrentStatus(BaseModel):
     download_limit: int
     upload_limit: int
     label: Optional[str] = None
+    sequential: bool = False
 
 
 class SetLabelRequest(BaseModel):
     label: Optional[str] = None
+
+
+class SequentialRequest(BaseModel):
+    enabled: bool
+
+
+class FilePriorityRequest(BaseModel):
+    priorities: List[int]
 
 
 class LabelOut(BaseModel):

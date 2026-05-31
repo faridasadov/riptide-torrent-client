@@ -130,6 +130,12 @@ class TorrentService:
         self.engine.set_torrent_limits(torrent_id.lower(), download_limit, upload_limit)
         self.torrent_repo.update_limits(torrent_id.lower(), download_limit, upload_limit)
 
+    def set_sequential(self, torrent_id: str, enabled: bool) -> None:
+        self.engine.set_sequential_download(torrent_id, enabled)
+
+    def set_file_priorities(self, torrent_id: str, priorities: list) -> None:
+        self.engine.set_file_priorities(torrent_id, priorities)
+
 
 def create_service() -> TorrentService:
     settings_repo = SettingsRepository()

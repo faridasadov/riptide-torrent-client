@@ -9,10 +9,23 @@ from app.api import auth, files, rss, search, settings, system, torrents
 from app.api.labels import router as labels_router
 from app.core.config import CORS_ORIGINS, FRONTEND_DIR, ensure_directories
 from app.core.security import basic_auth_middleware
-from app.core.storage import TorrentRepository
+from app.core.storage import SettingsRepository, TorrentRepository
 from app.database.db import init_db
 from app.services.resume_service import ResumeService
 from app.services.torrent_service import UnavailableTorrentService, create_service
+
+
+async def periodic_alt_speed(app: FastAPI) -> None:
+    _settings_repo = SettingsRepository()
+    while True:
+        await asyncio.sleep(60)
+        service = app.state.torrent_service
+        if hasattr(service, "engine"):
+            try:
+                settings = _settings_repo.get_all()
+                await asyncio.to_thread(service.engine.check_alt_speed, settings)
+            except Exception:
+                pass
 
 
 async def periodic_resume_save(app: FastAPI) -> None:
@@ -30,15 +43,19 @@ async def lifespan(app: FastAPI):
     ensure_directories()
     init_db()
     resume_task = None
+    alt_speed_task = None
     try:
         app.state.torrent_service = create_service()
         ResumeService(app.state.torrent_service.engine, TorrentRepository()).restore_torrents()
         resume_task = asyncio.create_task(periodic_resume_save(app))
+        alt_speed_task = asyncio.create_task(periodic_alt_speed(app))
     except Exception as exc:
         app.state.torrent_service = UnavailableTorrentService(exc)
     yield
     if resume_task:
         resume_task.cancel()
+    if alt_speed_task:
+        alt_speed_task.cancel()
     service = app.state.torrent_service
     if hasattr(service, "engine"):
         ResumeService(service.engine, TorrentRepository()).save_resume_data()

@@ -44,6 +44,12 @@ DEFAULT_SETTINGS = {
     "dht_enabled": True,
     "upnp_enabled": True,
     "lsd_enabled": True,
+    "alt_speed_enabled": False,
+    "alt_speed_dl": 0,
+    "alt_speed_ul": 0,
+    "alt_speed_begin": "09:00",
+    "alt_speed_end": "23:00",
+    "alt_speed_days": "1111111",
 }
 
 
