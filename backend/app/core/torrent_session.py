@@ -87,11 +87,23 @@ class TorrentSessionManager:
         self._lock = threading.Lock()
 
     def _create_session(self) -> Any:
-        ses = self.lt.session()
+        settings = {
+            "listen_interfaces": "0.0.0.0:6881,[::]:6881",
+            "alert_mask": (
+                getattr(self.lt.alert, "port_mapping_notification", 0) |
+                getattr(self.lt.alert, "port_mapping_log_notification", 0) |
+                getattr(self.lt.alert, "status_notification", 0) |
+                getattr(self.lt.alert, "error_notification", 0)
+            ),
+        }
         try:
-            ses.listen_on(6881, 6891)
-        except TypeError:
-            ses.listen_on((6881, 6891))
+            ses = self.lt.session(settings)
+        except Exception:
+            ses = self.lt.session()
+            try:
+                ses.listen_on(6881, 6891)
+            except TypeError:
+                ses.listen_on((6881, 6891))
         return ses
 
     def apply_settings(self, settings: Dict[str, Any]) -> None:
