@@ -217,7 +217,7 @@ const I18N = {
     copySavePath: "Copy save path", showQr: "QR code",
     clipboardMagnet: "Magnet link detected", clickToAdd: "click to add",
     downloadComplete: "Download complete", allTime: "all time",
-    received: "received", unknownClient: "Unknown",
+    received: "received", unknownClient: "Unknown", backToList: "Back to list",
   },
   az: {
     logout: "Çıxış", all: "Hamısı", downloading: "Yüklənənlər", seeding: "Paylaşanlar",
@@ -352,7 +352,7 @@ const I18N = {
     copySavePath: "Yükləmə yolunu kopyala", showQr: "QR kod",
     clipboardMagnet: "Magnet link aşkarlandı", clickToAdd: "əlavə etmək üçün klikləyin",
     downloadComplete: "Yükləmə tamamlandı", allTime: "ümumi",
-    received: "alındı", unknownClient: "Naməlum",
+    received: "alındı", unknownClient: "Naməlum", backToList: "Siyahıya qayıt",
   },
   ru: {
     logout: "Выйти", all: "Все", downloading: "Загружаются", seeding: "Раздаются",
@@ -490,7 +490,7 @@ const I18N = {
     copySavePath: "Копировать путь загрузки", showQr: "QR-код",
     clipboardMagnet: "Обнаружена magnet-ссылка", clickToAdd: "нажмите для добавления",
     downloadComplete: "Загрузка завершена", allTime: "за всё время",
-    received: "получено", unknownClient: "Неизвестно",
+    received: "получено", unknownClient: "Неизвестно", backToList: "К списку",
   },
 };
 
@@ -1026,6 +1026,16 @@ async function selectTorrent(torrentId) {
   const torrent = details.status;
   qs("#detail-empty").classList.add("hidden");
   qs("#detail-content").classList.remove("hidden");
+  document.body.classList.add("detail-open");
+  const backBtn = qs("#detail-back-btn");
+  if (!backBtn) {
+    const btn = document.createElement("button");
+    btn.id = "detail-back-btn";
+    btn.className = "rt-back-btn";
+    btn.innerHTML = `← ${l("backToList")}`;
+    btn.onclick = () => { document.body.classList.remove("detail-open"); };
+    qs("#detail-content").prepend(btn);
+  }
   qs("#detail-name").textContent = torrent.name || l("metadataLoading");
   qs("#detail-status").textContent = statusText(torrent);
   qs("#detail-status").className = pillClass(torrent);
@@ -2656,6 +2666,16 @@ function showAbout() {
   qs("#about-engine").textContent = RIPTIDE.engine;
   qs("#about-stack").textContent = RIPTIDE.stack.join(", ");
   qs("#about-copy").textContent = RIPTIDE.copyright;
+
+  const clEl = qs("#about-changelog");
+  if (clEl && typeof RIPTIDE_CHANGELOG !== "undefined") {
+    const entries = Object.entries(RIPTIDE_CHANGELOG).slice(0, 5);
+    clEl.innerHTML = entries.map(([ver, items]) => `
+      <div class="rt-cl-version ${ver === RIPTIDE.version ? "current" : ""}">
+        <div class="rt-cl-ver-label">v${esc(ver)}${ver === RIPTIDE.version ? " <span class='rt-cl-new'>new</span>" : ""}</div>
+        <ul class="rt-cl-items">${items.map(i => `<li>${esc(i)}</li>`).join("")}</ul>
+      </div>`).join("");
+  }
   openModal("about-modal");
 }
 

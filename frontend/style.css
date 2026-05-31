@@ -89,9 +89,9 @@ body.theme-light {
   --rt-border-strong: #b7c8d0;
   --rt-border-faint: #e6eef1;
   --rt-fg-1: #10232a;
-  --rt-fg-2: #48616b;
-  --rt-fg-3: #758b95;
-  --rt-fg-4: #a7b6bd;
+  --rt-fg-2: #3d5560;
+  --rt-fg-3: #5a7078;
+  --rt-fg-4: #7a8f97;
   --rt-aqua: #0aa98f;
   --rt-aqua-400: #078f7a;
   --rt-aqua-wash: rgba(10, 169, 143, 0.11);
@@ -1555,6 +1555,12 @@ input:focus-visible {
   color: var(--rt-fg-1);
   background: var(--rt-bg-3);
 }
+.settings-save-row button.rt-btn-primary,
+.rss-panel button.rt-btn-primary {
+  background: var(--rt-aqua);
+  border-color: var(--rt-aqua);
+  color: #ffffff;
+}
 
 .rt-rss-body {
   flex: 1;
@@ -2796,6 +2802,50 @@ select.rt-modal-input {
 
 .rt-toast.clickable { cursor: pointer; text-decoration: underline dotted; }
 #footer-stats { font-size: 11px; color: var(--rt-fg-3); margin-left: auto; }
+
+/* ── responsive detail pane ──────────────────────────────────── */
+@media (max-width: 900px) {
+  .detail-pane {
+    position: fixed;
+    top: 44px;
+    left: 0;
+    right: 0;
+    bottom: 26px;
+    width: 100% !important;
+    transform: translateX(110%);
+    transition: transform 0.22s var(--rt-ease);
+    z-index: 50;
+    overflow-y: auto;
+  }
+  body.detail-open .detail-pane {
+    transform: translateX(0);
+  }
+  .rt-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--rt-aqua);
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+  }
+}
+@media (min-width: 901px) {
+  .rt-back-btn { display: none; }
+}
+
+/* ── changelog ───────────────────────────────────────────────── */
+.rt-changelog { margin-top: 12px; border-top: 1px solid var(--rt-border); padding-top: 12px; max-height: 260px; overflow-y: auto; }
+.rt-cl-version { margin-bottom: 12px; }
+.rt-cl-version.current .rt-cl-ver-label { color: var(--rt-aqua); font-weight: 700; }
+.rt-cl-ver-label { font-size: 12px; font-weight: 600; color: var(--rt-fg-2); margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+.rt-cl-new { background: var(--rt-aqua); color: #fff; font-size: 10px; padding: 1px 6px; border-radius: 99px; font-weight: 700; }
+.rt-cl-items { margin: 0; padding-left: 16px; }
+.rt-cl-items li { font-size: 11.5px; color: var(--rt-fg-2); line-height: 1.6; }
 
 /* ── semantic type classes (from design-tokens.css) ──────────── */
 ::selection { background: var(--rt-aqua-wash2); }
