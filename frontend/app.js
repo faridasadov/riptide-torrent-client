@@ -202,6 +202,8 @@ const I18N = {
     privacyNote: "Riptide stores credentials locally in /etc/torrent-client.env. No telemetry is sent.",
     backupSection: "Backup", backupDesc: "Includes settings, labels, RSS feeds and RSS rules",
     exportBtn: "Export", importBtn: "Import",
+    encDisabled: "Disabled", encPrefer: "Prefer", encRequire: "Require",
+    statusEnabled: "Enabled", saveSettings: "Save settings",
     pauseAll: "Pause all", resumeAll: "Resume all",
     copyMagnet: "Copy magnet link", rename: "Rename",
     renameTitle: "Rename torrent", renameLabel: "New name",
@@ -335,6 +337,8 @@ const I18N = {
     privacyNote: "Riptide etimadnamələri yerli olaraq /etc/torrent-client.env-də saxlayır. Heç bir telemetriya göndərilmir.",
     backupSection: "Yedəkləmə", backupDesc: "Tənzimləmələr, etiketlər, RSS məlumatlarını ehtiva edir",
     exportBtn: "İxrac", importBtn: "İdxal",
+    encDisabled: "Söndürülü", encPrefer: "Üstünlük ver", encRequire: "Tələb et",
+    statusEnabled: "Aktiv", saveSettings: "Tənzimləmələri saxla",
     pauseAll: "Hamısını dayandır", resumeAll: "Hamısını davam et",
     copyMagnet: "Magnet linkini kopyala", rename: "Adını dəyiş",
     renameTitle: "Torrentin adını dəyiş", renameLabel: "Yeni ad",
@@ -471,6 +475,8 @@ const I18N = {
     privacyNote: "Riptide хранит учётные данные локально в /etc/torrent-client.env. Телеметрия не собирается.",
     backupSection: "Резервная копия", backupDesc: "Включает настройки, метки, RSS",
     exportBtn: "Экспорт", importBtn: "Импорт",
+    encDisabled: "Отключено", encPrefer: "Предпочтительно", encRequire: "Обязательно",
+    statusEnabled: "Включено", saveSettings: "Сохранить настройки",
     pauseAll: "Остановить все", resumeAll: "Возобновить все",
     copyMagnet: "Копировать magnet-ссылку", rename: "Переименовать",
     renameTitle: "Переименовать торрент", renameLabel: "Новое имя",
@@ -1591,15 +1597,16 @@ function renderSettingsScreen() {
     return;
   }
   if (state.settingsSection === "privacy") {
-    const encButtons = [["Disabled", 0], ["Prefer", 1], ["Require", 2]].map(([label, value]) =>
-      `<button type="button" data-encryption="${label}" data-enc-policy="${value}" class="${Number(s.encryption_policy || 0) === value ? "active" : ""}">${label}</button>`
+    const encOpts = [[l("encDisabled"), "Disabled", 0], [l("encPrefer"), "Prefer", 1], [l("encRequire"), "Require", 2]];
+    const encButtons = encOpts.map(([label, key, value]) =>
+      `<button type="button" data-encryption="${key}" data-enc-policy="${value}" class="${Number(s.encryption_policy || 0) === value ? "active" : ""}">${label}</button>`
     ).join("");
-    panel.innerHTML = `<div class="rt-set-group"><div class="rt-set-grouphead">${l("setPrivacy")}</div>${row(l("encryption"), "", `<div class="rt-seg rt-seg-inline">${encButtons}</div>`)}${row(l("preferTcp"), l("preferTcpDesc"), `<button type="button" class="rt-tog ${Number(s.utp_tcp_mixed_mode || 0) === 0 ? "on" : "off"}" data-mixed-mode><span class="rt-tog-knob"></span></button>`)}${row(l("limitTcpOverhead"), l("limitTcpDesc"), toggle("limit_tcp_overhead"))}${row(l("limitUtpRate"), l("limitUtpDesc"), toggle("limit_utp_rate"))}${row(l("multiConnSameIp"), "", toggle("allow_multiple_connections_from_same_ip"))}${row(l("anonymousMode"), "", toggle("anonymous_mode"))}${row(l("ipFilter"), l("ipFilterDesc"), `<textarea id="screen_ip_filter" class="rt-textarea" placeholder="203.0.113.0/24">${esc(s.ip_filter || "")}</textarea>`)}${row(l("vpnRoute"), l("vpnRouteDesc"), `<span class="rt-select">${icon("shield", 14)} enabled</span>`)}${row(l("authSetting"), l("authSettingDesc"), `<span class="rt-select">${icon("lock", 14)} enabled</span>`)}<div class="rt-set-note">${icon("lock", 14)} ${l("privacyNote")}</div></div>`;
+    panel.innerHTML = `<div class="rt-set-group"><div class="rt-set-grouphead">${l("setPrivacy")}</div>${row(l("encryption"), "", `<div class="rt-seg rt-seg-inline">${encButtons}</div>`)}${row(l("preferTcp"), l("preferTcpDesc"), `<button type="button" class="rt-tog ${Number(s.utp_tcp_mixed_mode || 0) === 0 ? "on" : "off"}" data-mixed-mode><span class="rt-tog-knob"></span></button>`)}${row(l("limitTcpOverhead"), l("limitTcpDesc"), toggle("limit_tcp_overhead"))}${row(l("limitUtpRate"), l("limitUtpDesc"), toggle("limit_utp_rate"))}${row(l("multiConnSameIp"), "", toggle("allow_multiple_connections_from_same_ip"))}${row(l("anonymousMode"), "", toggle("anonymous_mode"))}${row(l("ipFilter"), l("ipFilterDesc"), `<textarea id="screen_ip_filter" class="rt-textarea" placeholder="203.0.113.0/24">${esc(s.ip_filter || "")}</textarea>`)}${row(l("vpnRoute"), l("vpnRouteDesc"), `<span class="rt-select">${icon("shield", 14)} ${l("statusEnabled")}</span>`)}${row(l("authSetting"), l("authSettingDesc"), `<span class="rt-select">${icon("lock", 14)} ${l("statusEnabled")}</span>`)}<div class="rt-set-note">${icon("lock", 14)} ${l("privacyNote")}</div></div>`;
   }
   if (state.settingsSection === "general") {
     panel.insertAdjacentHTML("beforeend", `<div class="rt-set-group"><div class="rt-set-grouphead">${l("backupSection")}</div>${row(l("backupDesc"), "", `<div class="rt-inline-actions"><button type="button" class="rt-btn rt-btn-secondary rt-btn-auto" data-export-settings>${icon("download", 13)} ${l("exportBtn")}</button><button type="button" class="rt-btn rt-btn-secondary rt-btn-auto" data-import-settings>${icon("upload", 13)} ${l("importBtn")}</button><input id="settings-import-file" class="hidden" type="file" accept="application/json,.json" /></div>`)}</div>`);
   }
-  panel.insertAdjacentHTML("beforeend", `<div class="settings-save-row"><button class="rt-btn rt-btn-primary rt-btn-auto" type="submit">${icon("check", 14)} Save settings</button></div>`);
+  panel.insertAdjacentHTML("beforeend", `<div class="settings-save-row"><button class="rt-btn rt-btn-primary rt-btn-auto" type="submit">${icon("check", 14)} ${l("saveSettings")}</button></div>`);
 }
 
 function parentPath(path) {
