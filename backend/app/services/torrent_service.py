@@ -1,7 +1,7 @@
 import shutil
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from app.core.config import DEFAULT_SETTINGS, RESUME_DIR
 from app.core.storage import SettingsRepository, TorrentRepository
@@ -71,7 +71,7 @@ class TorrentService:
         save_path: str = None,
         start_paused: bool = False,
         sequential: bool = False,
-        priorities: list[int] | None = None,
+        priorities: Optional[List[int]] = None,
     ) -> Dict[str, str]:
         final_path = validate_save_path(save_path or self.settings_repo.get_all()["default_download_folder"])
         info = self.engine.get_torrent_file_info(source_file)
