@@ -1,0 +1,38 @@
+{
+  "name": "riptide-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Native desktop shell for the Riptide torrent client.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist:linux": "electron-builder --linux AppImage deb",
+    "dist:win": "electron-builder --win nsis portable"
+  },
+  "devDependencies": {
+    "electron": "^30.5.1",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "app.riptide.desktop",
+    "productName": "Riptide",
+    "files": [
+      "main.js",
+      "preload.js",
+      "package.json"
+    ],
+    "linux": {
+      "category": "Network",
+      "target": [
+        "AppImage",
+        "deb"
+      ]
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    }
+  }
+}

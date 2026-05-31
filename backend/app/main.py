@@ -28,6 +28,33 @@ async def periodic_alt_speed(app: FastAPI) -> None:
                 pass
 
 
+async def periodic_watch_folder(app: FastAPI) -> None:
+    _settings_repo = SettingsRepository()
+    seen = set()
+    while True:
+        await asyncio.sleep(15)
+        service = app.state.torrent_service
+        if not hasattr(service, "engine"):
+            continue
+        settings = _settings_repo.get_all()
+        if not settings.get("watch_folder_enabled") or not settings.get("watch_folder"):
+            continue
+        try:
+            from pathlib import Path
+            folder = Path(settings["watch_folder"]).expanduser().resolve()
+            for item in folder.glob("*.torrent"):
+                key = str(item)
+                if key in seen:
+                    continue
+                seen.add(key)
+                try:
+                    await asyncio.to_thread(service.add_torrent_file, key, item.name, settings["default_download_folder"])
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+
 async def periodic_resume_save(app: FastAPI) -> None:
     _repo = TorrentRepository()
     while True:
@@ -44,11 +71,13 @@ async def lifespan(app: FastAPI):
     init_db()
     resume_task = None
     alt_speed_task = None
+    watch_task = None
     try:
         app.state.torrent_service = create_service()
         ResumeService(app.state.torrent_service.engine, TorrentRepository()).restore_torrents()
         resume_task = asyncio.create_task(periodic_resume_save(app))
         alt_speed_task = asyncio.create_task(periodic_alt_speed(app))
+        watch_task = asyncio.create_task(periodic_watch_folder(app))
     except Exception as exc:
         app.state.torrent_service = UnavailableTorrentService(exc)
     yield
@@ -56,6 +85,8 @@ async def lifespan(app: FastAPI):
         resume_task.cancel()
     if alt_speed_task:
         alt_speed_task.cancel()
+    if watch_task:
+        watch_task.cancel()
     service = app.state.torrent_service
     if hasattr(service, "engine"):
         ResumeService(service.engine, TorrentRepository()).save_resume_data()

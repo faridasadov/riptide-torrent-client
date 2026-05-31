@@ -20,7 +20,9 @@ class TorrentRepository:
 
     def list(self) -> List[Dict[str, Any]]:
         with get_conn() as conn:
-            rows = conn.execute("SELECT * FROM torrents ORDER BY added_at DESC").fetchall()
+            rows = conn.execute(
+                "SELECT * FROM torrents ORDER BY queue_position ASC, added_at DESC"
+            ).fetchall()
             return [_row_to_dict(row) for row in rows]
 
     def exists(self, info_hash: str) -> bool:
@@ -74,6 +76,24 @@ class TorrentRepository:
                 WHERE info_hash = ?
                 """,
                 (download_limit, upload_limit, info_hash),
+            )
+
+    def update_queue_position(self, info_hash: str, queue_position: int) -> None:
+        with get_conn() as conn:
+            conn.execute(
+                "UPDATE torrents SET queue_position = ? WHERE info_hash = ?",
+                (queue_position, info_hash),
+            )
+
+    def update_seeding_limits(self, info_hash: str, ratio_limit: float, seeding_time_limit: int) -> None:
+        with get_conn() as conn:
+            conn.execute(
+                """
+                UPDATE torrents
+                SET ratio_limit = ?, seeding_time_limit = ?
+                WHERE info_hash = ?
+                """,
+                (ratio_limit, seeding_time_limit, info_hash),
             )
 
     def update_label(self, info_hash: str, label: Optional[str]) -> None:

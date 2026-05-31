@@ -50,6 +50,9 @@ DEFAULT_SETTINGS = {
     "alt_speed_begin": "09:00",
     "alt_speed_end": "23:00",
     "alt_speed_days": "1111111",
+    "watch_folder": "",
+    "watch_folder_enabled": False,
+    "ip_filter": "",
 }
 
 

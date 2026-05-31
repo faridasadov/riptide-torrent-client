@@ -1,4 +1,5 @@
 import shutil
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -86,7 +87,8 @@ class TorrentService:
     def list_statuses(self) -> List[Dict[str, Any]]:
         rows = self.torrent_repo.list()
         statuses = [self.engine.get_status(row["info_hash"], row) for row in rows]
-        for status in statuses:
+        for row, status in zip(rows, statuses):
+            self._enforce_seeding_limits(row, status)
             self.torrent_repo.save_status_snapshot(status["info_hash"], status)
         return statuses
 
@@ -95,6 +97,7 @@ class TorrentService:
         if not row:
             raise KeyError("Torrent not found")
         status = self.engine.get_status(torrent_id, row)
+        self._enforce_seeding_limits(row, status)
         self.torrent_repo.save_status_snapshot(status["info_hash"], status)
         return status
 
@@ -138,6 +141,50 @@ class TorrentService:
 
     def set_file_priorities(self, torrent_id: str, priorities: list) -> None:
         self.engine.set_file_priorities(torrent_id, priorities)
+
+    def reannounce(self, torrent_id: str) -> None:
+        self.engine.force_reannounce(torrent_id.lower())
+
+    def replace_trackers(self, torrent_id: str, urls: list[str]) -> None:
+        self.engine.replace_trackers(torrent_id.lower(), urls)
+
+    def queue_action(self, torrent_id: str, action: str) -> int:
+        position = self.engine.queue_action(torrent_id.lower(), action)
+        self.torrent_repo.update_queue_position(torrent_id.lower(), position)
+        return position
+
+    def seeding_limits(self, torrent_id: str, ratio_limit: float, seeding_time_limit: int) -> None:
+        self.torrent_repo.update_seeding_limits(torrent_id.lower(), ratio_limit, seeding_time_limit)
+
+    def preview_torrent_file(self, source_file: str) -> Dict[str, Any]:
+        return self.engine.preview_torrent_file(source_file)
+
+    def create_torrent_file(self, source_path: str, trackers: list[str], comment: str = "") -> str:
+        return self.engine.create_torrent_file(source_path, trackers, comment)
+
+    def _enforce_seeding_limits(self, row: Dict[str, Any], status: Dict[str, Any]) -> None:
+        if status.get("paused") or str(status.get("status", "")).lower() != "seeding":
+            return
+        ratio_limit = float(row.get("ratio_limit") or 0)
+        time_limit = int(row.get("seeding_time_limit") or 0)
+        should_pause = False
+        downloaded = int(status.get("downloaded") or 0)
+        uploaded = int(status.get("uploaded") or 0)
+        if ratio_limit > 0 and downloaded > 0 and uploaded / downloaded >= ratio_limit:
+            should_pause = True
+        if time_limit > 0:
+            try:
+                added = datetime.fromisoformat(str(row.get("added_at")).replace("Z", "+00:00"))
+                if added.tzinfo is None:
+                    added = added.replace(tzinfo=timezone.utc)
+                if (datetime.now(timezone.utc) - added).total_seconds() >= time_limit * 60:
+                    should_pause = True
+            except Exception:
+                pass
+        if should_pause:
+            self.pause(status["info_hash"])
+            status["paused"] = True
+            status["status"] = "paused"
 
 
 def create_service() -> TorrentService:

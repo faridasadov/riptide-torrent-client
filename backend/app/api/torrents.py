@@ -3,11 +3,12 @@ import logging
 from pathlib import Path
 
 from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
+from fastapi.responses import FileResponse
 
 from app.core.config import MAX_TORRENT_FILE_BYTES
 from app.core.storage import TorrentRepository
 from app.core.torrent_session import TorrentEngineUnavailable
-from app.models.torrent import AddMagnetRequest, AddTorrentResponse, FilePriorityRequest, LimitRequest, SequentialRequest, SetLabelRequest
+from app.models.torrent import AddMagnetRequest, AddTorrentResponse, CreateTorrentRequest, FilePriorityRequest, LimitRequest, SeedingLimitsRequest, SequentialRequest, SetLabelRequest, TrackerListRequest
 
 router = APIRouter(prefix="/api/torrents", tags=["torrents"])
 _torrent_repo = TorrentRepository()
@@ -68,6 +69,35 @@ async def add_file(
                 Path(tmp_path).unlink(missing_ok=True)
             except Exception:
                 pass
+
+
+@router.post("/preview-file")
+async def preview_file(request: Request, file: UploadFile = File(...)):
+    if not file.filename or not file.filename.endswith(".torrent"):
+        raise HTTPException(status_code=400, detail="Only .torrent files are accepted")
+    tmp_path = None
+    try:
+        content = await file.read()
+        if len(content) > MAX_TORRENT_FILE_BYTES:
+            raise ValueError(f".torrent file is too large. Maximum allowed size is {MAX_TORRENT_FILE_BYTES} bytes")
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".torrent") as tmp:
+            tmp.write(content)
+            tmp_path = tmp.name
+        return _service(request).preview_torrent_file(tmp_path)
+    except Exception as exc:
+        raise _handle_error(exc)
+    finally:
+        if tmp_path:
+            Path(tmp_path).unlink(missing_ok=True)
+
+
+@router.post("/create-file")
+async def create_file(payload: CreateTorrentRequest, request: Request):
+    try:
+        path = _service(request).create_torrent_file(payload.source_path, payload.trackers, payload.comment or "")
+        return FileResponse(path, media_type="application/x-bittorrent", filename=Path(path).name)
+    except Exception as exc:
+        raise _handle_error(exc)
 
 
 @router.get("")
@@ -152,6 +182,42 @@ async def set_sequential(torrent_id: str, payload: SequentialRequest, request: R
 async def set_file_priorities(torrent_id: str, payload: FilePriorityRequest, request: Request):
     try:
         _service(request).set_file_priorities(torrent_id, payload.priorities)
+        return {"success": True}
+    except Exception as exc:
+        raise _handle_error(exc)
+
+
+@router.post("/{torrent_id}/reannounce")
+async def reannounce(torrent_id: str, request: Request):
+    try:
+        _service(request).reannounce(torrent_id)
+        return {"success": True}
+    except Exception as exc:
+        raise _handle_error(exc)
+
+
+@router.put("/{torrent_id}/trackers")
+async def replace_trackers(torrent_id: str, payload: TrackerListRequest, request: Request):
+    try:
+        _service(request).replace_trackers(torrent_id, payload.urls)
+        return {"success": True}
+    except Exception as exc:
+        raise _handle_error(exc)
+
+
+@router.post("/{torrent_id}/queue/{action}")
+async def queue_action(torrent_id: str, action: str, request: Request):
+    try:
+        position = _service(request).queue_action(torrent_id, action)
+        return {"success": True, "queue_position": position}
+    except Exception as exc:
+        raise _handle_error(exc)
+
+
+@router.patch("/{torrent_id}/seeding-limits")
+async def seeding_limits(torrent_id: str, payload: SeedingLimitsRequest, request: Request):
+    try:
+        _service(request).seeding_limits(torrent_id, payload.ratio_limit, payload.seeding_time_limit)
         return {"success": True}
     except Exception as exc:
         raise _handle_error(exc)

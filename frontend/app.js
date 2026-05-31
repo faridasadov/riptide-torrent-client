@@ -40,6 +40,8 @@ const RT_ICON_PATHS = {
   layers: '<polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>',
   list: '<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
   magnet: '<path d="M6 15V9a6 6 0 1 1 12 0v6"/><path d="M6 9H2v6h4"/><path d="M22 9h-4v6h4"/>',
+  arrowUp: '<path d="m18 15-6-6-6 6"/>',
+  arrowDown: '<path d="m6 9 6 6 6-6"/>',
   pause: '<rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>',
   play: '<polygon points="6 3 20 12 6 21 6 3"/>',
   plus: '<path d="M12 5v14M5 12h14"/>',
@@ -65,6 +67,7 @@ const RT_ICON_PATHS = {
   'more-horizontal': '<circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>',
   info: '<circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>',
   'arrow-right': '<line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>',
+  repeat: '<path d="m17 2 4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>',
 };
 
 function icon(name, size = 16) {
@@ -477,7 +480,13 @@ async function selectTorrent(torrentId) {
     filesEl.innerHTML = `<div class="muted">No file metadata yet.</div>`;
   } else {
     const PRI_LABELS = { 0: "Skip", 1: "Low", 4: "Normal", 7: "High" };
-    filesEl.innerHTML = details.files.map((f, idx) => {
+    filesEl.innerHTML = `
+      <div class="rt-file-toolbar">
+        <button type="button" class="rt-btn rt-btn-secondary rt-btn-auto" data-files-pri="0">${icon("x", 13)} Skip all</button>
+        <button type="button" class="rt-btn rt-btn-secondary rt-btn-auto" data-files-pri="4">${icon("check", 13)} Normal all</button>
+        <button type="button" class="rt-btn rt-btn-secondary rt-btn-auto" data-files-pri="7">${icon("arrowUp", 13)} High all</button>
+      </div>
+      ${details.files.map((f, idx) => {
       const pct = f.size ? Math.min((f.downloaded / f.size) * 100, 100) : 0;
       const name = f.path.split("/").pop();
       const priOpts = Object.entries(PRI_LABELS).map(([v, l]) =>
@@ -491,7 +500,21 @@ async function selectTorrent(torrentId) {
         <select class="rt-file-pri" data-idx="${idx}">${priOpts}</select>
         <div class="rt-file-size">${bytes(f.downloaded)} / ${bytes(f.size)}</div>
       </div>`;
-    }).join("");
+    }).join("")}`;
+    filesEl.querySelectorAll("[data-files-pri]").forEach((btn) => {
+      btn.onclick = async () => {
+        filesEl.querySelectorAll(".rt-file-pri").forEach((sel) => { sel.value = btn.dataset.filesPri; });
+        const priorities = [...filesEl.querySelectorAll(".rt-file-pri")].map((s) => Number(s.value));
+        try {
+          await api(`/api/torrents/${state.selectedId}/files`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ priorities }),
+          });
+          showToast("File priorities updated", "success");
+        } catch (e) { showToast(e.message, "error"); }
+      };
+    });
     filesEl.querySelectorAll(".rt-file-pri").forEach((sel) => {
       sel.onchange = async () => {
         const priorities = [...filesEl.querySelectorAll(".rt-file-pri")].map((s) => Number(s.value));
@@ -524,10 +547,15 @@ async function selectTorrent(torrentId) {
   }
 
   const trackersEl = qs("#tab-trackers");
+  const trackerControls = `
+    <div class="rt-file-toolbar">
+      <button type="button" class="rt-btn rt-btn-secondary rt-btn-auto" data-reannounce>${icon("refresh", 13)} Reannounce</button>
+      <button type="button" class="rt-btn rt-btn-secondary rt-btn-auto" data-edit-trackers>${icon("server", 13)} Edit trackers</button>
+    </div>`;
   if (!details.trackers.length) {
-    trackersEl.innerHTML = `<div class="muted">No tracker metadata yet.</div>`;
+    trackersEl.innerHTML = `${trackerControls}<div class="muted">No tracker metadata yet.</div>`;
   } else {
-    trackersEl.innerHTML = details.trackers.map((t) => {
+    trackersEl.innerHTML = trackerControls + details.trackers.map((t) => {
       const ok = t.message && !t.message.toLowerCase().includes("error");
       return `<div class="rt-tracker-row">
         <div class="rt-bdot" style="background:${ok ? "var(--rt-success)" : "var(--rt-fg-4)"}"></div>
@@ -538,6 +566,28 @@ async function selectTorrent(torrentId) {
       </div>`;
     }).join("");
   }
+  trackersEl.querySelector("[data-reannounce]")?.addEventListener("click", async () => {
+    try {
+      await api(`/api/torrents/${torrentId}/reannounce`, { method: "POST" });
+      showToast("Tracker reannounce sent", "success");
+      await selectTorrent(torrentId);
+    } catch (e) { showToast(e.message, "error"); }
+  });
+  trackersEl.querySelector("[data-edit-trackers]")?.addEventListener("click", async () => {
+    const current = details.trackers.map((t) => t.url).join("\n");
+    const value = await openInputModal("Edit trackers", "Tracker URLs, comma separated", current);
+    if (value === null) return;
+    const urls = value.split(/[\n,]+/).map((x) => x.trim()).filter(Boolean);
+    try {
+      await api(`/api/torrents/${torrentId}/trackers`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ urls }),
+      });
+      showToast("Trackers updated", "success");
+      await selectTorrent(torrentId);
+    } catch (e) { showToast(e.message, "error"); }
+  });
 }
 
 let _loadingTorrents = false;
@@ -773,7 +823,7 @@ function renderSettingsScreen() {
     panel.innerHTML = `<div class="rt-set-group"><div class="rt-set-grouphead">General</div>${row("Launch Riptide on system startup", "Stored as a local UI preference; systemd service stays enabled separately", uiToggle("autostart"))}${row("Desktop notifications", "Notify when a download completes in this browser", uiToggle("notifications"))}${row("Theme", "", `<button type="button" class="rt-select" data-cycle-theme>${icon("settings", 14)} ${esc(ui.theme)}</button>`)}</div>`;
   }
   if (state.settingsSection === "downloads") {
-    panel.innerHTML = `<div class="rt-set-group"><div class="rt-set-grouphead">Downloads</div>${row("Default save location", "", `<div class="rt-pathfield">${icon("folder", 14)}<input id="screen_default_download_folder" value="${esc(s.default_download_folder || "")}" /><button type="button" class="rt-path-btn" data-browse-download>Browse</button></div>`)}${row("Keep incomplete files in download root", "Stored as a local UI preference until incomplete-folder backend support is added", uiToggle("incomplete_folder"))}${row("Maximum active downloads", "", `<input class="rt-numfield" id="screen_max_active_downloads" type="number" min="1" value="${s.max_active_downloads || 3}" />`)}</div>`;
+    panel.innerHTML = `<div class="rt-set-group"><div class="rt-set-grouphead">Downloads</div>${row("Default save location", "", `<div class="rt-pathfield">${icon("folder", 14)}<input id="screen_default_download_folder" value="${esc(s.default_download_folder || "")}" /><button type="button" class="rt-path-btn" data-browse-download>Browse</button></div>`)}${row("Watch folder", "Auto-import .torrent files from this directory", `<div class="rt-pathfield">${icon("folderOpen", 14)}<input id="screen_watch_folder" value="${esc(s.watch_folder || "")}" placeholder="/var/lib/torrent-client/watch" /></div>`)}${row("Enable watch folder", "", toggle("watch_folder_enabled"))}${row("Keep incomplete files in download root", "Stored as a local UI preference until incomplete-folder backend support is added", uiToggle("incomplete_folder"))}${row("Maximum active downloads", "", `<input class="rt-numfield" id="screen_max_active_downloads" type="number" min="1" value="${s.max_active_downloads || 3}" />`)}</div>`;
   }
   if (state.settingsSection === "bandwidth") {
     const days = (s.alt_speed_days || "1111111").split("");
@@ -858,7 +908,10 @@ function renderSettingsScreen() {
     return;
   }
   if (state.settingsSection === "privacy") {
-    panel.innerHTML = `<div class="rt-set-group"><div class="rt-set-grouphead">Privacy</div>${row("Protocol encryption", "Stored as a local UI preference until explicit libtorrent encryption settings are exposed", `<div class="rt-seg rt-seg-inline">${["Disabled", "Prefer", "Require"].map((option) => `<button type="button" data-encryption="${option}" class="${ui.encryption === option ? "active" : ""}">${option}</button>`).join("")}</div>`)}${row("Route traffic through VPN interface", "nftables kill-switch restricts torrentclient to tun0 and loopback", `<span class="rt-select">${icon("shield", 14)} enabled</span>`)}${row("Authentication", "Session cookie frontend plus Basic Auth API compatibility", `<span class="rt-select">${icon("lock", 14)} enabled</span>`)}<div class="rt-set-note">${icon("lock", 14)}Riptide stores credentials locally in /etc/torrent-client.env and sends no telemetry.</div></div>`;
+    panel.innerHTML = `<div class="rt-set-group"><div class="rt-set-grouphead">Privacy</div>${row("Protocol encryption", "Stored as a local UI preference until explicit libtorrent encryption settings are exposed", `<div class="rt-seg rt-seg-inline">${["Disabled", "Prefer", "Require"].map((option) => `<button type="button" data-encryption="${option}" class="${ui.encryption === option ? "active" : ""}">${option}</button>`).join("")}</div>`)}${row("IP filter", "One CIDR or start-end range per line", `<textarea id="screen_ip_filter" class="rt-textarea" placeholder="203.0.113.0/24">${esc(s.ip_filter || "")}</textarea>`)}${row("Route traffic through VPN interface", "nftables kill-switch restricts torrentclient to tun0 and loopback", `<span class="rt-select">${icon("shield", 14)} enabled</span>`)}${row("Authentication", "Session cookie frontend plus Basic Auth API compatibility", `<span class="rt-select">${icon("lock", 14)} enabled</span>`)}<div class="rt-set-note">${icon("lock", 14)}Riptide stores credentials locally in /etc/torrent-client.env and sends no telemetry.</div></div>`;
+  }
+  if (state.settingsSection === "general") {
+    panel.insertAdjacentHTML("beforeend", `<div class="rt-set-group"><div class="rt-set-grouphead">Backup</div>${row("Import / export settings", "Includes settings, labels, RSS feeds and RSS rules", `<div class="rt-inline-actions"><button type="button" class="rt-btn rt-btn-secondary rt-btn-auto" data-export-settings>${icon("download", 13)} Export</button><button type="button" class="rt-btn rt-btn-secondary rt-btn-auto" data-import-settings>${icon("upload", 13)} Import</button><input id="settings-import-file" class="hidden" type="file" accept="application/json,.json" /></div>`)}</div>`);
   }
   panel.insertAdjacentHTML("beforeend", `<div class="settings-save-row"><button class="rt-btn rt-btn-primary rt-btn-auto" type="submit">${icon("check", 14)} Save settings</button></div>`);
 }
@@ -878,6 +931,7 @@ async function loadStorage(path = state.storagePath) {
     if (!data.roots.includes(data.path)) {
       rows.push(`<div class="storage-row"><span>${icon("folderOpen", 14)} ..</span><span></span><button data-open="${esc(parentPath(data.path))}">${icon("folderOpen", 14)} Open</button><span></span></div>`);
     }
+    rows.push(`<div class="storage-row storage-action-row"><span>${icon("magnet", 14)} Create torrent from this folder</span><span></span><button data-create-torrent="${esc(data.path)}">${icon("plus", 14)} Create</button><span></span></div>`);
     rows.push(...data.items.map((item) => `
       <div class="storage-row">
         <span title="${esc(item.path)}">${icon(item.type === "directory" ? "folder" : "file", 14)} ${esc(item.name)}</span>
@@ -913,6 +967,38 @@ async function deleteStorageItem(path) {
     body: JSON.stringify({ path }),
   });
   await loadStorage();
+}
+
+async function createTorrentFromPath(sourcePath) {
+  const trackersRaw = await openInputModal("Create torrent", "Tracker URLs, comma separated", "");
+  if (trackersRaw === null) return;
+  const comment = await openInputModal("Create torrent", "Comment (optional)", "Created by Riptide");
+  const trackers = trackersRaw.split(/[\n,]+/).map((x) => x.trim()).filter(Boolean);
+  try {
+    const response = await fetch("/api/torrents/create-file", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ source_path: sourcePath, trackers, comment: comment || "" }),
+    });
+    if (!response.ok) {
+      let detail = response.statusText;
+      try { detail = (await response.json()).detail || detail; } catch {}
+      throw new Error(detail);
+    }
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${sourcePath.split("/").filter(Boolean).pop() || "riptide"}.torrent`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    showToast(".torrent file created", "success");
+  } catch (e) {
+    showToast(e.message, "error");
+  }
 }
 
 async function loadSettings() {
@@ -1124,6 +1210,8 @@ qs("#storage-list").onclick = async (event) => {
   if (!button) return;
   const open = button.dataset.open;
   const del = button.dataset.delete;
+  const create = button.dataset.createTorrent;
+  if (create) return createTorrentFromPath(create);
   if (open && button.textContent.includes("Move")) return moveStorageItem(open);
   if (open) return loadStorage(open);
   if (del) return deleteStorageItem(del);
@@ -1220,12 +1308,37 @@ qs("#file-label").addEventListener("change", () => {
   if (label?.save_path) qs("#file-save-path").value = label.save_path;
 });
 
+qs("#torrent-file").addEventListener("change", async () => {
+  const box = qs("#torrent-file-preview");
+  const file = qs("#torrent-file").files[0];
+  box.classList.add("hidden");
+  box.innerHTML = "";
+  if (!file) return;
+  const form = new FormData();
+  form.append("file", file);
+  try {
+    const preview = await api("/api/torrents/preview-file", { method: "POST", body: form });
+    const shownFiles = preview.files.slice(0, 6).map((f) => `<div>${esc(f.path)} <span>${bytes(f.size)}</span></div>`).join("");
+    box.innerHTML = `
+      <div class="rt-preview-title">${icon("file", 13)} ${esc(preview.name)}</div>
+      <div class="rt-preview-meta">${bytes(preview.total_size)} · ${preview.files.length} files · ${preview.trackers.length} trackers</div>
+      <div class="rt-preview-files">${shownFiles}${preview.files.length > 6 ? `<div>+${preview.files.length - 6} more</div>` : ""}</div>
+    `;
+    box.classList.remove("hidden");
+  } catch (e) {
+    box.innerHTML = `<div class="rt-preview-error">${esc(e.message)}</div>`;
+    box.classList.remove("hidden");
+  }
+});
+
 qs("#settings-screen-form").addEventListener("click", async (event) => {
   const settingToggle = event.target.closest("[data-setting-toggle]");
   const uiToggle = event.target.closest("[data-ui-toggle]");
   const encryption = event.target.closest("[data-encryption]");
   const browse = event.target.closest("[data-browse-download]");
   const theme = event.target.closest("[data-cycle-theme]");
+  const exportSettings = event.target.closest("[data-export-settings]");
+  const importSettings = event.target.closest("[data-import-settings]");
   if (settingToggle) {
     const key = settingToggle.dataset.settingToggle;
     state.settings[key] = !state.settings[key];
@@ -1253,8 +1366,46 @@ qs("#settings-screen-form").addEventListener("click", async (event) => {
     applyTheme();
     renderSettingsScreen();
   }
+  if (exportSettings) {
+    try {
+      const data = await api("/api/settings/export");
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "riptide-settings.json";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) { showToast(e.message, "error"); }
+  }
+  if (importSettings) {
+    qs("#settings-import-file")?.click();
+  }
   const dayBtn = event.target.closest(".rt-day-btn");
   if (dayBtn) dayBtn.classList.toggle("active");
+});
+
+qs("#settings-screen-form").addEventListener("change", async (event) => {
+  const fileInput = event.target.closest("#settings-import-file");
+  if (!fileInput || !fileInput.files[0]) return;
+  try {
+    const payload = JSON.parse(await fileInput.files[0].text());
+    state.settings = await api("/api/settings/import", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    await loadLabels();
+    await loadRss();
+    renderSettingsScreen();
+    showToast("Settings imported", "success");
+  } catch (e) {
+    showToast(e.message, "error");
+  } finally {
+    fileInput.value = "";
+  }
 });
 
 qs("#settings-screen-form").addEventListener("submit", async (event) => {
@@ -1262,6 +1413,8 @@ qs("#settings-screen-form").addEventListener("submit", async (event) => {
   const payload = {};
   if (state.settingsSection === "downloads") {
     payload.default_download_folder = qs("#screen_default_download_folder")?.value || state.settings.default_download_folder;
+    payload.watch_folder = qs("#screen_watch_folder")?.value || "";
+    payload.watch_folder_enabled = state.settings.watch_folder_enabled;
     payload.max_active_downloads = Number(qs("#screen_max_active_downloads")?.value || state.settings.max_active_downloads);
   }
   if (state.settingsSection === "bandwidth") {
@@ -1278,6 +1431,9 @@ qs("#settings-screen-form").addEventListener("submit", async (event) => {
     payload.dht_enabled = state.settings.dht_enabled;
     payload.upnp_enabled = state.settings.upnp_enabled;
     payload.lsd_enabled = state.settings.lsd_enabled;
+  }
+  if (state.settingsSection === "privacy") {
+    payload.ip_filter = qs("#screen_ip_filter")?.value || "";
   }
   if (!Object.keys(payload).length) {
     localStorage.setItem("riptide_ui_settings", JSON.stringify(state.uiSettings));
@@ -1413,6 +1569,25 @@ function showCtxMenu(x, y, torrentId) {
     <button class="rt-ctx-item" data-ctx="sequential" role="menuitem">
       <span>${icon("arrow-right", 14)}</span><span>${torrent.sequential ? "Disable sequential" : "Sequential download"}</span>
     </button>
+    <button class="rt-ctx-item" data-ctx="reannounce" role="menuitem">
+      <span>${icon("refresh", 14)}</span><span>Force reannounce</span>
+    </button>
+    <button class="rt-ctx-item" data-ctx="edit-trackers" role="menuitem">
+      <span>${icon("server", 14)}</span><span>Edit trackers</span>
+    </button>
+    <button class="rt-ctx-item" data-ctx="seeding-limits" role="menuitem">
+      <span>${icon("repeat", 14)}</span><span>Seeding limits</span>
+    </button>
+    <div class="rt-ctx-sep"></div>
+    <button class="rt-ctx-item" data-ctx="queue-top" role="menuitem">
+      <span>${icon("arrowUp", 14)}</span><span>Queue top</span>
+    </button>
+    <button class="rt-ctx-item" data-ctx="queue-up" role="menuitem">
+      <span>${icon("arrowUp", 14)}</span><span>Queue up</span>
+    </button>
+    <button class="rt-ctx-item" data-ctx="queue-down" role="menuitem">
+      <span>${icon("arrowDown", 14)}</span><span>Queue down</span>
+    </button>
     <button class="rt-ctx-item" data-ctx="set-label" role="menuitem">
       <span>${icon("tag", 14)}</span><span>Set label</span>
     </button>
@@ -1460,6 +1635,44 @@ qs("#ctx-menu").onclick = async (e) => {
     } catch (e) { showToast(e.message, "error"); }
   }
   if (btn.dataset.ctx === "set-label") openLabelPickerModal(id);
+  if (btn.dataset.ctx === "reannounce") {
+    try {
+      await api(`/api/torrents/${id}/reannounce`, { method: "POST" });
+      showToast("Reannounce sent", "success");
+    } catch (e) { showToast(e.message, "error"); }
+  }
+  if (btn.dataset.ctx === "edit-trackers") {
+    try {
+      const details = await api(`/api/torrents/${id}/details`);
+      const current = details.trackers.map((t) => t.url).join("\n");
+      const value = await openInputModal("Edit trackers", "Tracker URLs, comma separated", current);
+      if (value === null) return;
+      const urls = value.split(/[\n,]+/).map((x) => x.trim()).filter(Boolean);
+      await api(`/api/torrents/${id}/trackers`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ urls }) });
+      showToast("Trackers updated", "success");
+      await selectTorrent(id);
+    } catch (e) { showToast(e.message, "error"); }
+  }
+  if (btn.dataset.ctx === "seeding-limits") {
+    const torrent = state.torrents.find((t) => t.torrent_id === id);
+    const ratio = await openInputModal("Seeding limits", "Ratio limit, 0 = unlimited", torrent?.ratio_limit || 0);
+    if (ratio === null) return;
+    const minutes = await openInputModal("Seeding limits", "Seeding time in minutes, 0 = unlimited", torrent?.seeding_time_limit || 0);
+    if (minutes === null) return;
+    try {
+      await api(`/api/torrents/${id}/seeding-limits`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ratio_limit: Number(ratio), seeding_time_limit: Number(minutes) }) });
+      showToast("Seeding limits saved", "success");
+      await loadTorrents();
+    } catch (e) { showToast(e.message, "error"); }
+  }
+  if (btn.dataset.ctx?.startsWith("queue-")) {
+    const action = btn.dataset.ctx.replace("queue-", "");
+    try {
+      await api(`/api/torrents/${id}/queue/${action}`, { method: "POST" });
+      showToast("Queue updated", "success");
+      await loadTorrents();
+    } catch (e) { showToast(e.message, "error"); }
+  }
   if (btn.dataset.ctx === "copy-magnet") {
     const torrent = state.torrents.find((t) => t.torrent_id === id);
     if (torrent) {

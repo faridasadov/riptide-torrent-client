@@ -4,6 +4,8 @@ import re
 import shutil
 import threading
 import time
+import tempfile
+import ipaddress
 from pathlib import Path
 from typing import Any, Dict, Optional
 from urllib.parse import parse_qs, urlparse
@@ -128,6 +130,24 @@ class TorrentSessionManager:
         )
         self._set_active_downloads(int(settings.get("max_active_downloads", 3) or 3))
         self._apply_choking_settings()
+        self._apply_ip_filter(str(settings.get("ip_filter", "") or ""))
+
+    def _apply_ip_filter(self, text: str) -> None:
+        try:
+            filt = self.lt.ip_filter()
+            for raw in text.replace(",", "\n").splitlines():
+                item = raw.strip()
+                if not item or item.startswith("#"):
+                    continue
+                if "-" in item:
+                    start, end = [part.strip() for part in item.split("-", 1)]
+                else:
+                    network = ipaddress.ip_network(item, strict=False)
+                    start, end = str(network.network_address), str(network.broadcast_address)
+                filt.add_rule(start, end, 1)
+            self.session.set_ip_filter(filt)
+        except Exception as e:
+            logger.warning("Failed to apply IP filter: %s", e)
 
     def _apply_choking_settings(self) -> None:
         try:
@@ -260,6 +280,72 @@ class TorrentSessionManager:
         handle = self.get_handle(torrent_id)
         handle.prioritize_files(priorities)
 
+    def force_reannounce(self, torrent_id: str) -> None:
+        handle = self.get_handle(torrent_id)
+        handle.force_reannounce()
+
+    def replace_trackers(self, torrent_id: str, urls: list[str]) -> None:
+        handle = self.get_handle(torrent_id)
+        entries = []
+        for tier, url in enumerate(urls):
+            entry = self.lt.announce_entry(url)
+            entry.tier = tier
+            entries.append(entry)
+        handle.replace_trackers(entries)
+        handle.force_reannounce()
+
+    def queue_action(self, torrent_id: str, action: str) -> int:
+        handle = self.get_handle(torrent_id)
+        if action == "up" and hasattr(handle, "queue_position_up"):
+            handle.queue_position_up()
+        elif action == "down" and hasattr(handle, "queue_position_down"):
+            handle.queue_position_down()
+        elif action == "top" and hasattr(handle, "queue_position_top"):
+            handle.queue_position_top()
+        elif action == "bottom" and hasattr(handle, "queue_position_bottom"):
+            handle.queue_position_bottom()
+        else:
+            raise ValueError("Unsupported queue action")
+        try:
+            return int(handle.queue_position())
+        except Exception:
+            return 0
+
+    def preview_torrent_file(self, torrent_path: str) -> Dict[str, Any]:
+        info = self.lt.torrent_info(torrent_path)
+        files = info.files()
+        return {
+            "torrent_id": str(info.info_hash()).lower(),
+            "name": info.name(),
+            "total_size": int(info.total_size()),
+            "trackers": [tracker.url for tracker in info.trackers()],
+            "files": [
+                {"path": files.file_path(index), "size": int(files.file_size(index))}
+                for index in range(files.num_files())
+            ],
+        }
+
+    def create_torrent_file(self, source_path: str, trackers: list[str], comment: str = "") -> str:
+        source = Path(source_path).expanduser().resolve()
+        if not any(source == root or root in source.parents for root in ALLOWED_DOWNLOAD_ROOTS):
+            allowed = ", ".join(str(root) for root in ALLOWED_DOWNLOAD_ROOTS)
+            raise ValueError(f"Source path must be inside allowed roots: {allowed}")
+        if not source.exists():
+            raise ValueError("Source path not found")
+        storage = self.lt.file_storage()
+        self.lt.add_files(storage, str(source))
+        creator = self.lt.create_torrent(storage)
+        for tracker in trackers:
+            if tracker.strip():
+                creator.add_tracker(tracker.strip())
+        if comment:
+            creator.set_comment(comment)
+        root = str(source if source.is_dir() else source.parent)
+        self.lt.set_piece_hashes(creator, root)
+        target = Path(tempfile.gettempdir()) / f"{source.name or 'riptide'}.torrent"
+        target.write_bytes(self.lt.bencode(creator.generate()))
+        return str(target)
+
     def get_status(self, torrent_id: str, db_row: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         with self._lock:
             handle = self.handles.get(torrent_id.lower())
@@ -294,6 +380,9 @@ class TorrentSessionManager:
             "upload_limit": int((db_row or {}).get("upload_limit", 0) or 0),
             "label": (db_row or {}).get("label"),
             "sequential": self._get_sequential(handle),
+            "queue_position": int((db_row or {}).get("queue_position", 0) or 0),
+            "ratio_limit": float((db_row or {}).get("ratio_limit", 0) or 0),
+            "seeding_time_limit": int((db_row or {}).get("seeding_time_limit", 0) or 0),
         }
 
     def check_alt_speed(self, settings: Dict[str, Any]) -> None:

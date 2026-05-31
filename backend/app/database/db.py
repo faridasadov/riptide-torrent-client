@@ -93,6 +93,15 @@ def init_db() -> None:
             conn.execute("ALTER TABLE torrents ADD COLUMN label TEXT DEFAULT NULL")
         except Exception:
             pass  # column already exists
+        for ddl in [
+            "ALTER TABLE torrents ADD COLUMN queue_position INTEGER NOT NULL DEFAULT 0",
+            "ALTER TABLE torrents ADD COLUMN ratio_limit REAL NOT NULL DEFAULT 0",
+            "ALTER TABLE torrents ADD COLUMN seeding_time_limit INTEGER NOT NULL DEFAULT 0",
+        ]:
+            try:
+                conn.execute(ddl)
+            except Exception:
+                pass  # column already exists
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS labels (

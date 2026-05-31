@@ -11,6 +11,15 @@ class Settings(BaseModel):
     dht_enabled: bool
     upnp_enabled: bool
     lsd_enabled: bool
+    alt_speed_enabled: bool = False
+    alt_speed_dl: int = Field(default=0, ge=0)
+    alt_speed_ul: int = Field(default=0, ge=0)
+    alt_speed_begin: str = "09:00"
+    alt_speed_end: str = "23:00"
+    alt_speed_days: str = "1111111"
+    watch_folder: str = ""
+    watch_folder_enabled: bool = False
+    ip_filter: str = ""
 
 
 class SettingsUpdate(BaseModel):
@@ -21,3 +30,12 @@ class SettingsUpdate(BaseModel):
     dht_enabled: Optional[bool] = None
     upnp_enabled: Optional[bool] = None
     lsd_enabled: Optional[bool] = None
+    alt_speed_enabled: Optional[bool] = None
+    alt_speed_dl: Optional[int] = Field(default=None, ge=0)
+    alt_speed_ul: Optional[int] = Field(default=None, ge=0)
+    alt_speed_begin: Optional[str] = None
+    alt_speed_end: Optional[str] = None
+    alt_speed_days: Optional[str] = None
+    watch_folder: Optional[str] = None
+    watch_folder_enabled: Optional[bool] = None
+    ip_filter: Optional[str] = None

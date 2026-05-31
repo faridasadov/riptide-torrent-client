@@ -53,6 +53,21 @@ class FilePriorityRequest(BaseModel):
     priorities: List[int]
 
 
+class TrackerListRequest(BaseModel):
+    urls: List[str]
+
+
+class SeedingLimitsRequest(BaseModel):
+    ratio_limit: float = Field(default=0, ge=0)
+    seeding_time_limit: int = Field(default=0, ge=0)
+
+
+class CreateTorrentRequest(BaseModel):
+    source_path: str
+    trackers: List[str] = []
+    comment: Optional[str] = None
+
+
 class LabelOut(BaseModel):
     name: str
     color: str
