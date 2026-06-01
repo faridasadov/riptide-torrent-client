@@ -42,7 +42,7 @@ _NET_FS_TYPES = {"nfs", "nfs4", "nfs3", "cifs", "smb", "smb2", "smb3",
                  "lustre", "beegfs", "ocfs2", "afs"}
 
 
-def _network_mounts() -> list[dict]:
+def _network_mounts_linux() -> list[dict]:
     mounts = []
     try:
         with open("/proc/mounts") as f:
@@ -52,8 +52,8 @@ def _network_mounts() -> list[dict]:
                     continue
                 device, mountpoint, fstype = parts[0], parts[1], parts[2]
                 if fstype.lower() in _NET_FS_TYPES or (
-                    ":" in device and not device.startswith("/")  # NFS-style host:path
-                ) or device.startswith("//"):  # SMB-style //host/share
+                    ":" in device and not device.startswith("/")
+                ) or device.startswith("//"):
                     name = Path(mountpoint).name or mountpoint
                     mounts.append({"path": mountpoint, "name": name,
                                    "device": device, "fstype": fstype})
@@ -62,28 +62,96 @@ def _network_mounts() -> list[dict]:
     return mounts
 
 
+def _network_mounts_windows() -> list[dict]:
+    mounts = []
+    try:
+        import string
+        import ctypes
+        bitmask = ctypes.windll.kernel32.GetLogicalDrives()
+        for letter in string.ascii_uppercase:
+            if bitmask & 1:
+                drive = f"{letter}:\\"
+                # DRIVE_REMOTE = 4
+                if ctypes.windll.kernel32.GetDriveTypeW(drive) == 4:
+                    try:
+                        buf = ctypes.create_unicode_buffer(512)
+                        ctypes.windll.mpr.WNetGetConnectionW(
+                            f"{letter}:", buf, ctypes.byref(ctypes.c_ulong(512))
+                        )
+                        device = buf.value or drive
+                    except Exception:
+                        device = drive
+                    mounts.append({"path": drive, "name": f"{letter}: (Network)",
+                                   "device": device, "fstype": "network"})
+            bitmask >>= 1
+    except Exception:
+        pass
+    return mounts
+
+
+def _network_mounts() -> list[dict]:
+    if platform.system() == "Windows":
+        return _network_mounts_windows()
+    return _network_mounts_linux()
+
+
+def _build_shortcuts_windows() -> list[dict]:
+    import string
+    sc = []
+    home = Path.home()
+    if home.exists():
+        sc.append({"path": str(home), "name": "Home"})
+        dl = home / "Downloads"
+        if dl.exists():
+            sc.append({"path": str(dl), "name": "Downloads"})
+        desktop = home / "Desktop"
+        if desktop.exists():
+            sc.append({"path": str(desktop), "name": "Desktop"})
+    try:
+        import ctypes
+        bitmask = ctypes.windll.kernel32.GetLogicalDrives()
+        for letter in string.ascii_uppercase:
+            if bitmask & 1:
+                drive = f"{letter}:\\"
+                drive_type = ctypes.windll.kernel32.GetDriveTypeW(drive)
+                if drive_type in (3, 5, 6):  # FIXED, CDROM, RAMDISK
+                    sc.append({"path": drive, "name": f"{letter}:"})
+            bitmask >>= 1
+    except Exception:
+        pass
+    return sc
+
+
+def _build_shortcuts_unix(home: Path) -> list[dict]:
+    sc = []
+    if home.exists():
+        sc.append({"path": str(home), "name": "Home"})
+        dl = home / "Downloads"
+        if dl.exists():
+            sc.append({"path": str(dl), "name": "Downloads"})
+    for mount in ["/media", "/mnt", "/data", "/opt", "/srv"]:
+        if Path(mount).exists():
+            sc.append({"path": mount, "name": mount})
+    return sc
+
+
 @router.get("/browse")
 async def browse_directory(path: str = None):
     server_os = platform.system().lower()
     home = Path.home()
     net_mounts = _network_mounts()
+    is_windows = platform.system() == "Windows"
 
     def build_shortcuts():
-        sc = []
-        if home.exists():
-            sc.append({"path": str(home), "name": "Home"})
-            dl = home / "Downloads"
-            if dl.exists():
-                sc.append({"path": str(dl), "name": "Downloads"})
-        for mount in ["/media", "/mnt", "/data", "/opt", "/srv"]:
-            mp = Path(mount)
-            if mp.exists():
-                sc.append({"path": mount, "name": mount})
-        return sc
+        if is_windows:
+            return _build_shortcuts_windows()
+        return _build_shortcuts_unix(home)
+
+    start_path = "C:\\" if is_windows else str(home)
 
     if path is None:
         return {
-            "path": str(home), "parent": None, "dirs": [],
+            "path": start_path, "parent": None, "dirs": [],
             "shortcuts": build_shortcuts(),
             "network": net_mounts,
             "os": server_os,
