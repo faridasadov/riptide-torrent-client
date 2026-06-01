@@ -73,6 +73,7 @@ DEFAULT_SETTINGS = {
     "file_pool_size": 100,
     "async_io_threads": 10,
     "disk_cache": -1,
+    "bind_interface": "",
 }
 
 

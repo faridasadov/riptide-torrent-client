@@ -137,8 +137,12 @@ class TorrentSessionManager:
     def _set_listen_port(self, settings: Dict[str, Any]) -> None:
         try:
             port = 0 if settings.get("random_port") else int(settings.get("listen_port", 6881) or 6881)
+            iface = str(settings.get("bind_interface", "") or "").strip()
             pack = self.session.get_settings()
-            pack["listen_interfaces"] = f"0.0.0.0:{port},[::]:{port}"
+            if iface:
+                pack["listen_interfaces"] = f"{iface}:{port}"
+            else:
+                pack["listen_interfaces"] = f"0.0.0.0:{port},[::]:{port}"
             self.session.apply_settings(pack)
         except Exception as e:
             logger.warning("Failed to set listen port: %s", e)

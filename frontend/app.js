@@ -129,6 +129,7 @@ const I18N = {
     enableAltSpeed: "Enable alt speed", enableAltSpeedDesc: "Apply lower limits on a schedule",
     altDlRate: "Alt download rate", altUlRate: "Alt upload rate",
     schedule: "Schedule", scheduleDesc: "Active hours", days: "Days",
+    networkInterface: "Network interface", networkInterfaceDesc: "Bind to a specific interface (e.g. VPN tunnel)",
     incomingPort: "Incoming port", listenPort: "Listen port", randomPort: "Random port on startup",
     upnp: "Map port with UPnP / NAT-PMP", dht: "Distributed Hash Table (DHT)",
     dhtDesc: "Find peers without a tracker", pex: "Peer Exchange (PEX)",
@@ -272,6 +273,7 @@ const I18N = {
     enableAltSpeedDesc: "Cədvəl əsasında aşağı limitlər tətbiq et",
     altDlRate: "Alt yükləmə sürəti", altUlRate: "Alt paylaşma sürəti",
     schedule: "Cədvəl", scheduleDesc: "Aktiv saatlar", days: "Günlər",
+    networkInterface: "Şəbəkə interfeysi", networkInterfaceDesc: "Xüsusi interfeysə bağlan (məs. VPN tunnel)",
     incomingPort: "Giriş portu", listenPort: "Dinləmə portu",
     randomPort: "Başlanğıcda təsadüfi port", upnp: "UPnP / NAT-PMP ilə port açıqlığı",
     dht: "Paylanmış Hash Cədvəli (DHT)", dhtDesc: "Tracker olmadan peer tap",
@@ -412,6 +414,7 @@ const I18N = {
     enableAltSpeedDesc: "Применять меньшие лимиты по расписанию",
     altDlRate: "Альт. скорость загрузки", altUlRate: "Альт. скорость отдачи",
     schedule: "Расписание", scheduleDesc: "Активные часы", days: "Дни",
+    networkInterface: "Сетевой интерфейс", networkInterfaceDesc: "Привязать к интерфейсу (например VPN)",
     incomingPort: "Входящий порт", listenPort: "Порт прослушивания",
     randomPort: "Случайный порт при запуске", upnp: "Пробросить порт через UPnP / NAT-PMP",
     dht: "Распределённая хеш-таблица (DHT)", dhtDesc: "Поиск пиров без трекера",
@@ -1738,9 +1741,13 @@ function renderSettingsScreen() {
       </div>`;
   }
   if (state.settingsSection === "connection") {
+    const ifaceOpts = (state.networkInterfaces || []).map(i =>
+      `<option value="${esc(i.value)}" ${s.bind_interface === i.value ? "selected" : ""}>${esc(i.name)}${i.addrs?.length ? " — " + esc(i.addrs[0]) : ""}</option>`
+    ).join("");
     panel.innerHTML = `
       <div class="rt-set-group">
         <div class="rt-set-grouphead">${l("setConnection")}</div>
+        ${row(l("networkInterface"), l("networkInterfaceDesc"), `<select class="rt-select-inline" id="screen_bind_interface">${ifaceOpts || '<option value="">Any (0.0.0.0)</option>'}</select>`)}
         ${row(l("incomingPort"), "libtorrent listens on 6881-6891", `<input class="rt-numfield" value="6881" disabled />`)}
         ${row(l("listenPort"), "", `<input class="rt-numfield" id="screen_listen_port" type="number" min="1" max="65535" value="${s.listen_port || 6881}" />`)}
         ${row(l("randomPort"), "", toggle("random_port"))}
@@ -1758,7 +1765,7 @@ function renderSettingsScreen() {
         ${row(l("maxActiveUl"), "", `<input class="rt-numfield" id="screen_max_active_uploads" type="number" min="1" value="${s.max_active_uploads || 5}" />`)}
         <div class="rt-set-note" id="port-status-note">${l("portStatus")}: ...</div>
       </div>`;
-    setTimeout(() => loadPortStatus(), 0);
+    setTimeout(() => { loadPortStatus(); loadNetworkInterfaces().then(() => renderSettingsScreen()); }, 0);
   }
   if (state.settingsSection === "labels") {
     const labelRows = state.labels.map((lbl) => `
@@ -2080,6 +2087,14 @@ async function promptTorrentLimit(torrentId, direction) {
   });
   showToast("Torrent speed limit saved", "success");
   await loadTorrents();
+}
+
+async function loadNetworkInterfaces() {
+  try {
+    state.networkInterfaces = await api("/api/system/interfaces");
+  } catch {
+    state.networkInterfaces = [{ name: "Any (0.0.0.0)", value: "", addrs: [] }];
+  }
 }
 
 async function loadPortStatus() {
@@ -2551,6 +2566,7 @@ qs("#settings-screen-form").addEventListener("submit", async (event) => {
     payload.lsd_enabled = state.settings.lsd_enabled;
     payload.pex_enabled = state.settings.pex_enabled;
     payload.random_port = state.settings.random_port;
+    payload.bind_interface = qs("#screen_bind_interface")?.value ?? "";
     payload.listen_port = Number(qs("#screen_listen_port")?.value || 6881);
     payload.queueing_enabled = state.settings.queueing_enabled;
     payload.global_connections_limit = Number(qs("#screen_global_connections_limit")?.value || 500);

@@ -3086,3 +3086,17 @@ select.rt-modal-input {
 .fp-empty { padding: 20px 14px; font-size: 12.5px; color: var(--rt-fg-3); font-style: italic; }
 .fp-bar { padding: 8px 14px; border-top: 1px solid var(--rt-border); }
 .fp-path-input { width: 100%; box-sizing: border-box; font-family: var(--rt-font-mono); font-size: 12px; }
+
+.rt-select-inline {
+  height: 34px;
+  padding: 0 10px;
+  background: var(--rt-bg-1);
+  border: 1px solid var(--rt-border-strong);
+  border-radius: var(--rt-radius-md);
+  font-size: 13px;
+  color: var(--rt-fg-1);
+  font-family: var(--rt-font-mono);
+  min-width: 220px;
+  cursor: pointer;
+}
+.rt-select-inline:focus { outline: 2px solid var(--rt-aqua); }

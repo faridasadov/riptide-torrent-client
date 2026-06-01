@@ -1,5 +1,7 @@
+import json
 import platform
 import shutil
+import subprocess
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, Request
@@ -73,6 +75,23 @@ async def browse_directory(path: str = None):
         shortcuts.append({"path": str(dl), "name": "Downloads"})
 
     return {"path": str(target), "parent": parent, "dirs": dirs, "shortcuts": shortcuts, "os": server_os}
+
+
+@router.get("/interfaces")
+async def list_interfaces():
+    result = [{"name": "Any (0.0.0.0)", "value": "", "addrs": ["0.0.0.0"]}]
+    try:
+        out = subprocess.run(["ip", "-j", "addr"], capture_output=True, text=True, timeout=3)
+        if out.returncode == 0:
+            for iface in json.loads(out.stdout):
+                name = iface.get("ifname", "")
+                if name == "lo":
+                    continue
+                addrs = [a["local"] for a in iface.get("addr_info", []) if a.get("family") == "inet"]
+                result.append({"name": name, "value": name, "addrs": addrs or []})
+    except Exception:
+        pass
+    return result
 
 
 @router.get("/port-status")

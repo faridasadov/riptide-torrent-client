@@ -40,6 +40,7 @@ class Settings(BaseModel):
     file_pool_size: int = Field(default=100, ge=1, le=10000)
     async_io_threads: int = Field(default=10, ge=1, le=128)
     disk_cache: int = Field(default=-1, ge=-1, le=1048576)
+    bind_interface: str = ""
 
 
 class SettingsUpdate(BaseModel):
@@ -79,3 +80,4 @@ class SettingsUpdate(BaseModel):
     file_pool_size: Optional[int] = Field(default=None, ge=1, le=10000)
     async_io_threads: Optional[int] = Field(default=None, ge=1, le=128)
     disk_cache: Optional[int] = Field(default=None, ge=-1, le=1048576)
+    bind_interface: Optional[str] = None
