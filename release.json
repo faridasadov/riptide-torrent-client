@@ -1,6 +1,6 @@
 {
   "name": "Riptide",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "tagline": "Fast. Private. Yours.",
   "brand": "faridasadov",
   "author": "Farid Asadov",
@@ -10,6 +10,11 @@
     "brand": "https://faridasadov.com"
   },
   "changelog": {
+    "0.1.12": [
+      "Added a dedicated Help screen with Windows desktop usage notes",
+      "Moved About access into Help and stopped showing About automatically on startup",
+      "Added the Riptide app icon to Windows desktop packaging"
+    ],
     "0.1.11": [
       "Completed torrents now show completed state instead of paused state in the list",
       "Torrent row action icon now switches to a completed check icon after finishing",

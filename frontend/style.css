@@ -318,6 +318,72 @@ input:focus-visible {
 .rt-about-table b     { color: var(--rt-fg-1); font-weight: 600; }
 .rt-about-copy    { font-size: 11px; color: var(--rt-fg-4); padding-top: 8px; border-top: 1px solid var(--rt-border); }
 
+.rt-help-body {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 18px;
+  overflow: auto;
+}
+
+.rt-help-hero {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid var(--rt-border);
+  border-radius: var(--rt-radius-lg);
+  background: var(--rt-bg-2);
+}
+
+.rt-help-logo {
+  width: 46px;
+  height: 46px;
+}
+
+.rt-help-hero h2 {
+  margin: 0 0 4px;
+  font-size: 18px;
+}
+
+.rt-help-hero p {
+  margin: 0;
+  color: var(--rt-fg-3);
+  line-height: 1.45;
+}
+
+.rt-help-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.rt-help-card {
+  padding: 14px;
+  border: 1px solid var(--rt-border);
+  border-radius: var(--rt-radius-lg);
+  background: var(--rt-bg-2);
+}
+
+.rt-help-card h3 {
+  margin: 0 0 10px;
+  font-size: 14px;
+}
+
+.rt-help-card ul {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--rt-fg-3);
+  line-height: 1.55;
+}
+
+.rt-help-card code {
+  color: var(--rt-aqua);
+  font-family: var(--rt-font-mono);
+  font-size: 12px;
+}
+
 .top-stats span,
 .speeds,
 .row-meta,
@@ -1316,6 +1382,11 @@ input:focus-visible {
 
   .main-pane {
     overflow: visible;
+  }
+
+  .rt-help-hero,
+  .rt-help-grid {
+    grid-template-columns: 1fr;
   }
 }
 

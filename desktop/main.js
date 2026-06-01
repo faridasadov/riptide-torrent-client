@@ -5,6 +5,7 @@ const path = require("path");
 
 const BackendPort = process.env.RIPTIDE_BACKEND_PORT || "8123";
 const RiptideUrl = process.env.RIPTIDE_URL || `http://127.0.0.1:${BackendPort}`;
+const AppIcon = path.join(__dirname, "assets", process.platform === "win32" ? "icon.ico" : "icon.png");
 let pendingOpenPath = null;
 let pendingMagnet = null;
 let backendProcess = null;
@@ -17,6 +18,10 @@ function captureLaunchArgs(argv = []) {
 }
 
 captureLaunchArgs(process.argv);
+
+if (process.platform === "win32") {
+  app.setAppUserModelId("app.riptide.desktop");
+}
 
 if (!app.requestSingleInstanceLock()) {
   app.quit();
@@ -84,6 +89,7 @@ function createWindow() {
     minWidth: 1024,
     minHeight: 720,
     title: "Riptide",
+    icon: AppIcon,
     backgroundColor: "#0b1118",
     webPreferences: {
       preload: `${__dirname}/preload.js`,

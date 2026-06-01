@@ -75,6 +75,7 @@ const RT_ICON_PATHS = {
   zap: '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
   'more-horizontal': '<circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>',
   info: '<circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>',
+  help: '<circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 1 1 5.8 1c-.5 1.1-1.8 1.6-2.4 2.5-.3.4-.5.8-.5 1.5"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
   'arrow-right': '<line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>',
   repeat: '<path d="m17 2 4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>',
   share: '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4"/><path d="m15.4 6.5-6.8 4"/>',
@@ -94,7 +95,7 @@ const I18N = {
   en: {
     logout: "Logout", all: "All torrents", downloading: "Downloading", seeding: "Seeding",
     completed: "Completed", paused: "Paused", labels: "Labels", tools: "Tools", search: "Search",
-    rss: "RSS feeds", settings: "Settings", about: "About", freeSpace: "Free space",
+    rss: "RSS feeds", settings: "Settings", help: "Help", about: "About", freeSpace: "Free space",
     addTorrent: "Add torrent", files: "Files", filterTorrents: "Filter torrents...",
     searchTitle: "Search torrents", searchPlaceholder: "Search local torrents and downloaded files...",
     rssTitle: "RSS feeds", rules: "Auto-download rules", addFeed: "Add feed",
@@ -233,7 +234,7 @@ const I18N = {
   az: {
     logout: "Çıxış", all: "Hamısı", downloading: "Yüklənənlər", seeding: "Paylaşanlar",
     completed: "Tamamlananlar", paused: "Dayandırılanlar", labels: "Etiketlər", tools: "Alətlər",
-    search: "Axtarış", rss: "RSS lentlər", settings: "Tənzimləmələr", about: "Haqqında",
+    search: "Axtarış", rss: "RSS lentlər", settings: "Tənzimləmələr", help: "Kömək", about: "Haqqında",
     freeSpace: "Boş yer", addTorrent: "Torrent əlavə et", files: "Fayllar",
     filterTorrents: "Torrentləri süz...", searchTitle: "Torrent axtar",
     searchPlaceholder: "Lokal torrent və yüklənmiş fayllarda axtar...",
@@ -374,7 +375,7 @@ const I18N = {
   ru: {
     logout: "Выйти", all: "Все", downloading: "Загружаются", seeding: "Раздаются",
     completed: "Завершены", paused: "Остановлены", labels: "Метки", tools: "Инструменты",
-    search: "Поиск", rss: "RSS", settings: "Настройки", about: "О программе",
+    search: "Поиск", rss: "RSS", settings: "Настройки", help: "Помощь", about: "О программе",
     freeSpace: "Свободно", addTorrent: "Добавить торрент", files: "Файлы",
     filterTorrents: "Фильтр торрентов...", searchTitle: "Поиск торрентов",
     searchPlaceholder: "Поиск локальных торрентов и загруженных файлов...",
@@ -537,7 +538,7 @@ function applyLanguage() {
     if (btn) btn.innerHTML = `${icon(btn.dataset.icon)}<span>${value}</span>${count}`;
   });
   document.querySelectorAll(".sidebar-title").forEach((el, idx) => { el.textContent = idx === 0 ? l("labels") : l("tools"); });
-  const screens = { search: l("search"), rss: l("rss"), settings: l("settings") };
+  const screens = { search: l("search"), rss: l("rss"), settings: l("settings"), help: l("help") };
   Object.entries(screens).forEach(([key, value]) => {
     const btn = qs(`[data-screen="${key}"]`);
     const count = btn?.querySelector("b")?.outerHTML || "";
@@ -556,6 +557,7 @@ function applyLanguage() {
   setText("#rss-rules-toggle span", l("rules"));
   setText("#rss-add-feed span", l("addFeed"));
   setText("#settings-screen .rt-screen-title", l("settings"));
+  setText("#help-screen .rt-screen-title", l("help"));
   setText("#detail-empty", l("selectTorrent"));
   setText("#delete-selected span", l("delete"));
   const tabs = { general: l("general"), files: l("files"), peers: l("peers"), trackers: l("trackers") };
@@ -3151,6 +3153,7 @@ function showAbout() {
 
 qs("#about-toggle").onclick = showAbout;
 qs(".brand").onclick = showAbout;
+qs("#help-about").onclick = showAbout;
 qs("#about-modal-close").onclick = () => closeModal("about-modal");
 qs("#text-preview-close").onclick = () => closeModal("text-preview-modal");
 qs("#text-preview-cancel").onclick = () => closeModal("text-preview-modal");
@@ -3289,10 +3292,6 @@ async function boot() {
     }
     try { state.sessionStats = await api("/api/torrents/session-stats"); renderTotals(); } catch { /* ignore */ }
     qs("#qr-modal-close")?.addEventListener("click", () => closeModal("qr-modal"));
-    if (typeof RIPTIDE !== "undefined" && !sessionStorage.getItem("about_shown")) {
-      sessionStorage.setItem("about_shown", "1");
-      showAbout();
-    }
     await handleDesktopIntents();
   } catch {
     showLogin();

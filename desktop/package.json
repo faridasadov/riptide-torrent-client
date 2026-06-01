@@ -1,6 +1,6 @@
 {
   "name": "riptide-desktop",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "private": true,
   "description": "Native desktop shell for the Riptide torrent client.",
   "main": "main.js",
@@ -20,6 +20,7 @@
     "files": [
       "main.js",
       "preload.js",
+      "assets/**/*",
       "package.json"
     ],
     "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
@@ -31,6 +32,7 @@
       }
     ],
     "linux": {
+      "icon": "assets/icon.png",
       "category": "Network",
       "target": [
         "AppImage",
@@ -42,6 +44,7 @@
       ]
     },
     "win": {
+      "icon": "assets/icon.ico",
       "target": [
         "nsis"
       ],

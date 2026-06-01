@@ -1,0 +1,7 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Riptide">
+  <rect width="256" height="256" rx="56" fill="#0B1118"/>
+  <rect x="10" y="10" width="236" height="236" rx="48" stroke="#1FE3C0" stroke-opacity=".18" stroke-width="6"/>
+  <path d="M42 84c57 52 115 52 172 0" stroke="#1FE3C0" stroke-width="20" stroke-linecap="round"/>
+  <path d="M62 128c44 42 88 42 132 0" stroke="#1FE3C0" stroke-opacity=".72" stroke-width="20" stroke-linecap="round"/>
+  <path d="M82 172c31 32 61 32 92 0" stroke="#FF7A66" stroke-width="20" stroke-linecap="round"/>
+</svg>

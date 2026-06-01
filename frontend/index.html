@@ -47,6 +47,7 @@
           <button class="tool-nav" data-screen="search" data-icon="search">Search</button>
           <button class="tool-nav" data-screen="rss" data-icon="rss">RSS feeds <b id="count-rss">0</b></button>
           <button class="tool-nav" data-screen="settings" data-icon="settings">Settings</button>
+          <button class="tool-nav" data-screen="help" data-icon="help">Help</button>
           <button class="tool-nav" id="about-toggle" data-icon="info">About</button>
 
           <div class="free-space">
@@ -132,6 +133,73 @@
                 <button class="settings-section rt-set-navitem" data-section="labels" data-icon="tag">Labels</button>
               </nav>
               <form id="settings-screen-form" class="rt-set-panel"></form>
+            </div>
+          </div>
+
+          <div id="help-screen" class="screen-page rt-screen">
+            <div class="rt-screen-head">
+              <div class="rt-screen-title"><span class="title-icon" data-icon="help"></span>Help</div>
+            </div>
+            <div class="rt-help-body">
+              <section class="rt-help-hero">
+                <img class="rt-help-logo" src="/static/assets/logo-mark.svg" alt="" />
+                <div>
+                  <h2>Riptide help</h2>
+                  <p>Use Riptide to add magnet links, import .torrent files, manage download folders and control bandwidth from one local desktop app.</p>
+                </div>
+                <button type="button" id="help-about" class="rt-btn rt-btn-secondary" data-icon="info">About Riptide</button>
+              </section>
+
+              <div class="rt-help-grid">
+                <section class="rt-help-card">
+                  <h3>Adding torrents</h3>
+                  <ul>
+                    <li>Click <b>Add torrent</b> to paste a magnet link or choose a .torrent file.</li>
+                    <li>Double-clicking a .torrent file in Windows opens Riptide and imports it.</li>
+                    <li>Magnet links are supported through the registered <code>magnet:</code> protocol.</li>
+                  </ul>
+                </section>
+                <section class="rt-help-card">
+                  <h3>Download location</h3>
+                  <ul>
+                    <li>Windows builds download to <code>Downloads\Riptide</code> by default.</li>
+                    <li>Change the default folder in <b>Settings > Downloads</b>.</li>
+                    <li>Use <b>Files</b> to browse, move or delete downloaded content.</li>
+                  </ul>
+                </section>
+                <section class="rt-help-card">
+                  <h3>Speed and queue controls</h3>
+                  <ul>
+                    <li>Set per-torrent limits from the details pane or context menu.</li>
+                    <li>Set global limits and active torrent limits in <b>Settings</b>.</li>
+                    <li>Use pause, resume and force recheck from torrent actions.</li>
+                  </ul>
+                </section>
+                <section class="rt-help-card">
+                  <h3>RSS and watch folder</h3>
+                  <ul>
+                    <li>Add RSS feeds and auto-download rules from the RSS screen.</li>
+                    <li>Enable a watch folder to auto-import .torrent files placed there.</li>
+                    <li>Rules support wildcard matching and optional regex with <code>re:</code>.</li>
+                  </ul>
+                </section>
+                <section class="rt-help-card">
+                  <h3>Privacy and networking</h3>
+                  <ul>
+                    <li>Riptide runs locally and stores data on this machine.</li>
+                    <li>No telemetry is sent by the app.</li>
+                    <li>For VPN use, bind the client to the VPN interface in connection settings.</li>
+                  </ul>
+                </section>
+                <section class="rt-help-card">
+                  <h3>Troubleshooting</h3>
+                  <ul>
+                    <li>If downloads do not start, check tracker status, DHT and the incoming port.</li>
+                    <li>If a folder is blocked, choose a path inside the allowed download roots.</li>
+                    <li>Default local login is <code>admin</code> / <code>admin</code> unless changed before launch.</li>
+                  </ul>
+                </section>
+              </div>
             </div>
           </div>
         </section>
