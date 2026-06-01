@@ -44,6 +44,7 @@ const RT_ICON_PATHS = {
   download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/>',
   file: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/>',
   folder: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+  network: '<rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><path d="M6 6h.01M6 18h.01"/>',
   folderOpen: '<path d="M6 14l1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6A2 2 0 0 1 18.46 20H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H18a2 2 0 0 1 2 2v2"/>',
   layers: '<polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>',
   list: '<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
@@ -130,6 +131,7 @@ const I18N = {
     altDlRate: "Alt download rate", altUlRate: "Alt upload rate",
     schedule: "Schedule", scheduleDesc: "Active hours", days: "Days",
     networkInterface: "Network interface", networkInterfaceDesc: "Bind to a specific interface (e.g. VPN tunnel)",
+    networkDrives: "Network",
     incomingPort: "Incoming port", listenPort: "Listen port", randomPort: "Random port on startup",
     upnp: "Map port with UPnP / NAT-PMP", dht: "Distributed Hash Table (DHT)",
     dhtDesc: "Find peers without a tracker", pex: "Peer Exchange (PEX)",
@@ -274,6 +276,7 @@ const I18N = {
     altDlRate: "Alt yükləmə sürəti", altUlRate: "Alt paylaşma sürəti",
     schedule: "Cədvəl", scheduleDesc: "Aktiv saatlar", days: "Günlər",
     networkInterface: "Şəbəkə interfeysi", networkInterfaceDesc: "Xüsusi interfeysə bağlan (məs. VPN tunnel)",
+    networkDrives: "Şəbəkə",
     incomingPort: "Giriş portu", listenPort: "Dinləmə portu",
     randomPort: "Başlanğıcda təsadüfi port", upnp: "UPnP / NAT-PMP ilə port açıqlığı",
     dht: "Paylanmış Hash Cədvəli (DHT)", dhtDesc: "Tracker olmadan peer tap",
@@ -415,6 +418,7 @@ const I18N = {
     altDlRate: "Альт. скорость загрузки", altUlRate: "Альт. скорость отдачи",
     schedule: "Расписание", scheduleDesc: "Активные часы", days: "Дни",
     networkInterface: "Сетевой интерфейс", networkInterfaceDesc: "Привязать к интерфейсу (например VPN)",
+    networkDrives: "Сеть",
     incomingPort: "Входящий порт", listenPort: "Порт прослушивания",
     randomPort: "Случайный порт при запуске", upnp: "Пробросить порт через UPnP / NAT-PMP",
     dht: "Распределённая хеш-таблица (DHT)", dhtDesc: "Поиск пиров без трекера",
@@ -2729,9 +2733,16 @@ function openFolderPickerModal(initialPath) {
       qs("#fp-breadcrumb").textContent = data.path;
 
       // shortcuts
-      qs("#fp-shortcuts").innerHTML = (data.shortcuts || []).map(s =>
+      let sidebarHtml = (data.shortcuts || []).map(s =>
         `<div class="fp-shortcut" data-fp-shortcut="${esc(s.path)}">${esc(s.name)}</div>`
       ).join("");
+      if (data.network && data.network.length > 0) {
+        sidebarHtml += `<div class="fp-shortcut-sep">${l("networkDrives")}</div>`;
+        sidebarHtml += data.network.map(n =>
+          `<div class="fp-shortcut fp-shortcut-net" data-fp-shortcut="${esc(n.path)}" title="${esc(n.device)} (${esc(n.fstype)})">${icon("network", 12)} ${esc(n.name)}</div>`
+        ).join("");
+      }
+      qs("#fp-shortcuts").innerHTML = sidebarHtml;
 
       // dirs list
       let html = "";

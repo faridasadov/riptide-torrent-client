@@ -36,23 +36,58 @@ async def system_status():
     }
 
 
+_NET_FS_TYPES = {"nfs", "nfs4", "nfs3", "cifs", "smb", "smb2", "smb3",
+                 "sshfs", "fuse.sshfs", "davfs", "fuse.davfs2",
+                 "fuse.rclone", "fuse.mergerfs", "s3fs", "glusterfs",
+                 "lustre", "beegfs", "ocfs2", "afs"}
+
+
+def _network_mounts() -> list[dict]:
+    mounts = []
+    try:
+        with open("/proc/mounts") as f:
+            for line in f:
+                parts = line.split()
+                if len(parts) < 3:
+                    continue
+                device, mountpoint, fstype = parts[0], parts[1], parts[2]
+                if fstype.lower() in _NET_FS_TYPES or (
+                    ":" in device and not device.startswith("/")  # NFS-style host:path
+                ) or device.startswith("//"):  # SMB-style //host/share
+                    name = Path(mountpoint).name or mountpoint
+                    mounts.append({"path": mountpoint, "name": name,
+                                   "device": device, "fstype": fstype})
+    except OSError:
+        pass
+    return mounts
+
+
 @router.get("/browse")
 async def browse_directory(path: str = None):
-    server_os = platform.system().lower()  # "linux", "windows", "darwin"
+    server_os = platform.system().lower()
     home = Path.home()
+    net_mounts = _network_mounts()
 
-    if path is None:
-        shortcuts = []
+    def build_shortcuts():
+        sc = []
         if home.exists():
-            shortcuts.append({"path": str(home), "name": "Home"})
+            sc.append({"path": str(home), "name": "Home"})
             dl = home / "Downloads"
             if dl.exists():
-                shortcuts.append({"path": str(dl), "name": "Downloads"})
+                sc.append({"path": str(dl), "name": "Downloads"})
         for mount in ["/media", "/mnt", "/data", "/opt", "/srv"]:
             mp = Path(mount)
             if mp.exists():
-                shortcuts.append({"path": mount, "name": mount})
-        return {"path": str(home), "parent": None, "dirs": [], "shortcuts": shortcuts, "os": server_os}
+                sc.append({"path": mount, "name": mount})
+        return sc
+
+    if path is None:
+        return {
+            "path": str(home), "parent": None, "dirs": [],
+            "shortcuts": build_shortcuts(),
+            "network": net_mounts,
+            "os": server_os,
+        }
 
     target = Path(path).expanduser().resolve()
     if not target.exists() or not target.is_dir():
@@ -69,12 +104,12 @@ async def browse_directory(path: str = None):
     except PermissionError:
         dirs = []
 
-    shortcuts = [{"path": str(home), "name": "Home"}]
-    dl = home / "Downloads"
-    if dl.exists():
-        shortcuts.append({"path": str(dl), "name": "Downloads"})
-
-    return {"path": str(target), "parent": parent, "dirs": dirs, "shortcuts": shortcuts, "os": server_os}
+    return {
+        "path": str(target), "parent": parent, "dirs": dirs,
+        "shortcuts": build_shortcuts(),
+        "network": net_mounts,
+        "os": server_os,
+    }
 
 
 @router.get("/interfaces")

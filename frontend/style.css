@@ -3100,3 +3100,7 @@ select.rt-modal-input {
   cursor: pointer;
 }
 .rt-select-inline:focus { outline: 2px solid var(--rt-aqua); }
+
+.fp-shortcut-sep { padding: 10px 10px 4px; font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--rt-fg-4); }
+.fp-shortcut-net { display: flex; align-items: center; gap: 6px; }
+.fp-shortcut-net svg { flex-shrink: 0; }
