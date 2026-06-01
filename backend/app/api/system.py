@@ -1,4 +1,6 @@
+import platform
 import shutil
+from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, Request
 
@@ -30,6 +32,47 @@ async def system_status():
         "upnp_enabled": settings["upnp_enabled"],
         "lsd_enabled": settings["lsd_enabled"],
     }
+
+
+@router.get("/browse")
+async def browse_directory(path: str = None):
+    server_os = platform.system().lower()  # "linux", "windows", "darwin"
+    home = Path.home()
+
+    if path is None:
+        shortcuts = []
+        if home.exists():
+            shortcuts.append({"path": str(home), "name": "Home"})
+            dl = home / "Downloads"
+            if dl.exists():
+                shortcuts.append({"path": str(dl), "name": "Downloads"})
+        for mount in ["/media", "/mnt", "/data", "/opt", "/srv"]:
+            mp = Path(mount)
+            if mp.exists():
+                shortcuts.append({"path": mount, "name": mount})
+        return {"path": str(home), "parent": None, "dirs": [], "shortcuts": shortcuts, "os": server_os}
+
+    target = Path(path).expanduser().resolve()
+    if not target.exists() or not target.is_dir():
+        raise HTTPException(status_code=404, detail="Directory not found")
+
+    parent = str(target.parent) if target != target.parent else None
+    try:
+        dirs = sorted(
+            [{"path": str(item), "name": item.name}
+             for item in target.iterdir()
+             if item.is_dir() and not item.name.startswith(".")],
+            key=lambda d: d["name"].lower(),
+        )
+    except PermissionError:
+        dirs = []
+
+    shortcuts = [{"path": str(home), "name": "Home"}]
+    dl = home / "Downloads"
+    if dl.exists():
+        shortcuts.append({"path": str(dl), "name": "Downloads"})
+
+    return {"path": str(target), "parent": parent, "dirs": dirs, "shortcuts": shortcuts, "os": server_os}
 
 
 @router.get("/port-status")

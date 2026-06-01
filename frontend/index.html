@@ -302,6 +302,32 @@
       </div>
     </div>
 
+    <!-- Folder Picker Modal -->
+    <div id="folder-picker-modal" class="rt-modal-scrim hidden" role="dialog" aria-modal="true" aria-labelledby="fp-title">
+      <div class="rt-modal rt-modal-fp">
+        <div class="rt-modal-head">
+          <span class="rt-modal-title" id="fp-title">Select folder</span>
+          <button class="rt-modal-close" id="fp-close" aria-label="Close">&times;</button>
+        </div>
+        <div class="rt-modal-body" style="padding:0">
+          <div class="fp-layout">
+            <div class="fp-sidebar" id="fp-shortcuts"></div>
+            <div class="fp-main">
+              <div class="fp-breadcrumb" id="fp-breadcrumb"></div>
+              <div class="fp-list" id="fp-list"></div>
+            </div>
+          </div>
+          <div class="fp-bar">
+            <input class="rt-modal-input fp-path-input" id="fp-path-input" autocomplete="off" spellcheck="false" />
+          </div>
+        </div>
+        <div class="rt-modal-foot">
+          <button type="button" class="rt-btn rt-btn-ghost" id="fp-cancel">Cancel</button>
+          <button type="button" class="rt-btn rt-btn-primary" id="fp-ok">Select</button>
+        </div>
+      </div>
+    </div>
+
     <!-- About Modal -->
     <div id="about-modal" class="rt-modal-scrim hidden" role="dialog" aria-modal="true" aria-labelledby="about-modal-title">
       <div class="rt-modal rt-modal-sm">

@@ -2474,7 +2474,7 @@ qs("#settings-screen-form").addEventListener("click", async (event) => {
   }
   if (browse) {
     const current = qs("#screen_default_download_folder")?.value || state.settings.default_download_folder;
-    const next = await openInputModal(l("saveLocTitle"), l("defaultSavePathLabel"), current);
+    const next = await openFolderPickerModal(current);
     if (next) qs("#screen_default_download_folder").value = next;
   }
   if (theme) {
@@ -2679,6 +2679,99 @@ function openTextPreviewModal(title, text) {
   qs("#text-preview-title").textContent = title;
   qs("#text-preview-body").textContent = text;
   openModal("text-preview-modal");
+}
+
+function clientOS() {
+  const ua = navigator.userAgent || "";
+  const pl = navigator.platform || "";
+  if (/Win/i.test(pl) || /Windows/i.test(ua)) return "windows";
+  if (/Mac/i.test(pl) || /Mac OS/i.test(ua)) return "macos";
+  return "linux";
+}
+
+function openFolderPickerModal(initialPath) {
+  return new Promise((resolve) => {
+    const folderIcon = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>`;
+    const upIcon = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 14l-5-5 5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>`;
+
+    let currentData = null;
+
+    async function navigate(path) {
+      try {
+        const url = path ? `/api/system/browse?path=${encodeURIComponent(path)}` : "/api/system/browse";
+        currentData = await api(url);
+        render(currentData);
+        qs("#fp-path-input").value = currentData.path;
+      } catch (e) {
+        showToast(e.message || "Cannot open folder", "error");
+      }
+    }
+
+    function render(data) {
+      // breadcrumb
+      const sep = data.os === "windows" ? "\\" : "/";
+      qs("#fp-breadcrumb").textContent = data.path;
+
+      // shortcuts
+      qs("#fp-shortcuts").innerHTML = (data.shortcuts || []).map(s =>
+        `<div class="fp-shortcut" data-fp-shortcut="${esc(s.path)}">${esc(s.name)}</div>`
+      ).join("");
+
+      // dirs list
+      let html = "";
+      if (data.parent !== null && data.parent !== undefined) {
+        html += `<div class="fp-dir fp-dir-up" data-fp-nav="${esc(data.parent)}">${upIcon}<span>..</span></div>`;
+      }
+      if (data.dirs.length === 0 && data.parent === null) {
+        html += `<div class="fp-empty">No subfolders</div>`;
+      } else {
+        html += data.dirs.map(d =>
+          `<div class="fp-dir" data-fp-nav="${esc(d.path)}">${folderIcon}<span>${esc(d.name)}</span></div>`
+        ).join("");
+      }
+      qs("#fp-list").innerHTML = html;
+    }
+
+    const cleanup = (val) => {
+      qs("#fp-list").onclick = null;
+      qs("#fp-shortcuts").onclick = null;
+      qs("#fp-ok").onclick = null;
+      qs("#fp-cancel").onclick = null;
+      qs("#fp-close").onclick = null;
+      qs("#fp-path-input").oninput = null;
+      qs("#fp-path-input").onkeydown = null;
+      closeModal("folder-picker-modal");
+      resolve(val);
+    };
+
+    qs("#fp-list").onclick = (e) => {
+      const dir = e.target.closest("[data-fp-nav]");
+      if (!dir) return;
+      navigate(dir.dataset.fpNav);
+      qs("#fp-path-input").value = dir.dataset.fpNav;
+    };
+
+    qs("#fp-shortcuts").onclick = (e) => {
+      const s = e.target.closest("[data-fp-shortcut]");
+      if (!s) return;
+      navigate(s.dataset.fpShortcut);
+    };
+
+    qs("#fp-path-input").oninput = (e) => {
+      /* typed path — update on blur/enter */
+    };
+
+    qs("#fp-path-input").onkeydown = (e) => {
+      if (e.key === "Enter") navigate(qs("#fp-path-input").value.trim());
+    };
+
+    qs("#fp-ok").onclick = () => cleanup(qs("#fp-path-input").value.trim() || null);
+    qs("#fp-cancel").onclick = () => cleanup(null);
+    qs("#fp-close").onclick = () => cleanup(null);
+
+    openModal("folder-picker-modal");
+    navigate(initialPath || null);
+  });
 }
 
 function syncViewToggle() {
