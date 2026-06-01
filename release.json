@@ -1,6 +1,6 @@
 {
   "name": "Riptide",
-  "version": "0.1.12",
+  "version": "0.1.13",
   "tagline": "Fast. Private. Yours.",
   "brand": "faridasadov",
   "author": "Farid Asadov",
@@ -10,6 +10,11 @@
     "brand": "https://faridasadov.com"
   },
   "changelog": {
+    "0.1.13": [
+      "Added a native Windows Help menu in the desktop app",
+      "Fixed About so it can be opened repeatedly from the UI and Help menu",
+      "Kept About from opening automatically at startup"
+    ],
     "0.1.12": [
       "Added a dedicated Help screen with Windows desktop usage notes",
       "Moved About access into Help and stopped showing About automatically on startup",

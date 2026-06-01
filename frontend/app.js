@@ -3132,6 +3132,7 @@ qs("#add-modal-cancel").onclick = () => closeModal("add-modal");
 
 function showAbout() {
   if (typeof RIPTIDE === "undefined") { showToast("About info unavailable", "error"); return; }
+  closeModal("about-modal");
   qs("#about-version").textContent = `v${RIPTIDE.version}`;
   qs("#about-tagline").textContent = RIPTIDE.tagline;
   qs("#about-brand").textContent = RIPTIDE.brand;
@@ -3148,7 +3149,7 @@ function showAbout() {
         <ul class="rt-cl-items">${items.map(i => `<li>${esc(i)}</li>`).join("")}</ul>
       </div>`).join("");
   }
-  openModal("about-modal");
+  requestAnimationFrame(() => openModal("about-modal"));
 }
 
 qs("#about-toggle").onclick = showAbout;
@@ -3254,11 +3255,21 @@ async function handleDesktopIntents() {
   const params = new URLSearchParams(window.location.search);
   const magnet = params.get("add");
   const torrentPath = params.get("addFile");
-  if (!magnet && !torrentPath) return;
+  const screen = params.get("screen");
+  const about = params.get("about") === "1";
+  if (!magnet && !torrentPath && !screen && !about) return;
   params.delete("add");
   params.delete("addFile");
+  params.delete("screen");
+  params.delete("about");
   const next = `${window.location.pathname}${params.toString() ? `?${params}` : ""}${window.location.hash || ""}`;
   window.history.replaceState({}, "", next);
+  if (screen && qs(`#${screen === "torrents" ? "torrent" : screen}-screen`)) {
+    setScreen(screen);
+  }
+  if (about) {
+    showAbout();
+  }
   if (magnet) {
     qs("#magnet").value = magnet;
     openModal("add-modal");

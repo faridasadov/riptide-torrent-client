@@ -1,4 +1,4 @@
-const { app, BrowserWindow, shell, dialog } = require("electron");
+const { app, BrowserWindow, shell, dialog, Menu } = require("electron");
 const { spawn } = require("child_process");
 const fs = require("fs");
 const path = require("path");
@@ -31,6 +31,64 @@ function targetUrl() {
   if (pendingMagnet) return `${RiptideUrl}/?add=${encodeURIComponent(pendingMagnet)}`;
   if (pendingOpenPath) return `${RiptideUrl}/?addFile=${encodeURIComponent(pendingOpenPath)}`;
   return RiptideUrl;
+}
+
+function navigateTo(screen, options = {}) {
+  const win = BrowserWindow.getAllWindows()[0];
+  if (!win) return;
+  const url = new URL(RiptideUrl);
+  if (screen) url.searchParams.set("screen", screen);
+  if (options.about) url.searchParams.set("about", "1");
+  win.focus();
+  win.loadURL(url.toString());
+}
+
+function installAppMenu() {
+  const template = [
+    {
+      label: "File",
+      submenu: [
+        { role: "quit", label: "Exit" },
+      ],
+    },
+    {
+      label: "Edit",
+      submenu: [
+        { role: "undo" },
+        { role: "redo" },
+        { type: "separator" },
+        { role: "cut" },
+        { role: "copy" },
+        { role: "paste" },
+        { role: "selectAll" },
+      ],
+    },
+    {
+      label: "View",
+      submenu: [
+        { role: "reload" },
+        { role: "forceReload" },
+        { type: "separator" },
+        { role: "togglefullscreen" },
+      ],
+    },
+    {
+      label: "Window",
+      submenu: [
+        { role: "minimize" },
+        { role: "close" },
+      ],
+    },
+    {
+      label: "Help",
+      submenu: [
+        { label: "Open Help", click: () => navigateTo("help") },
+        { label: "About Riptide", click: () => navigateTo("help", { about: true }) },
+      ],
+    },
+  ];
+
+  Menu.setApplicationMenu(Menu.buildFromTemplate(template));
 }
 
 function bundledBackendPath() {
@@ -112,7 +170,10 @@ function createWindow() {
 
 app.whenReady()
   .then(startBundledBackend)
-  .then(createWindow)
+  .then(() => {
+    installAppMenu();
+    createWindow();
+  })
   .catch((error) => {
     dialog.showErrorBox("Riptide", `Could not start Riptide backend: ${error.message}`);
     app.quit();
