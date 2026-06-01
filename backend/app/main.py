@@ -10,14 +10,14 @@ from fastapi.responses import HTMLResponse, Response
 
 from app.api import auth, files, rss, search, settings, system, torrents
 from app.api.labels import router as labels_router
-from app.core.config import CORS_ORIGINS, FRONTEND_DIR, ensure_directories
+from app.core.config import CORS_ORIGINS, FRONTEND_DIR, PROJECT_DIR, ensure_directories
 from app.core.security import basic_auth_middleware
 from app.core.storage import SettingsRepository, TorrentRepository
 from app.database.db import init_db
 from app.services.resume_service import ResumeService
 from app.services.torrent_service import UnavailableTorrentService, create_service
 
-RELEASE_FILE = Path(__file__).resolve().parents[2] / "release.json"
+RELEASE_FILE = PROJECT_DIR / "release.json"
 
 
 def load_release() -> dict:

@@ -1,9 +1,13 @@
-import logging as _logging
 import os
+import sys
+import logging as _logging
 from pathlib import Path
 
 
-PROJECT_DIR = Path(__file__).resolve().parents[3]
+if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+    PROJECT_DIR = Path(sys._MEIPASS)
+else:
+    PROJECT_DIR = Path(__file__).resolve().parents[3]
 BACKEND_DIR = PROJECT_DIR / "backend"
 DATA_DIR = Path(os.getenv("TORRENT_CLIENT_DATA_DIR", str(PROJECT_DIR / "data"))).expanduser().resolve()
 RESUME_DIR = DATA_DIR / "resume"
@@ -32,7 +36,7 @@ MAX_TORRENT_FILE_BYTES = int(os.getenv("TORRENT_CLIENT_MAX_TORRENT_FILE_BYTES", 
 MIN_FREE_SPACE_BYTES = int(os.getenv("TORRENT_CLIENT_MIN_FREE_SPACE_BYTES", str(5 * 1024 * 1024 * 1024)))
 ALLOWED_DOWNLOAD_ROOTS = [
     Path(root).expanduser().resolve()
-    for root in os.getenv("TORRENT_CLIENT_ALLOWED_DOWNLOAD_ROOTS", str(DOWNLOAD_DIR)).split(":")
+    for root in os.getenv("TORRENT_CLIENT_ALLOWED_DOWNLOAD_ROOTS", str(DOWNLOAD_DIR)).split(os.pathsep)
     if root.strip()
 ]
 

@@ -14,3 +14,10 @@ downloads/
 .env
 *.env
 !deploy/*.env.example
+
+backend/build/
+backend/dist/
+desktop/dist/
+desktop/node_modules/
+
+Riptide-*-win-*.exe

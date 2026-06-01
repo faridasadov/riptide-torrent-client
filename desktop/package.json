@@ -6,8 +6,9 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
+    "build:backend": "pyinstaller ../backend/riptide-backend.spec --distpath ../backend/dist --workpath ../backend/build --noconfirm --clean",
     "dist:linux": "electron-builder --linux AppImage deb",
-    "dist:win": "electron-builder --win nsis portable"
+    "dist:win": "npm run build:backend && electron-builder --win nsis"
   },
   "devDependencies": {
     "electron": "^30.5.1",
@@ -21,6 +22,7 @@
       "preload.js",
       "package.json"
     ],
+    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
     "fileAssociations": [
       {
         "ext": "torrent",
@@ -41,9 +43,21 @@
     },
     "win": {
       "target": [
-        "nsis",
-        "portable"
+        "nsis"
+      ],
+      "extraResources": [
+        {
+          "from": "../backend/dist/riptide-backend.exe",
+          "to": "backend/riptide-backend.exe"
+        }
       ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Riptide"
     },
     "protocols": {
       "name": "Magnet URI",
