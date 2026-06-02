@@ -1,6 +1,6 @@
 {
   "name": "Riptide",
-  "version": "0.1.23",
+  "version": "0.1.24",
   "tagline": "Fast. Private. Yours.",
   "brand": "faridasadov",
   "author": "Farid Asadov",
@@ -10,6 +10,10 @@
     "brand": "https://faridasadov.com"
   },
   "changelog": {
+    "0.1.24": [
+      "Started the packaged Windows backend with CREATE_NO_WINDOW so no extra cmd window stays open",
+      "Prevents the app from depending on a visible console window for backend lifetime"
+    ],
     "0.1.23": [
       "Added startup tracing for the Windows Tauri shell to capture bundled backend launch diagnostics",
       "Used to verify the packaged backend path, data directory and startup timeout behavior on installed builds"

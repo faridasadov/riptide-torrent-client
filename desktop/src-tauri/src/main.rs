@@ -21,9 +21,15 @@ use tauri::{
     WindowEvent,
 };
 
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
+
 const BACKEND_HOST: &str = "127.0.0.1";
 const BACKEND_PORT: u16 = 8123;
 const WINDOW_LABEL: &str = "main";
+
+#[cfg(target_os = "windows")]
+const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 
 struct DesktopState {
     backend_process: Mutex<Option<Child>>,
@@ -240,7 +246,8 @@ fn start_bundled_backend(app: &AppHandle) -> tauri::Result<()> {
     std::fs::create_dir_all(&data_dir).map_err(|e| tauri::Error::AssetNotFound(e.to_string()))?;
     std::fs::create_dir_all(&downloads_dir).map_err(|e| tauri::Error::AssetNotFound(e.to_string()))?;
 
-    let child = Command::new(backend_path)
+    let mut command = Command::new(backend_path);
+    command
         .env("RIPTIDE_BACKEND_HOST", BACKEND_HOST)
         .env("RIPTIDE_BACKEND_PORT", BACKEND_PORT.to_string())
         .env("TORRENT_CLIENT_DATA_DIR", data_dir)
@@ -251,9 +258,12 @@ fn start_bundled_backend(app: &AppHandle) -> tauri::Result<()> {
         .env("TORRENT_CLIENT_CORS_ORIGINS", backend_url())
         .stdin(Stdio::null())
         .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .spawn()
-        .map_err(|e| {
+        .stderr(Stdio::null());
+
+    #[cfg(target_os = "windows")]
+    command.creation_flags(CREATE_NO_WINDOW);
+
+    let child = command.spawn().map_err(|e| {
             trace(&format!("Failed to spawn backend: {e}"));
             tauri::Error::AssetNotFound(e.to_string())
         })?;
