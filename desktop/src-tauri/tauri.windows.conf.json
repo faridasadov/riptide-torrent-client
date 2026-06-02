@@ -1,0 +1,30 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Riptide",
+  "version": "0.1.19",
+  "identifier": "app.riptide.desktop",
+  "build": {
+    "frontendDist": "../../frontend"
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "resources": [
+      "../../backend/dist/win32/riptide-backend.exe"
+    ],
+    "fileAssociations": [
+      {
+        "ext": ["torrent"],
+        "name": "BitTorrent metadata",
+        "description": "BitTorrent metadata file",
+        "role": "Editor",
+        "mimeType": "application/x-bittorrent"
+      }
+    ],
+    "windows": {
+      "nsis": {
+        "installerIcon": "../assets/icon-fixed.ico"
+      }
+    }
+  }
+}

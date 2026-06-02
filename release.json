@@ -1,6 +1,6 @@
 {
   "name": "Riptide",
-  "version": "0.1.13",
+  "version": "0.1.19",
   "tagline": "Fast. Private. Yours.",
   "brand": "faridasadov",
   "author": "Farid Asadov",
@@ -10,6 +10,35 @@
     "brand": "https://faridasadov.com"
   },
   "changelog": {
+    "0.1.19": [
+      "Switched the desktop shell plan from Electron to Tauri",
+      "Added a Tauri backend launcher, native menu, tray integration and single-instance scaffolding",
+      "Kept the existing web frontend and backend flow through a desktop bridge layer",
+      "Added separate Linux and Windows backend packaging flows for the Tauri bundles"
+    ],
+    "0.1.18": [
+      "Forced software rendering on Windows by disabling GPU, GPU compositing, and D3D11 in the desktop shell",
+      "Targets the observed Electron rendering/context-loss failures on the test Windows host"
+    ],
+    "0.1.17": [
+      "Disabled Windows hardware acceleration in the desktop shell to avoid observed GPU context-loss rendering failures",
+      "Keeps the backend cleanup and desktop UI fixes from 0.1.16"
+    ],
+    "0.1.16": [
+      "Clears stale packaged backend processes on Windows startup before launching the current app backend",
+      "Keeps the About modal desktop fix and folder picker footer layout changes from 0.1.15"
+    ],
+    "0.1.15": [
+      "Fixed About so it opens as a modal without switching to the Help screen",
+      "Adjusted the Windows folder picker footer layout to match the requested bottom path row",
+      "Switched the Windows tray icon to a visible app-icon base with live status tooltip updates"
+    ],
+    "0.1.14": [
+      "Added Windows tray mode with a live animated status icon and quick actions",
+      "Fixed desktop Help and About handling to work without reloading the app shell",
+      "Fixed the connection screen rerender loop and added Windows network interface discovery",
+      "Improved Windows shutdown so Riptide quits cleanly instead of leaving stuck processes"
+    ],
     "0.1.13": [
       "Added a native Windows Help menu in the desktop app",
       "Fixed About so it can be opened repeatedly from the UI and Help menu",

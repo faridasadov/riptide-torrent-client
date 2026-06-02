@@ -17,6 +17,8 @@ const state = {
   rssItems: [],
   rssSelectedFeed: null,
   rssShowRules: false,
+  networkInterfaces: [{ name: "Any (0.0.0.0)", value: "", addrs: ["0.0.0.0"] }],
+  networkInterfacesLoaded: false,
   labels: [],
   addFilePreview: null,
   addFilePriorities: [],
@@ -1771,7 +1773,13 @@ function renderSettingsScreen() {
         ${row(l("maxActiveUl"), "", `<input class="rt-numfield" id="screen_max_active_uploads" type="number" min="1" value="${s.max_active_uploads || 5}" />`)}
         <div class="rt-set-note" id="port-status-note">${l("portStatus")}: ...</div>
       </div>`;
-    setTimeout(() => { loadPortStatus(); loadNetworkInterfaces().then(() => renderSettingsScreen()); }, 0);
+    setTimeout(() => { loadPortStatus(); }, 0);
+    if (!state.networkInterfacesLoaded) {
+      setTimeout(async () => {
+        await loadNetworkInterfaces();
+        if (state.settingsSection === "connection") renderSettingsScreen();
+      }, 0);
+    }
   }
   if (state.settingsSection === "labels") {
     const labelRows = state.labels.map((lbl) => `
@@ -2096,10 +2104,13 @@ async function promptTorrentLimit(torrentId, direction) {
 }
 
 async function loadNetworkInterfaces() {
+  if (state.networkInterfacesLoaded) return;
   try {
     state.networkInterfaces = await api("/api/system/interfaces");
   } catch {
     state.networkInterfaces = [{ name: "Any (0.0.0.0)", value: "", addrs: [] }];
+  } finally {
+    state.networkInterfacesLoaded = true;
   }
 }
 
@@ -3290,6 +3301,39 @@ async function handleDesktopIntents() {
   }
 }
 
+async function handleDesktopCommand(payload = {}) {
+  const command = payload.command;
+  if (!command) return;
+  if (command === "screen" && payload.screen) {
+    setScreen(payload.screen);
+    return;
+  }
+  if (command === "about") {
+    showAbout();
+    return;
+  }
+  if (command === "magnet" && payload.magnet) {
+    qs("#magnet").value = payload.magnet;
+    openModal("add-modal");
+    showToast(l("magnetLoaded"), "info");
+    return;
+  }
+  if (command === "torrent-file" && payload.path) {
+    try {
+      await api("/api/torrents/add-local-file", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path: payload.path }),
+      });
+      setScreen("torrents");
+      showToast(l("torrentImported"), "success");
+      await loadTorrents();
+    } catch (error) {
+      showToast(error.message, "error");
+    }
+  }
+}
+
 async function boot() {
   try {
     await api("/api/auth/me");
@@ -3313,6 +3357,12 @@ applyThemeOverride();
 applyTheme();
 applyStaticIcons();
 applyLanguage();
+window.riptideDesktop?.onNavigate?.((payload) => {
+  handleDesktopCommand(payload);
+});
+window.addEventListener("riptide-desktop-command", (event) => {
+  handleDesktopCommand(event.detail || {});
+});
 boot();
 setInterval(() => state.authenticated && loadTorrents(), 2000);
 setInterval(() => state.authenticated && loadSystem(), 10000);

@@ -3,6 +3,7 @@ __pycache__/
 *.py[cod]
 .venv/
 venv/
+backend/.venv-linux/
 
 data/
 downloads/
@@ -19,5 +20,8 @@ backend/build/
 backend/dist/
 desktop/dist/
 desktop/node_modules/
+desktop/src-tauri/target/
 
 Riptide-*-win-*.exe
+Riptide_*_setup.exe
+Riptide_*.exe

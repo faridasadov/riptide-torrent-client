@@ -1,0 +1,33 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Riptide",
+  "version": "0.1.19",
+  "identifier": "app.riptide.desktop",
+  "build": {
+    "frontendDist": "../../frontend"
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["appimage", "deb"],
+    "resources": [
+      "../../backend/dist/linux/riptide-backend"
+    ],
+    "fileAssociations": [
+      {
+        "ext": ["torrent"],
+        "name": "BitTorrent metadata",
+        "role": "Editor",
+        "mimeType": "application/x-bittorrent"
+      }
+    ],
+    "linux": {
+      "deb": {
+        "depends": [
+          "libwebkit2gtk-4.1-0 | libwebkit2gtk-4.0-37",
+          "libappindicator3-1 | libayatana-appindicator3-1",
+          "libgtk-3-0"
+        ]
+      }
+    }
+  }
+}

@@ -274,6 +274,7 @@
       </footer>
     </main>
     <script src="/static/about.js" defer></script>
+    <script src="/static/desktop-bridge.js" defer></script>
     <script src="/static/app.js" defer></script>
 
     <!-- Add Torrent Modal -->
@@ -385,13 +386,15 @@
               <div class="fp-list" id="fp-list"></div>
             </div>
           </div>
-          <div class="fp-bar">
-            <input class="rt-modal-input fp-path-input" id="fp-path-input" autocomplete="off" spellcheck="false" />
+          <div class="fp-footer">
+            <div class="fp-bar">
+              <input class="rt-modal-input fp-path-input" id="fp-path-input" autocomplete="off" spellcheck="false" />
+            </div>
+            <div class="rt-modal-foot fp-actions">
+              <button type="button" class="rt-btn rt-btn-ghost" id="fp-cancel">Cancel</button>
+              <button type="button" class="rt-btn rt-btn-primary" id="fp-ok">Select</button>
+            </div>
           </div>
-        </div>
-        <div class="rt-modal-foot">
-          <button type="button" class="rt-btn rt-btn-ghost" id="fp-cancel">Cancel</button>
-          <button type="button" class="rt-btn rt-btn-primary" id="fp-ok">Select</button>
         </div>
       </div>
     </div>

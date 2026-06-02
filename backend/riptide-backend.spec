@@ -2,11 +2,13 @@
 
 from pathlib import Path
 import os
+import sys
 
 
 cwd = Path.cwd()
 repo_root = cwd.parent if cwd.name == "desktop" else Path(SPECPATH).parent
 backend_dir = repo_root / "backend"
+target_platform = os.getenv("RIPTIDE_BUILD_PLATFORM", sys.platform)
 openssl_bin = Path(os.getenv("OPENSSL_BIN", r"C:\Program Files\OpenSSL-Win64\bin"))
 openssl_binaries = [
     (str(path), ".")
@@ -16,6 +18,7 @@ openssl_binaries = [
     ]
     if path.exists()
 ]
+backend_name = "riptide-backend.exe" if target_platform.startswith("win") else "riptide-backend"
 
 
 a = Analysis(
@@ -49,7 +52,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name="riptide-backend",
+    name=backend_name,
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

@@ -1,72 +1,17 @@
 {
   "name": "riptide-desktop",
-  "version": "0.1.13",
+  "version": "0.1.19",
   "private": true,
-  "description": "Native desktop shell for the Riptide torrent client.",
-  "main": "main.js",
+  "description": "Native Tauri desktop shell for the Riptide torrent client.",
   "scripts": {
-    "start": "electron .",
-    "build:backend": "pyinstaller ../backend/riptide-backend.spec --distpath ../backend/dist --workpath ../backend/build --noconfirm --clean",
-    "dist:linux": "electron-builder --linux AppImage deb",
-    "dist:win": "npm run build:backend && electron-builder --win nsis"
+    "start": "tauri dev",
+    "build:backend": "node ./scripts/build-backend.js auto",
+    "build:backend:linux": "node ./scripts/build-backend.js linux",
+    "build:backend:win": "node ./scripts/build-backend.js win32",
+    "dist:linux": "npm run build:backend:linux && tauri build --config src-tauri/tauri.linux.conf.json --bundles appimage,deb",
+    "dist:win": "npm run build:backend:win && tauri build --config src-tauri/tauri.windows.conf.json --bundles nsis"
   },
   "devDependencies": {
-    "electron": "^30.5.1",
-    "electron-builder": "^24.13.3"
-  },
-  "build": {
-    "appId": "app.riptide.desktop",
-    "productName": "Riptide",
-    "files": [
-      "main.js",
-      "preload.js",
-      "assets/**/*",
-      "package.json"
-    ],
-    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
-    "fileAssociations": [
-      {
-        "ext": "torrent",
-        "name": "BitTorrent metadata",
-        "role": "Editor"
-      }
-    ],
-    "linux": {
-      "icon": "assets/icon.png",
-      "category": "Network",
-      "target": [
-        "AppImage",
-        "deb"
-      ],
-      "mimeTypes": [
-        "application/x-bittorrent",
-        "x-scheme-handler/magnet"
-      ]
-    },
-    "win": {
-      "icon": "assets/icon.ico",
-      "target": [
-        "nsis"
-      ],
-      "extraResources": [
-        {
-          "from": "../backend/dist/riptide-backend.exe",
-          "to": "backend/riptide-backend.exe"
-        }
-      ]
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true,
-      "shortcutName": "Riptide"
-    },
-    "protocols": {
-      "name": "Magnet URI",
-      "schemes": [
-        "magnet"
-      ]
-    }
+    "@tauri-apps/cli": "^2.9.1"
   }
 }

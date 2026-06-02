@@ -1,0 +1,19 @@
+[package]
+name = "riptide-desktop"
+version = "0.1.19"
+description = "Native Tauri desktop shell for Riptide"
+authors = ["Farid Asadov"]
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "=2.0.2", features = [] }
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tauri = { version = "=2.0.6", features = ["tray-icon", "image-png"] }
+tauri-codegen = "=2.0.5"
+tauri-macros = "=2.0.2"
+tauri-runtime = "=2.1.1"
+tauri-runtime-wry = "=2.1.2"
+tauri-utils = "=2.2.0"

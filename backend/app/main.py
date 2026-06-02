@@ -186,6 +186,14 @@ async def frontend_about_js():
     )
 
 
+@app.get("/static/desktop-bridge.js")
+async def frontend_desktop_bridge_js():
+    return Response(
+        (FRONTEND_DIR / "desktop-bridge.js").read_text(encoding="utf-8"),
+        media_type="application/javascript",
+    )
+
+
 @app.get("/static/app.js")
 async def frontend_js():
     return Response(

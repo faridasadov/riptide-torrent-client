@@ -1,6 +1,7 @@
 import json
 import platform
 import shutil
+import socket
 import subprocess
 from pathlib import Path
 
@@ -95,6 +96,60 @@ def _network_mounts() -> list[dict]:
     return _network_mounts_linux()
 
 
+def _list_interfaces_windows() -> list[dict]:
+    result = [{"name": "Any (0.0.0.0)", "value": "", "addrs": ["0.0.0.0"]}]
+    try:
+        command = [
+            "powershell",
+            "-NoProfile",
+            "-Command",
+            "Get-NetIPAddress -AddressFamily IPv4 | "
+            "Where-Object { $_.IPAddress -notmatch '^127\\.' -and $_.SkipAsSource -ne $true } | "
+            "Select-Object InterfaceAlias,IPAddress | ConvertTo-Json -Compress",
+        ]
+        out = subprocess.run(command, capture_output=True, text=True, timeout=5)
+        if out.returncode != 0 or not out.stdout.strip():
+            return result
+        rows = json.loads(out.stdout)
+        if isinstance(rows, dict):
+            rows = [rows]
+        seen = set()
+        for row in rows:
+            address = str(row.get("IPAddress") or "").strip()
+            alias = str(row.get("InterfaceAlias") or address).strip()
+            if not address or address.startswith("127."):
+                continue
+            if address in seen:
+                continue
+            seen.add(address)
+            result.append({"name": alias, "value": address, "addrs": [address]})
+    except Exception:
+        try:
+            hostname = socket.gethostname()
+            for address in socket.gethostbyname_ex(hostname)[2]:
+                if address and not address.startswith("127."):
+                    result.append({"name": hostname, "value": address, "addrs": [address]})
+        except Exception:
+            pass
+    return result
+
+
+def _list_interfaces_linux() -> list[dict]:
+    result = [{"name": "Any (0.0.0.0)", "value": "", "addrs": ["0.0.0.0"]}]
+    try:
+        out = subprocess.run(["ip", "-j", "addr"], capture_output=True, text=True, timeout=3)
+        if out.returncode == 0:
+            for iface in json.loads(out.stdout):
+                name = iface.get("ifname", "")
+                if name == "lo":
+                    continue
+                addrs = [a["local"] for a in iface.get("addr_info", []) if a.get("family") == "inet"]
+                result.append({"name": name, "value": name, "addrs": addrs or []})
+    except Exception:
+        pass
+    return result
+
+
 def _build_shortcuts_windows() -> list[dict]:
     import string
     sc = []
@@ -182,19 +237,9 @@ async def browse_directory(path: str = None):
 
 @router.get("/interfaces")
 async def list_interfaces():
-    result = [{"name": "Any (0.0.0.0)", "value": "", "addrs": ["0.0.0.0"]}]
-    try:
-        out = subprocess.run(["ip", "-j", "addr"], capture_output=True, text=True, timeout=3)
-        if out.returncode == 0:
-            for iface in json.loads(out.stdout):
-                name = iface.get("ifname", "")
-                if name == "lo":
-                    continue
-                addrs = [a["local"] for a in iface.get("addr_info", []) if a.get("family") == "inet"]
-                result.append({"name": name, "value": name, "addrs": addrs or []})
-    except Exception:
-        pass
-    return result
+    if platform.system() == "Windows":
+        return _list_interfaces_windows()
+    return _list_interfaces_linux()
 
 
 @router.get("/port-status")
