@@ -2838,7 +2838,7 @@ dependencies = [
 
 [[package]]
 name = "riptide-desktop"
-version = "0.1.19"
+version = "0.1.25"
 dependencies = [
  "serde",
  "serde_json",
