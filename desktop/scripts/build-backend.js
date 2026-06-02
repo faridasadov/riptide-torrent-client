@@ -10,6 +10,10 @@ const specPath = path.join(backendDir, "riptide-backend.spec");
 const workPath = path.join(backendDir, "build", platform);
 const distPath = path.join(backendDir, "dist", platform);
 const env = { ...process.env, RIPTIDE_BUILD_PLATFORM: platform };
+const venvPyInstaller = process.platform === "win32"
+  ? path.join(backendDir, ".venv", "Scripts", "pyinstaller.exe")
+  : path.join(backendDir, ".venv", "bin", "pyinstaller");
+const pyInstallerBin = fs.existsSync(venvPyInstaller) ? venvPyInstaller : "pyinstaller";
 
 fs.mkdirSync(workPath, { recursive: true });
 fs.mkdirSync(distPath, { recursive: true });
@@ -22,12 +26,17 @@ const args = [
   "--clean",
 ];
 
-const result = spawnSync("pyinstaller", args, {
+const result = spawnSync(pyInstallerBin, args, {
   cwd: backendDir,
   stdio: "inherit",
   env,
   shell: process.platform === "win32",
 });
+
+if (result.error) {
+  console.error(result.error.message);
+  process.exit(1);
+}
 
 if (result.status !== 0) {
   process.exit(result.status || 1);

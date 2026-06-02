@@ -2,6 +2,16 @@
 
 All user-visible changes bump the patch version by one step.
 
+## 0.1.27
+
+- Desktop backend packaging now resolves `PyInstaller` from the backend virtualenv automatically.
+- Removed the host `PATH` dependency from the Linux and Windows desktop backend build step.
+
+## 0.1.26
+
+- Aligned release metadata and About versioning with the current Tauri desktop line.
+- Cleaned up desktop documentation to reflect Tauri packaging instead of the old Electron shell.
+
 ## 0.1.11
 
 - Completed torrents now show completed state instead of paused state in the list.

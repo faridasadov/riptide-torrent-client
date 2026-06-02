@@ -88,10 +88,12 @@ http://SERVER_IP:8080/
 
 Backend Uvicorn only binds to `127.0.0.1:8123`.
 
-## Windows Desktop Setup
+## Desktop Packaging
 
-The Electron desktop package can build a Windows installer that bundles the FastAPI backend as
-`riptide-backend.exe`. Run this on Windows so PyInstaller can produce a Windows executable:
+The native desktop shell now uses Tauri and can bundle the FastAPI backend as
+`riptide-backend.exe` on Windows and `riptide-backend` on Linux.
+
+For a Windows installer, run this on Windows so PyInstaller can produce a Windows executable:
 
 ```powershell
 cd desktop
@@ -111,10 +113,17 @@ npm install
 npm run dist:win
 ```
 
-The installer and portable executable are generated in `desktop\dist`. Installed builds start the
-backend automatically, keep app data in the user's Riptide profile folder, and download files to
-`Downloads\Riptide` by default. The default local login is `admin` / `admin` unless
-`TORRENT_CLIENT_USERNAME` and `TORRENT_CLIENT_PASSWORD` are set before starting the app.
+For Linux bundles:
+
+```bash
+cd desktop
+./build-linux.sh
+```
+
+The generated bundles are written under `desktop/src-tauri/target/release/bundle`. Installed builds
+start the backend automatically, keep app data in the user's Riptide profile folder, and download
+files to the platform default Riptide downloads folder. The default local login is `admin` /
+`admin` unless `TORRENT_CLIENT_USERNAME` and `TORRENT_CLIENT_PASSWORD` are set before starting the app.
 
 ## API
 

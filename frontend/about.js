@@ -1,38 +1,33 @@
 const RIPTIDE_CHANGELOG = Object.freeze({
-  "0.1.11": [
-    "Completed torrents now show completed state instead of paused state in the list",
-    "Torrent row action icon now switches to a completed check icon after finishing",
-    "Completed status and pill priority now override paused state in the main list"
+  "0.1.27": [
+    "Desktop backend packaging now resolves PyInstaller from the backend virtualenv automatically",
+    "This removes the host PATH dependency from the Linux and Windows desktop backend build step"
   ],
-  "0.1.10": [
-    "Added clickable table headers, checkbox multi-select and better bulk actions in table view",
-    "Improved add-torrent preview with a file tree and per-file priority controls",
-    "Added preview-wide skip, normal and high priority actions",
-    "Improved localized sort labels in the torrent toolbar"
+  "0.1.26": [
+    "Aligned release metadata and About versioning with the current Tauri desktop line",
+    "Cleaned up desktop documentation to reflect Tauri packaging instead of the old Electron shell"
   ],
-  "0.1.9": [
-    "Added cards/table torrent list toggle with persistent UI preference",
-    "Expanded add-torrent flow with rename-before-add and tracker override support",
-    "Added RSS regex rule shortcut and regex-aware rule testing",
-    "Completed desktop magnet and .torrent handoff flow with local file import"
+  "0.1.25": [
+    "Added a live desktop tray status loop with download and upload rates in the tooltip",
+    "Tray icon now animates and changes state based on active downloading or uploading traffic"
   ],
-  "0.1.8": [
-    "Fixed torrent file creation for directory-based fixtures and local content",
-    "Validated delete-with-files using a controlled fixture",
-    "Version line corrected to continue from 0.1.7 to 0.1.8"
+  "0.1.24": [
+    "Started the packaged Windows backend with CREATE_NO_WINDOW so no extra cmd window stays open",
+    "Prevents the app from depending on a visible console window for backend lifetime"
   ],
-  "0.1.7": [
-    "Fixed storage Actions button so file tools menu stays open and works reliably",
-    "Added release manifest with centralized version and changelog data",
-    "Added torrent move-content, force-start, peer block and port status features",
-    "Added tracker reorder controls and next-announce timing in the UI",
-    "Added optional skip-hash-check for .torrent imports and better storage action labels"
+  "0.1.23": [
+    "Added startup tracing for the Windows Tauri shell to capture bundled backend launch diagnostics",
+    "Used to verify the packaged backend path, data directory and startup timeout behavior on installed builds"
+  ],
+  "0.1.22": [
+    "Switched the packaged Windows backend data path to a stable LOCALAPPDATA-based directory",
+    "Avoids Tauri path-resolution edge cases in the installed Windows app while launching the bundled backend"
   ]
 });
 
 const RIPTIDE = Object.freeze({
   name: "Riptide",
-  version: "0.1.11",
+  version: "0.1.27",
   tagline: "Fast. Private. Yours.",
   brand: "faridasadov",
   author: "Farid Asadov",
