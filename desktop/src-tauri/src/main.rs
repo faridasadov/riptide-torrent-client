@@ -1,6 +1,8 @@
 use serde::Serialize;
 use std::{
     env,
+    fs::OpenOptions,
+    io::Write,
     net::{SocketAddr, TcpStream},
     path::{Path, PathBuf},
     process::{Child, Command, Stdio},
@@ -203,8 +205,8 @@ fn create_tray(app: &AppHandle) -> tauri::Result<()> {
 }
 
 fn load_app_icon() -> tauri::Result<Image<'static>> {
-    let icon_path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../assets/icon.png");
-    Image::from_path(icon_path)
+    const ICON_BYTES: &[u8] = include_bytes!("../../assets/icon-fixed.png");
+    Image::from_bytes(ICON_BYTES)
 }
 
 fn schedule_pending_flush(app: AppHandle) {
@@ -222,17 +224,18 @@ fn backend_url() -> String {
 
 fn start_bundled_backend(app: &AppHandle) -> tauri::Result<()> {
     if env::var("RIPTIDE_URL").is_ok() {
+        trace("Skipping bundled backend start because RIPTIDE_URL is set");
         return Ok(());
     }
 
     let backend_path = bundled_backend_path(app).ok_or_else(|| tauri::Error::AssetNotFound("Bundled backend was not found".into()))?;
+    trace(&format!("Bundled backend path: {}", backend_path.display()));
     cleanup_stale_backends();
 
-    let data_dir = app
-        .path()
-        .app_data_dir()
-        .map_err(|e| tauri::Error::AssetNotFound(e.to_string()))?;
+    let data_dir = desktop_data_dir(app)?;
     let downloads_dir = default_download_dir();
+    trace(&format!("Desktop data dir: {}", data_dir.display()));
+    trace(&format!("Desktop downloads dir: {}", downloads_dir.display()));
 
     std::fs::create_dir_all(&data_dir).map_err(|e| tauri::Error::AssetNotFound(e.to_string()))?;
     std::fs::create_dir_all(&downloads_dir).map_err(|e| tauri::Error::AssetNotFound(e.to_string()))?;
@@ -250,27 +253,39 @@ fn start_bundled_backend(app: &AppHandle) -> tauri::Result<()> {
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .spawn()
-        .map_err(|e| tauri::Error::AssetNotFound(e.to_string()))?;
+        .map_err(|e| {
+            trace(&format!("Failed to spawn backend: {e}"));
+            tauri::Error::AssetNotFound(e.to_string())
+        })?;
+    trace(&format!("Spawned backend pid {}", child.id()));
 
     let state = app.state::<DesktopState>();
     *state.backend_process.lock().expect("backend mutex poisoned") = Some(child);
     wait_for_backend()?;
+    trace("Bundled backend is reachable");
     Ok(())
 }
 
 fn bundled_backend_path(app: &AppHandle) -> Option<PathBuf> {
+    let resource_dir = app.path().resource_dir().ok();
+    let exe_dir = std::env::current_exe().ok().and_then(|path| path.parent().map(Path::to_path_buf));
     let candidates = if cfg!(target_os = "windows") {
         vec![
-            app.path().resource_dir().ok()?.join("backend").join("riptide-backend.exe"),
-            app.path().resource_dir().ok()?.join("riptide-backend.exe"),
+            resource_dir.as_ref().map(|dir| dir.join("backend").join("riptide-backend.exe")),
+            resource_dir.as_ref().map(|dir| dir.join("backend").join("dist").join("win32").join("riptide-backend.exe")),
+            resource_dir.as_ref().map(|dir| dir.join("riptide-backend.exe")),
+            exe_dir.as_ref().map(|dir| dir.join("backend").join("riptide-backend.exe")),
+            exe_dir.as_ref().map(|dir| dir.join("backend").join("dist").join("win32").join("riptide-backend.exe")),
+            exe_dir.as_ref().map(|dir| dir.join("_up_").join("_up_").join("backend").join("dist").join("win32").join("riptide-backend.exe")),
         ]
     } else {
         vec![
-            app.path().resource_dir().ok()?.join("backend").join("riptide-backend"),
-            app.path().resource_dir().ok()?.join("riptide-backend"),
+            resource_dir.as_ref().map(|dir| dir.join("backend").join("riptide-backend")),
+            resource_dir.as_ref().map(|dir| dir.join("riptide-backend")),
+            exe_dir.as_ref().map(|dir| dir.join("backend").join("riptide-backend")),
         ]
     };
-    candidates.into_iter().find(|path| path.exists())
+    candidates.into_iter().flatten().find(|path| path.exists())
 }
 
 fn default_download_dir() -> PathBuf {
@@ -278,6 +293,18 @@ fn default_download_dir() -> PathBuf {
         return PathBuf::from(user_profile).join("Downloads").join("Riptide");
     }
     PathBuf::from("Downloads").join("Riptide")
+}
+
+fn desktop_data_dir(app: &AppHandle) -> tauri::Result<PathBuf> {
+    if cfg!(target_os = "windows") {
+        if let Ok(local_app_data) = env::var("LOCALAPPDATA") {
+            return Ok(PathBuf::from(local_app_data).join("Riptide").join("data"));
+        }
+    }
+
+    app.path()
+        .app_data_dir()
+        .map_err(|e| tauri::Error::AssetNotFound(e.to_string()))
 }
 
 fn wait_for_backend() -> tauri::Result<()> {
@@ -293,6 +320,7 @@ fn wait_for_backend() -> tauri::Result<()> {
         thread::sleep(Duration::from_millis(300));
     }
 
+    trace("Timed out waiting for bundled backend");
     Err(tauri::Error::AssetNotFound("Timed out waiting for bundled backend".into()))
 }
 
@@ -399,4 +427,18 @@ fn terminate_backend(app: &AppHandle) {
     }
 
     *guard = None;
+}
+
+fn trace(message: &str) {
+    #[cfg(target_os = "windows")]
+    {
+        if let Ok(local_app_data) = env::var("LOCALAPPDATA") {
+            let log_dir = PathBuf::from(local_app_data).join("Riptide");
+            let _ = std::fs::create_dir_all(&log_dir);
+            let log_path = log_dir.join("desktop-debug.log");
+            if let Ok(mut file) = OpenOptions::new().create(true).append(true).open(log_path) {
+                let _ = writeln!(file, "{}", message);
+            }
+        }
+    }
 }

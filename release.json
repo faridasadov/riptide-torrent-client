@@ -1,6 +1,6 @@
 {
   "name": "Riptide",
-  "version": "0.1.19",
+  "version": "0.1.23",
   "tagline": "Fast. Private. Yours.",
   "brand": "faridasadov",
   "author": "Farid Asadov",
@@ -10,6 +10,22 @@
     "brand": "https://faridasadov.com"
   },
   "changelog": {
+    "0.1.23": [
+      "Added startup tracing for the Windows Tauri shell to capture bundled backend launch diagnostics",
+      "Used to verify the packaged backend path, data directory and startup timeout behavior on installed builds"
+    ],
+    "0.1.22": [
+      "Switched the packaged Windows backend data path to a stable LOCALAPPDATA-based directory",
+      "Avoids Tauri path-resolution edge cases in the installed Windows app while launching the bundled backend"
+    ],
+    "0.1.21": [
+      "Fixed the packaged Windows Tauri app so it finds the bundled backend in the installed updater layout",
+      "Added extra backend path probes for both resource-dir and installed executable layouts on Windows"
+    ],
+    "0.1.20": [
+      "Fixed the Tauri desktop tray icon so the packaged Windows app no longer exits immediately on startup",
+      "Embedded the tray icon bytes into the desktop binary instead of relying on a build-machine asset path"
+    ],
     "0.1.19": [
       "Switched the desktop shell plan from Electron to Tauri",
       "Added a Tauri backend launcher, native menu, tray integration and single-instance scaffolding",

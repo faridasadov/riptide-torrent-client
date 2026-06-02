@@ -1,6 +1,6 @@
 {
   "name": "riptide-desktop",
-  "version": "0.1.19",
+  "version": "0.1.23",
   "private": true,
   "description": "Native Tauri desktop shell for the Riptide torrent client.",
   "scripts": {
